@@ -34,6 +34,7 @@ import { ApiService } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
 import { formatPKR, getTodayLabel } from '@/utils/format';
+import { generateRouteSummaryPdf } from '@/utils/generateRouteSummaryPdf';
 
 // ── Types ──────────────────────────────────────────────────────────
 interface RecoveryEntry {
@@ -309,6 +310,20 @@ export default function RouteSummaryScreen() {
   const [error, setError] = useState<string | null>(null);
   const [editingEntry, setEditingEntry] = useState<RecoveryEntry | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+
+  // ── Download PDF ──────────────────────────────────────────────
+  const handleDownloadPdf = useCallback(async () => {
+    if (!data || !user) return;
+    setGeneratingPdf(true);
+    try {
+      await generateRouteSummaryPdf(data, user.name);
+    } catch (e: any) {
+      Alert.alert('PDF Error', e?.message || 'Failed to generate PDF');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  }, [data, user]);
 
   // Resolve the session ID — either from context (lastEndedSessionId) or from storage
   useEffect(() => {
@@ -501,10 +516,24 @@ export default function RouteSummaryScreen() {
         />
       )}
 
-      {/* Bottom action bar — Resume + Done */}
+      {/* Bottom action bar — Download PDF + Resume + Done */}
       <View
         style={[styles.bottomBar, { paddingBottom: insets.bottom + Spacing.sm }]}
       >
+        <Pressable
+          style={({ pressed }) => [styles.pdfBtn, pressed && styles.pdfBtnPressed, generatingPdf && styles.pdfBtnDisabled]}
+          onPress={handleDownloadPdf}
+          disabled={generatingPdf || !data}
+        >
+          {generatingPdf ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <MaterialIcons name="picture-as-pdf" size={18} color="#FFFFFF" />
+              <Text style={styles.pdfBtnText}>PDF</Text>
+            </>
+          )}
+        </Pressable>
         <Pressable
           style={({ pressed }) => [styles.resumeBtn, pressed && styles.resumeBtnPressed]}
           onPress={handleResume}
@@ -515,7 +544,7 @@ export default function RouteSummaryScreen() {
           ) : (
             <>
               <MaterialIcons name="play-arrow" size={18} color="#FFFFFF" />
-              <Text style={styles.resumeBtnText}>Resume Route</Text>
+              <Text style={styles.resumeBtnText}>Resume</Text>
             </>
           )}
         </Pressable>
@@ -642,6 +671,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: Colors.border,
     ...Shadow.lg,
   },
+  pdfBtn: { flex: 0.7, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.xs, backgroundColor: '#DC2626', paddingVertical: Spacing.md, borderRadius: Radius.lg, ...Shadow.md },
+  pdfBtnPressed: { opacity: 0.85 },
+  pdfBtnDisabled: { opacity: 0.5 },
+  pdfBtnText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: '#FFFFFF' },
   resumeBtn: { flex: 1.4, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.xs, backgroundColor: Colors.primary, paddingVertical: Spacing.md, borderRadius: Radius.lg, ...Shadow.md },
   resumeBtnPressed: { opacity: 0.85 },
   resumeBtnText: { fontSize: FontSize.base, fontWeight: FontWeight.bold, color: '#FFFFFF' },
