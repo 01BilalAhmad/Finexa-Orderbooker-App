@@ -36,6 +36,7 @@ const KEYS = {
   LAST_ENDED_SESSION_ID: 'af_last_ended_session_id', // last ended session ID — used for resume
   LAST_ENDED_SESSION_DATE: 'af_last_ended_session_date', // YYYY-MM-DD of last end — guards resume to same day
   OFFLINE_SMS_LOGS: 'af_offline_sms_logs', // pending SMS logs queued while offline
+  OVERDUE_SHOPS: 'af_overdue_shops', // cached overdue shops data
 };
 
 export interface PendingNotification {
@@ -93,6 +94,15 @@ export interface OfflineSmsLog {
   errorMessage?: string;
   sentAt: string;
   createdAt: string; // ISO timestamp when log was queued
+}
+
+export interface OverdueShop {
+  shopId: string;
+  shopName: string;
+  shopArea: string | null;
+  balance: number;
+  lastRecoveryDate: string | null;
+  daysOverdue: number;
 }
 
 export interface ShopNote {
@@ -930,6 +940,30 @@ export const StorageService = {
   clearOfflineSmsLogs: async () => {
     try {
       await AsyncStorage.setItem(KEYS.OFFLINE_SMS_LOGS, JSON.stringify([]));
+    } catch {}
+  },
+
+  // --- Overdue Shops (cached locally for offline access) ---
+  saveOverdueShops: async (shops: OverdueShop[]) => {
+    try {
+      await AsyncStorage.setItem(KEYS.OVERDUE_SHOPS, JSON.stringify(shops));
+    } catch (e) {
+      console.error('[Storage] Failed to save overdue shops:', e);
+    }
+  },
+
+  getOverdueShops: async (): Promise<OverdueShop[]> => {
+    try {
+      const raw = await AsyncStorage.getItem(KEYS.OVERDUE_SHOPS);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  clearOverdueShops: async () => {
+    try {
+      await AsyncStorage.removeItem(KEYS.OVERDUE_SHOPS);
     } catch {}
   },
 };

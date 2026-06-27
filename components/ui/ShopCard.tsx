@@ -33,6 +33,7 @@ interface ShopCardProps {
   shop: Shop;
   isVisited: boolean;
   hasRecovery?: boolean; // Whether recovery has been submitted for this shop today
+  isOverdue?: boolean; // Whether this shop is overdue (7+ days since last recovery)
   onCollect: () => void;
   onPress: () => void;
   onGpsVisit?: () => void;
@@ -43,6 +44,7 @@ export const ShopCard = memo(function ShopCard({
   shop,
   isVisited,
   hasRecovery = false,
+  isOverdue = false,
   onCollect,
   onPress,
   onGpsVisit,
@@ -132,6 +134,9 @@ export const ShopCard = memo(function ShopCard({
           </Text>
         </View>
         <View style={styles.shopInfo}>
+          {isOverdue && (
+            <Text style={styles.overdueLabel}>OVERDUE</Text>
+          )}
           <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
           <Text style={styles.shopMeta} numberOfLines={1}>
             {shop.ownerName}  ·  {shop.area}
@@ -342,6 +347,19 @@ const styles = StyleSheet.create({
   },
   shopInfo: {
     flex: 1,
+  },
+  overdueLabel: {
+    fontSize: 9,
+    fontWeight: FontWeight.bold,
+    color: '#FFFFFF',
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: 'hidden',
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+    letterSpacing: 0.5,
   },
   shopName: {
     fontSize: FontSize.base,

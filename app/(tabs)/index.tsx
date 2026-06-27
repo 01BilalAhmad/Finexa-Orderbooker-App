@@ -33,6 +33,7 @@ import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { PendingCreditAlert } from '@/components/ui/PendingCreditAlert';
 import { VisitStreakCounter } from '@/components/ui/VisitStreakCounter';
 import { CreditTargetCard } from '@/components/ui/CreditTargetCard';
+import { OverdueAlertBanner } from '@/components/ui/OverdueAlertBanner';
 import { PerformanceChart } from '@/components/ui/PerformanceChart';
 import { RecoveryAnalysisChart } from '@/components/ui/RecoveryAnalysisChart';
 import { NotificationChoice, NotificationMethod } from '@/components/ui/NotificationChoice';
@@ -161,6 +162,7 @@ export default function TodayRouteScreen() {
   }>({ visible: false, shopId: '', shopPhone: '', shopName: '', openingBalance: 0, recoveryAmount: 0, remainingBalance: 0 });
   const [visitedShopIds, setVisitedShopIds] = useState<Set<string>>(new Set());
   const [todayRecovery, setTodayRecovery] = useState(0);
+  const [overdueShopIds, setOverdueShopIds] = useState<Set<string>>(new Set());
   const [recoverySubmittedShopIds, setRecoverySubmittedShopIds] = useState<Set<string>>(new Set());
 
   // Helper: create a composite key for recovery tracking (shopId_companyId)
@@ -270,6 +272,19 @@ export default function TodayRouteScreen() {
       loadAllShops(user.id, selectedCompanyId || undefined);
       loadTodayStats();
       loadPendingNotifications();
+      // Calculate overdue shops locally
+      (async () => {
+        try {
+          const { calculateOverdueShops } = await import('@/utils/overdueCalculator');
+          const allShops = await StorageService.getShops();
+          await calculateOverdueShops(allShops);
+          const { getOverdueShopIds } = await import('@/utils/overdueCalculator');
+          const ids = await getOverdueShopIds();
+          setOverdueShopIds(ids);
+        } catch (e) {
+          console.warn('[Dashboard] Overdue calculation failed:', e);
+        }
+      })();
     }
   }, [user, allRoutesEnabled, selectedCompanyId]);
 
@@ -1086,6 +1101,9 @@ export default function TodayRouteScreen() {
                   <CreditTargetCard orderbookerId={user.id} />
                 ) : null}
 
+                {/* Overdue Shops Alert Banner */}
+                <OverdueAlertBanner />
+
                 {/* Badges */}
                 <View style={styles.badgesRow}>
                   <View style={[styles.heroDayBadge, styles.allRoutesBadge]}>
@@ -1314,6 +1332,7 @@ export default function TodayRouteScreen() {
                   shop={item.shop}
                   isVisited={visitedShopIds.has(item.shop.id)}
                   hasRecovery={isRecoverySubmitted(item.shop.id, selectedCompanyId || user?.companyId)}
+                  isOverdue={overdueShopIds.has(item.shop.id)}
                   onCollect={() => handleOpenRecovery(item.shop)}
                   onPress={() => setDetailShop(item.shop)}
                   onGpsVisit={() => setGpsVisitShop(item.shop)}
@@ -1589,6 +1608,7 @@ export default function TodayRouteScreen() {
               shop={item}
               isVisited={visitedShopIds.has(item.id)}
               hasRecovery={isRecoverySubmitted(item.id, selectedCompanyId || user?.companyId)}
+              isOverdue={overdueShopIds.has(item.id)}
               onCollect={() => handleOpenRecovery(item)}
               onPress={() => setDetailShop(item)}
               onGpsVisit={() => setGpsVisitShop(item)}
