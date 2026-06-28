@@ -57,6 +57,15 @@ export function NotificationChoice({ visible, payload, onDone }: NotificationCho
   const [sending, setSending] = useState(false);
   const [smsStatus, setSmsStatus] = useState<'idle' | 'success' | 'failed'>('idle');
   const [showConfirm, setShowConfirm] = useState(false);
+  const [businessName, setBusinessName] = useState<string>('AL-FALAH TRADERS');
+
+  // Fetch business name on mount
+  useEffect(() => {
+    (async () => {
+      const cached = await StorageService.getBusinessName();
+      if (cached) setBusinessName(cached);
+    })();
+  }, []);
   const [confirmWarning, setConfirmWarning] = useState(false);
   const scale = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -405,14 +414,16 @@ export function NotificationChoice({ visible, payload, onDone }: NotificationCho
           {/* Hidden Receipt View for Image Capture */}
           <View style={styles.hiddenReceipt}>
             <View ref={receiptRef} collapsable={false} style={styles.receiptCard}>
-              {/* ── 1. AL-FALAH CREDIT SYSTEM (System Header) ── */}
+              {/* ── 1. Business Name (from CMS admin settings) ── */}
               <View style={styles.receiptSystemHeader}>
                 <MaterialIcons name="account-balance" size={30} color="#FFFFFF" />
-                <Text style={styles.receiptSystemTitle}>AL-FALAH CREDIT SYSTEM</Text>
+                <Text style={styles.receiptSystemTitle}>{businessName}</Text>
               </View>
 
               {/* ── 2. Company Name ── */}
-              <Text style={styles.receiptCompanyName}>{payload.companyName || 'Finexa Recovery App'}</Text>
+              {payload.companyName ? (
+                <Text style={styles.receiptCompanyName}>{payload.companyName}</Text>
+              ) : null}
 
               {/* ── 3. Payment Receipt ── */}
               <Text style={styles.receiptPaymentLabel}>Payment Receipt</Text>
@@ -712,7 +723,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4338CA',
     overflow: 'hidden',
   },
-  // System header: AL-FALAH CREDIT SYSTEM
+  // System header: Business Name (from CMS)
   receiptSystemHeader: {
     flexDirection: 'row',
     alignItems: 'center',

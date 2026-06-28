@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     ...Shadow.xl,
   },
 
-  // System header: AL-FALAH CREDIT SYSTEM
+  // System header: Business Name (from CMS)
   receiptSystemHeader: {
     flexDirection: 'row',
     alignItems: 'center',

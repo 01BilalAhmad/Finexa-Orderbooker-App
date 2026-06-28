@@ -19,7 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { captureRef } from '@/utils/captureRef';
 import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { PendingNotification } from '@/services/storage';
+import { PendingNotification, StorageService } from '@/services/storage';
 import { sendRecoverySms } from '@/utils/sendRecoverySms';
 import { formatPKR } from '@/utils/format';
 
@@ -56,6 +56,15 @@ export function PendingMessagesSheet({
   // Confirmation dialog state
   const [confirmItem, setConfirmItem] = useState<PendingNotification | null>(null);
   const [confirmWarning, setConfirmWarning] = useState(false);
+  const [businessName, setBusinessName] = useState<string>('AL-FALAH TRADERS');
+
+  // Fetch business name on mount
+  useEffect(() => {
+    (async () => {
+      const cached = await StorageService.getBusinessName();
+      if (cached) setBusinessName(cached);
+    })();
+  }, []);
 
   // WhatsApp return tracking
   const whatsappOpenedAt = useRef<number | null>(null);
@@ -277,14 +286,16 @@ export function PendingMessagesSheet({
           collapsable={false}
           style={styles.receiptCard}
         >
-          {/* ── 1. AL-FALAH CREDIT SYSTEM (System Header) ── */}
+          {/* ── 1. Business Name (from CMS admin settings) ── */}
           <View style={styles.receiptSystemHeader}>
             <MaterialIcons name="account-balance" size={30} color="#FFFFFF" />
-            <Text style={styles.receiptSystemTitle}>AL-FALAH CREDIT SYSTEM</Text>
+            <Text style={styles.receiptSystemTitle}>{businessName}</Text>
           </View>
 
           {/* ── 2. Company Name ── */}
-          <Text style={styles.receiptCompanyName}>{item.companyName || 'Finexa Recovery App'}</Text>
+          {item.companyName ? (
+            <Text style={styles.receiptCompanyName}>{item.companyName}</Text>
+          ) : null}
 
           {/* ── 3. Payment Receipt ── */}
           <Text style={styles.receiptPaymentLabel}>Payment Receipt</Text>
