@@ -545,20 +545,26 @@ export const ShopDetailModal = memo(function ShopDetailModal({
               </View>
             ) : (
               recentTxns.map((txn) => (
-                <View key={txn.id} style={styles.txnRow}>
+                <View key={txn.id} style={[
+                  styles.txnRow,
+                  txn.type === 'claim' && { backgroundColor: 'rgba(239, 68, 68, 0.08)', borderRadius: 8 },
+                ]}>
                   <View style={[
                     styles.txnTypeIcon,
-                    { backgroundColor: txn.type === 'credit' ? Colors.secondaryLight : Colors.primaryLight },
+                    { backgroundColor: txn.type === 'credit' ? Colors.secondaryLight : txn.type === 'claim' ? Colors.dangerLight : Colors.primaryLight },
                   ]}>
                     <MaterialIcons
-                      name={txn.type === 'credit' ? 'arrow-downward' : 'arrow-upward'}
+                      name={txn.type === 'credit' ? 'arrow-downward' : txn.type === 'claim' ? 'remove-circle-outline' : 'arrow-upward'}
                       size={14}
-                      color={txn.type === 'credit' ? Colors.secondary : Colors.primary}
+                      color={txn.type === 'credit' ? Colors.secondary : txn.type === 'claim' ? Colors.danger : Colors.primary}
                     />
                   </View>
                   <View style={styles.txnInfo}>
                     <View style={styles.txnInfoTop}>
-                      <Text style={styles.txnType}>{txn.type === 'credit' ? 'Credit' : 'Recovery'}</Text>
+                      <Text style={[
+                        styles.txnType,
+                        txn.type === 'claim' && { color: Colors.danger, fontWeight: 'bold' },
+                      ]}>{txn.type === 'credit' ? 'Credit' : txn.type === 'claim' ? 'Claim' : 'Recovery'}</Text>
                       {txn.status === 'pending' ? (
                         <Badge label="Pending" bgColor="#FEF3C7" color="#92400E" size="sm" />
                       ) : txn.status === 'rejected' ? (
@@ -571,7 +577,10 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                     ) : null}
                   </View>
                   <View style={styles.txnAmountCol}>
-                    <Text style={[styles.txnAmount, { color: txn.type === 'credit' ? Colors.secondary : Colors.primary }]}>
+                    <Text style={[
+                      styles.txnAmount,
+                      { color: txn.type === 'credit' ? Colors.secondary : txn.type === 'claim' ? Colors.danger : Colors.primary },
+                    ]}>
                       {formatPKR(txn.amount)}
                     </Text>
                     <Text style={styles.txnBalAfter}>{formatPKR(txn.newBalance)}</Text>

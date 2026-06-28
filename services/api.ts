@@ -60,7 +60,7 @@ export interface Shop {
 export interface Transaction {
   id: string;
   shopId: string;
-  type: 'credit' | 'recovery';
+  type: 'credit' | 'recovery' | 'claim';
   status: 'pending' | 'approved' | 'rejected';
   amount: number;
   previousBalance: number;

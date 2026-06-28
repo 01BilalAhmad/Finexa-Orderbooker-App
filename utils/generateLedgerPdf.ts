@@ -13,10 +13,13 @@ function generateLedgerHtml(data: LedgerResponse, companyName?: string, distribu
   const txnRows = transactions
     .map((t) => {
       const isCredit = t.type === 'credit';
-      const bgColor = isCredit ? '#FEF3C7' : '#EEF2FF';
-      const typeColor = isCredit ? '#92400E' : '#4338CA';
-      const typeLabel = isCredit ? 'CREDIT' : 'RECOVERY';
+      const isClaim = t.type === 'claim';
+      const bgColor = isCredit ? '#FEF3C7' : isClaim ? '#FEE2E2' : '#EEF2FF';
+      const typeColor = isCredit ? '#92400E' : isClaim ? '#EF4444' : '#4338CA';
+      const typeLabel = isCredit ? 'CREDIT' : isClaim ? 'CLAIM' : 'RECOVERY';
       const amountPrefix = isCredit ? '+' : '-';
+      const amountColor = isCredit ? '#F59E0B' : isClaim ? '#EF4444' : '#4F46E5';
+      const rowBg = isClaim ? 'background:#FEF2F2;' : '';
       const statusBadge =
         t.status === 'pending'
           ? '<span style="background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:6px;">Pending</span>'
@@ -25,14 +28,14 @@ function generateLedgerHtml(data: LedgerResponse, companyName?: string, distribu
           : '';
 
       return `
-        <tr>
+        <tr style="${rowBg}">
           <td style="padding:10px 8px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#6B7280;">${formatDateTime(t.createdAt)}</td>
           <td style="padding:10px 8px;border-bottom:1px solid #E5E7EB;">
             <span style="background:${bgColor};color:${typeColor};padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:0.5px;">${typeLabel}</span>
             ${statusBadge}
           </td>
           <td style="padding:10px 8px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#374151;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.description || '—'}</td>
-          <td style="padding:10px 8px;border-bottom:1px solid #E5E7EB;font-size:13px;font-weight:700;color:${isCredit ? '#F59E0B' : '#4F46E5'};text-align:right;">${amountPrefix} ${formatPKR(t.amount)}</td>
+          <td style="padding:10px 8px;border-bottom:1px solid #E5E7EB;font-size:13px;font-weight:700;color:${amountColor};text-align:right;">${amountPrefix} ${formatPKR(t.amount)}</td>
           <td style="padding:10px 8px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#6B7280;text-align:right;">${formatPKR(t.previousBalance)}</td>
           <td style="padding:10px 8px;border-bottom:1px solid #E5E7EB;font-size:12px;font-weight:600;color:#111827;text-align:right;">${formatPKR(t.newBalance)}</td>
         </tr>
