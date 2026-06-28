@@ -209,7 +209,9 @@ export function NotificationChoice({ visible, payload, onDone }: NotificationCho
     setSending(true);
     setSmsStatus('idle');
     try {
-      const sent = await sendRecoverySms(payload);
+      // Fetch business name from storage for SMS
+      const bName = await StorageService.getBusinessName() || undefined;
+      const sent = await sendRecoverySms({ ...payload, businessName: bName });
       if (sent) {
         console.log('[NotificationChoice] SMS sent successfully');
         setSmsStatus('success');

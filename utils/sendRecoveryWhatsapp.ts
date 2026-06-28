@@ -72,6 +72,7 @@ export function buildRecoveryMessage(
   openingBalance: number,
   recoveryAmount: number,
   remainingBalance: number,
+  businessName?: string,
 ): string {
   const today = new Date().toLocaleDateString('en-PK', {
     day: '2-digit',
@@ -79,7 +80,9 @@ export function buildRecoveryMessage(
     year: 'numeric',
   });
 
-  return `Finexa Recovery App - Recovery Update\n\n`
+  const bName = businessName || 'AL-FALAH TRADERS';
+
+  return `${bName} - Recovery Update\n\n`
     + `Dear ${shopName},\n\n`
     + `Your account has been updated:\n\n`
     + `Opening Balance: Rs. ${openingBalance.toLocaleString('en-PK')}\n`
@@ -87,5 +90,5 @@ export function buildRecoveryMessage(
     + `Remaining Balance: Rs. ${remainingBalance.toLocaleString('en-PK')}\n\n`
     + `Date: ${today}\n\n`
     + `Thank you for your payment!\n`
-    + `Finexa Recovery App`;
+    + `${bName}`;
 }

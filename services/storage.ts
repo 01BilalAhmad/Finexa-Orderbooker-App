@@ -37,6 +37,7 @@ const KEYS = {
   LAST_ENDED_SESSION_DATE: 'af_last_ended_session_date', // YYYY-MM-DD of last end — guards resume to same day
   OFFLINE_SMS_LOGS: 'af_offline_sms_logs', // pending SMS logs queued while offline
   OVERDUE_SHOPS: 'af_overdue_shops', // cached overdue shops data
+  BUSINESS_NAME: 'af_business_name', // cached business name from CMS
 };
 
 export interface PendingNotification {
@@ -965,5 +966,20 @@ export const StorageService = {
     try {
       await AsyncStorage.removeItem(KEYS.OVERDUE_SHOPS);
     } catch {}
+  },
+
+  // --- Business Name (cached from CMS for receipts) ---
+  saveBusinessName: async (name: string) => {
+    try {
+      await AsyncStorage.setItem(KEYS.BUSINESS_NAME, name);
+    } catch {}
+  },
+
+  getBusinessName: async (): Promise<string | null> => {
+    try {
+      return await AsyncStorage.getItem(KEYS.BUSINESS_NAME);
+    } catch {
+      return null;
+    }
   },
 };

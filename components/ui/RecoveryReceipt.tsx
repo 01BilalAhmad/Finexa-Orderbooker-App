@@ -20,6 +20,9 @@ import * as Linking from 'expo-linking';
 import * as MediaLibrary from 'expo-media-library';
 import { formatPKR } from '@/utils/format';
 import { Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { ApiService } from '@/services/api';
+import { StorageService } from '@/services/storage';
+import { getApiUrl } from '@/constants/config';
 
 interface RecoveryReceiptProps {
   visible: boolean;
@@ -63,8 +66,32 @@ export function RecoveryReceipt({
   const [isCapturing, setIsCapturing] = useState(false);
   const [savedImageUri, setSavedImageUri] = useState<string | null>(null);
   const [imageSavedToGallery, setImageSavedToGallery] = useState(false);
+  const [businessName, setBusinessName] = useState<string>('');
   const scale = useRef(new Animated.Value(0.9)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+
+  // ── Fetch business name from CMS (admin set name) ──
+  // Falls back to AsyncStorage cached value, then to 'AL-FALAH TRADERS'
+  useEffect(() => {
+    (async () => {
+      // 1. Try cached value first (for offline)
+      const cached = await StorageService.getBusinessName();
+      if (cached) setBusinessName(cached);
+
+      // 2. Try fetching fresh from API
+      try {
+        const res = await fetch(`${await getApiUrl()}/api/config`);
+        if (res.ok) {
+          const data = await res.json();
+          const name = data.config?.businessName || 'AL-FALAH TRADERS';
+          setBusinessName(name);
+          await StorageService.saveBusinessName(name);
+        }
+      } catch {
+        // Offline — use cached value (already set above)
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -297,16 +324,18 @@ export function RecoveryReceipt({
 
           {/* RECEIPT — Dark Indigo Card */}
           <View ref={receiptRef} collapsable={false} style={styles.receipt}>
-            {/* ── 1. System Header: AL-FALAH CREDIT SYSTEM ── */}
+            {/* ── 1. Business Name Header (from CMS admin settings) ── */}
             <View style={styles.receiptSystemHeader}>
               <View style={styles.systemHeaderIconWrap}>
                 <MaterialIcons name="account-balance" size={26} color="#FFFFFF" />
               </View>
-              <Text style={styles.receiptSystemTitle}>AL-FALAH CREDIT SYSTEM</Text>
+              <Text style={styles.receiptSystemTitle}>{businessName || 'AL-FALAH TRADERS'}</Text>
             </View>
 
             {/* ── 2. Company Name ── */}
-            <Text style={styles.receiptCompanyName}>{companyName || 'Finexa Recovery App'}</Text>
+            {companyName ? (
+              <Text style={styles.receiptCompanyName}>{companyName}</Text>
+            ) : null}
 
             {/* ── 3. Payment Receipt Label ── */}
             <Text style={styles.receiptPaymentLabel}>Payment Receipt</Text>
