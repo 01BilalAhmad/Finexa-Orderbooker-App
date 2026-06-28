@@ -153,6 +153,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Fetch distributor phone on login
     fetchDistPhone(res.user.companyId);
 
+    // Pre-fetch business name from CMS for receipts/SMS/WhatsApp
+    (async () => {
+      try {
+        const { getApiUrl } = await import('@/constants/config');
+        const apiUrl = getApiUrl();
+        const configRes = await fetch(`${apiUrl}/api/config`);
+        if (configRes.ok) {
+          const configData = await configRes.json();
+          const bName = configData.config?.businessName || 'AL-FALAH TRADERS';
+          await StorageService.saveBusinessName(bName);
+          console.log('[Auth] Business name cached:', bName);
+        }
+      } catch (e) {
+        console.warn('[Auth] Failed to fetch business name:', e);
+      }
+    })();
+
     // Load companies from user object if available
     if (res.user.companies && res.user.companies.length > 0) {
       setCompanies(res.user.companies);

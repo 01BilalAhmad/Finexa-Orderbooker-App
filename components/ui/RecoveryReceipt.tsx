@@ -74,13 +74,16 @@ export function RecoveryReceipt({
   // Falls back to AsyncStorage cached value, then to 'AL-FALAH TRADERS'
   useEffect(() => {
     (async () => {
-      // 1. Try cached value first (for offline)
+      // 1. Try cached value first (for instant display + offline)
       const cached = await StorageService.getBusinessName();
-      if (cached) setBusinessName(cached);
+      if (cached) {
+        setBusinessName(cached);
+      }
 
-      // 2. Try fetching fresh from API
+      // 2. Try fetching fresh from API (in background)
       try {
-        const res = await fetch(`${await getApiUrl()}/api/config`);
+        const apiUrl = getApiUrl(); // synchronous — returns cached URL or DEFAULT_URL
+        const res = await fetch(`${apiUrl}/api/config`);
         if (res.ok) {
           const data = await res.json();
           const name = data.config?.businessName || 'AL-FALAH TRADERS';
@@ -89,6 +92,9 @@ export function RecoveryReceipt({
         }
       } catch {
         // Offline — use cached value (already set above)
+        if (!cached) {
+          setBusinessName('AL-FALAH TRADERS');
+        }
       }
     })();
   }, []);
