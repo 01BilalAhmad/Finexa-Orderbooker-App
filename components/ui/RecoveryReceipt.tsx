@@ -1,6 +1,7 @@
 // Powered by Finexa
-// Recovery Receipt — Modern Blue design matching Screen 11 mockup.
-// White receipt card with blue gradient header/footer, success badge, Urdu hidayat.
+// Recovery Receipt — Modern Blue design (Screen 11 mockup).
+// White receipt card with blue gradient header/footer, distributor strip,
+// shop details, amount details box, success badge, Urdu hidayat.
 // Dark overlay background with modal topbar. All functionality preserved.
 import React, { useRef, useState, useEffect } from 'react';
 import {
@@ -13,15 +14,13 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { captureRef } from 'react-native-view-shot';
 import * as Linking from 'expo-linking';
 import * as MediaLibrary from 'expo-media-library';
 import { formatPKR } from '@/utils/format';
-import { Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { ApiService } from '@/services/api';
+import { Spacing, FontWeight, Shadow } from '@/constants/theme';
 import { StorageService } from '@/services/storage';
 import { getApiUrl } from '@/constants/config';
 
@@ -47,6 +46,19 @@ function formatPhoneIntl(phone: string): string {
   if (p.startsWith('0')) p = p.substring(1);
   if (!p.startsWith('92')) p = '92' + p;
   return p.replace(/[^0-9]/g, '');
+}
+
+/** Build a receipt-number like "#RC-2026-00847" (year + 5-digit pseudo-sequential). */
+function buildReceiptNumber(d: Date): string {
+  const year = d.getFullYear();
+  // Pseudo-sequential 5-digit seed from month/day/hour/minute (00000..44639)
+  const seed =
+    d.getMonth() * 31 * 24 * 60 +
+    d.getDate() * 24 * 60 +
+    d.getHours() * 60 +
+    d.getMinutes();
+  const seq = String(seed).padStart(5, '0');
+  return `RC-${year}-${seq}`;
 }
 
 export function RecoveryReceipt({
@@ -127,9 +139,8 @@ export function RecoveryReceipt({
     hour12: true,
   });
 
-  // Receipt number for display (derived from current timestamp)
-  const _now = new Date();
-  const receiptNumber = `RC-${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}${String(_now.getDate()).padStart(2, '0')}-${String(_now.getHours()).padStart(2, '0')}${String(_now.getMinutes()).padStart(2, '0')}`;
+  // Receipt number for display — looks like "#RC-2026-00847"
+  const receiptNumber = buildReceiptNumber(new Date());
 
   /**
    * Capture receipt as image and save to gallery.
@@ -169,7 +180,7 @@ export function RecoveryReceipt({
       // Request permissions — try with full access first, fallback to writeOnly
       let permResult = await MediaLibrary.requestPermissionsAsync(false);
       console.log('[RecoveryReceipt] MediaLibrary permission status (full):', permResult.status);
-      
+
       if (permResult.status !== 'granted') {
         permResult = await MediaLibrary.requestPermissionsAsync(true);
         console.log('[RecoveryReceipt] MediaLibrary permission status (writeOnly):', permResult.status);
@@ -320,8 +331,24 @@ export function RecoveryReceipt({
 
   if (!visible) return null;
 
+  // ── Shop detail rows (5 rows max) ──
+  type ShopRow = {
+    icon: React.ComponentProps<typeof MaterialIcons>['name'];
+    label: string;
+    value: string;
+    bold?: boolean;
+  };
+  const shopRows: ShopRow[] = [
+    { icon: 'store', label: 'Shop', value: shopName, bold: true },
+    ...(shopAddress ? [{ icon: 'location-on' as const, label: 'Address', value: shopAddress }] : []),
+    ...(shopOwnerName ? [{ icon: 'person' as const, label: 'Owner', value: shopOwnerName }] : []),
+    ...(shopPhone ? [{ icon: 'call' as const, label: 'Phone', value: shopPhone }] : []),
+    { icon: 'calendar-today', label: 'Date', value: `${today}, ${timeNow}` },
+  ];
+
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+      {/* ── Dark Overlay (rgba(15, 23, 42, 0.85)) ── */}
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Animated.View style={[styles.backdropFade, { opacity }]} />
       </Pressable>
@@ -333,99 +360,103 @@ export function RecoveryReceipt({
         keyboardShouldPersistTaps="handled"
       >
         <Animated.View style={[styles.cardWrap, { transform: [{ scale }], opacity }]}>
-          {/* ── Modal Topbar ── */}
+          {/* ════════════════════════════════════════════════════════ */}
+          {/* MODAL TOPBAR  (NOT captured)                              */}
+          {/* ════════════════════════════════════════════════════════ */}
           <View style={styles.topbar}>
             <View style={styles.topbarTitle}>
-              <MaterialIcons name="receipt" size={18} color="#93C5FD" />
+              <View style={styles.topbarTitleIcon}>
+                <MaterialIcons name="receipt-long" size={15} color="#FFFFFF" />
+              </View>
               <Text style={styles.topbarTitleText}>Recovery Receipt</Text>
             </View>
-            <Pressable style={styles.topbarClose} onPress={onClose} hitSlop={10}>
+            <Pressable
+              style={({ pressed }) => [styles.topbarClose, pressed && { opacity: 0.7 }]}
+              onPress={onClose}
+              hitSlop={12}
+              accessibilityLabel="Close receipt"
+            >
               <MaterialIcons name="close" size={16} color="#FFFFFF" />
             </Pressable>
           </View>
 
-          {/* ════════════════════════════════════════════ */}
-          {/* RECEIPT CARD — White, captured as image       */}
-          {/* ════════════════════════════════════════════ */}
+          {/* ════════════════════════════════════════════════════════ */}
+          {/* RECEIPT CARD  — White, captured as image (receiptRef)    */}
+          {/* ════════════════════════════════════════════════════════ */}
           <View ref={receiptRef} collapsable={false} style={styles.receipt}>
-            {/* ── 1. Blue Gradient Header ── */}
+            {/* ────────────────────────────────────────────────────── */}
+            {/* 1. BLUE GRADIENT HEADER  (#1E40AF → #3B82F6)          */}
+            {/* ────────────────────────────────────────────────────── */}
             <View style={styles.receiptHead}>
               <View style={styles.receiptHeadOverlay} />
+
+              {/* Receipt number top-right */}
               <View style={styles.receiptNoWrap}>
                 <Text style={styles.receiptNoText}>#{receiptNumber}</Text>
               </View>
+
+              {/* Landmark / building icon (centered) */}
               <View style={styles.receiptBuildingIcon}>
-                <MaterialIcons name="account-balance" size={20} color="#FFFFFF" />
+                <MaterialIcons name="account-balance" size={22} color="#FFFFFF" />
               </View>
+
+              {/* Business name (large, bold, white) */}
               <Text style={styles.receiptBusinessName}>
                 {(businessName || 'AL-FALAH TRADERS').toUpperCase()}
               </Text>
+
+              {/* Company name subtitle (semi-transparent) */}
               {companyName ? (
                 <Text style={styles.receiptCompanySub}>{companyName}</Text>
               ) : null}
+
+              {/* "PAYMENT RECEIPT" white pill badge */}
               <View style={styles.receiptPayPill}>
                 <Text style={styles.receiptPayPillText}>PAYMENT RECEIPT</Text>
               </View>
             </View>
 
-            {/* ── 2. Distributor Phone Strip ── */}
+            {/* ────────────────────────────────────────────────────── */}
+            {/* 2. DISTRIBUTOR PHONE STRIP  (light blue #DBEAFE)      */}
+            {/* ────────────────────────────────────────────────────── */}
             {distributorPhone ? (
               <View style={styles.receiptDistStrip}>
-                <MaterialIcons name="call" size={12} color="#2563EB" />
+                <View style={styles.receiptDistIconWrap}>
+                  <MaterialIcons name="call" size={12} color="#1E40AF" />
+                </View>
                 <Text style={styles.receiptDistLab}>Distributor No:</Text>
                 <Text style={styles.receiptDistVal}>{distributorPhone}</Text>
               </View>
             ) : null}
 
-            {/* ── 3. Dashed Divider ── */}
+            {/* ────────────────────────────────────────────────────── */}
+            {/* 3. DASHED DIVIDER                                     */}
+            {/* ────────────────────────────────────────────────────── */}
             <View style={styles.receiptDashedDivider} />
 
-            {/* ── 4. Shop Details ── */}
+            {/* ────────────────────────────────────────────────────── */}
+            {/* 4. SHOP DETAILS SECTION  (white, 5 rows)              */}
+            {/* ────────────────────────────────────────────────────── */}
             <View style={styles.receiptShopSection}>
-              <View style={styles.receiptRow}>
-                <View style={styles.receiptRowIcon}>
-                  <MaterialIcons name="store" size={13} color="#64748B" />
-                </View>
-                <Text style={styles.receiptRowLab}>Shop:</Text>
-                <Text style={styles.receiptRowValBold}>{shopName}</Text>
-              </View>
-              {shopAddress ? (
-                <View style={styles.receiptRow}>
+              {shopRows.map((row, idx) => (
+                <View key={`${row.label}-${idx}`} style={styles.receiptRow}>
                   <View style={styles.receiptRowIcon}>
-                    <MaterialIcons name="location-on" size={13} color="#64748B" />
+                    <MaterialIcons name={row.icon} size={13} color="#64748B" />
                   </View>
-                  <Text style={styles.receiptRowLab}>Address:</Text>
-                  <Text style={styles.receiptRowVal}>{shopAddress}</Text>
+                  <Text style={styles.receiptRowLab}>{row.label}:</Text>
+                  <Text
+                    style={row.bold ? styles.receiptRowValBold : styles.receiptRowVal}
+                    numberOfLines={row.bold ? 1 : 2}
+                  >
+                    {row.value}
+                  </Text>
                 </View>
-              ) : null}
-              {shopOwnerName ? (
-                <View style={styles.receiptRow}>
-                  <View style={styles.receiptRowIcon}>
-                    <MaterialIcons name="person" size={13} color="#64748B" />
-                  </View>
-                  <Text style={styles.receiptRowLab}>Owner:</Text>
-                  <Text style={styles.receiptRowVal}>{shopOwnerName}</Text>
-                </View>
-              ) : null}
-              {shopPhone ? (
-                <View style={styles.receiptRow}>
-                  <View style={styles.receiptRowIcon}>
-                    <MaterialIcons name="call" size={13} color="#64748B" />
-                  </View>
-                  <Text style={styles.receiptRowLab}>Phone:</Text>
-                  <Text style={styles.receiptRowVal}>{shopPhone}</Text>
-                </View>
-              ) : null}
-              <View style={styles.receiptRow}>
-                <View style={styles.receiptRowIcon}>
-                  <MaterialIcons name="calendar-today" size={13} color="#64748B" />
-                </View>
-                <Text style={styles.receiptRowLab}>Date:</Text>
-                <Text style={styles.receiptRowVal}>{today}, {timeNow}</Text>
-              </View>
+              ))}
             </View>
 
-            {/* ── 5. Orderbooker Strip ── */}
+            {/* ────────────────────────────────────────────────────── */}
+            {/* 5. ORDERBOOKER STRIP  (gray bg)                       */}
+            {/* ────────────────────────────────────────────────────── */}
             {orderbookerName ? (
               <View style={styles.receiptObStrip}>
                 <View style={styles.receiptObIcon}>
@@ -436,25 +467,43 @@ export function RecoveryReceipt({
               </View>
             ) : null}
 
-            {/* ── 6. Amount Details Box ── */}
+            {/* ────────────────────────────────────────────────────── */}
+            {/* 6. AMOUNT DETAILS BOX  (highlighted, border/tint)     */}
+            {/* ────────────────────────────────────────────────────── */}
             <View style={styles.receiptAmounts}>
+              {/* Opening Balance row */}
               <View style={styles.receiptAmtRow}>
                 <Text style={styles.receiptAmtLab}>Opening Balance</Text>
                 <Text style={styles.receiptAmtVal}>{formatPKR(openingBalance)}</Text>
               </View>
+
               <View style={styles.receiptAmtDiv} />
+
+              {/* Payment Received row (GREEN, with down-arrow) */}
               <View style={styles.receiptAmtRow}>
                 <Text style={styles.receiptAmtLab}>Payment Received</Text>
-                <Text style={styles.receiptAmtValGreen}>{formatPKR(recoveryAmount)}</Text>
+                <View style={styles.receiptAmtGreenWrap}>
+                  <View style={styles.receiptAmtArrow}>
+                    <MaterialIcons name="arrow-downward" size={11} color="#16A34A" />
+                  </View>
+                  <Text style={styles.receiptAmtValGreen}>{formatPKR(recoveryAmount)}</Text>
+                </View>
               </View>
+
               <View style={styles.receiptAmtDivThick} />
+
+              {/* Remaining Balance row (AMBER #D97706, BOLD, LARGE 19px) */}
               <View style={[styles.receiptAmtRow, styles.receiptAmtRowHighlight]}>
                 <Text style={styles.receiptAmtLabHighlight}>Remaining Balance</Text>
-                <Text style={styles.receiptAmtValHighlight}>{formatPKR(remainingBalance)}</Text>
+                <Text style={styles.receiptAmtValHighlight}>
+                  {formatPKR(remainingBalance)}
+                </Text>
               </View>
             </View>
 
-            {/* ── 7. Success Badge ── */}
+            {/* ────────────────────────────────────────────────────── */}
+            {/* 7. SUCCESS BADGE  (centered)                          */}
+            {/* ────────────────────────────────────────────────────── */}
             <View style={styles.receiptSuccess}>
               <View style={styles.receiptCheckRing}>
                 <View style={styles.receiptCheckCircle}>
@@ -465,7 +514,9 @@ export function RecoveryReceipt({
               <Text style={styles.receiptSuccessSub}>Thank you for your payment!</Text>
             </View>
 
-            {/* ── 8. Urdu Hidayat ── */}
+            {/* ────────────────────────────────────────────────────── */}
+            {/* 8. URDU HIDAYAT STRIP  (amber #FFFBEB, RTL)           */}
+            {/* ────────────────────────────────────────────────────── */}
             <View style={styles.receiptUrdu}>
               <MaterialIcons name="info" size={14} color="#B45309" style={styles.receiptUrduIcon} />
               <Text style={styles.receiptUrduText}>
@@ -473,7 +524,9 @@ export function RecoveryReceipt({
               </Text>
             </View>
 
-            {/* ── 9. Blue Gradient Footer ── */}
+            {/* ────────────────────────────────────────────────────── */}
+            {/* 9. BLUE GRADIENT FOOTER                               */}
+            {/* ────────────────────────────────────────────────────── */}
             <View style={styles.receiptFooter}>
               <View style={styles.receiptFooterOverlay} />
               <Text style={styles.receiptFooterMain}>Powered by Finexa Credit System</Text>
@@ -481,35 +534,43 @@ export function RecoveryReceipt({
             </View>
           </View>
 
-          {/* ════════════════════════════════════════════ */}
-          {/* ACTION BUTTONS (not captured)                  */}
-          {/* ════════════════════════════════════════════ */}
+          {/* ════════════════════════════════════════════════════════ */}
+          {/* ACTION BUTTONS  (below card, NOT captured)               */}
+          {/* ════════════════════════════════════════════════════════ */}
           <View style={styles.actionsContainer}>
-            {/* Share on WhatsApp — full width green */}
+            {/* Share on WhatsApp — full width green (prominent) */}
             <Pressable
               style={({ pressed }) => [styles.waBtn, pressed && { opacity: 0.88 }]}
               onPress={handleShareImage}
               disabled={isCapturing}
+              accessibilityRole="button"
+              accessibilityLabel="Share receipt on WhatsApp"
             >
-              <MaterialIcons name="chat" size={17} color="#FFFFFF" />
+              {isCapturing ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <MaterialIcons name="chat" size={18} color="#FFFFFF" />
+              )}
               <Text style={styles.waBtnText}>Share on WhatsApp</Text>
             </Pressable>
 
-            {/* Save Image + Close — side by side */}
+            {/* Save Image (blue outline) + Close (gray outline) — side by side */}
             <View style={styles.actionsRow}>
               <Pressable
                 style={({ pressed }) => [
                   styles.saveBtn,
                   isCapturing && styles.saveBtnDisabled,
-                  pressed && !isCapturing && { opacity: 0.85 },
+                  pressed && !isCapturing && { opacity: 0.82 },
                 ]}
                 onPress={savedImageUri ? handleResend : handleShareImage}
                 disabled={isCapturing}
+                accessibilityRole="button"
+                accessibilityLabel="Save receipt image to gallery"
               >
                 {isCapturing ? (
-                  <ActivityIndicator size="small" color="#93C5FD" />
+                  <ActivityIndicator size="small" color="#2563EB" />
                 ) : (
-                  <MaterialIcons name={savedImageUri ? 'save' : 'download'} size={15} color="#93C5FD" />
+                  <MaterialIcons name={savedImageUri ? 'save' : 'download'} size={16} color="#2563EB" />
                 )}
                 <Text style={styles.saveBtnText}>
                   {isCapturing ? 'Saving...' : savedImageUri ? 'Save Again' : 'Save Image'}
@@ -517,10 +578,12 @@ export function RecoveryReceipt({
               </Pressable>
 
               <Pressable
-                style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.85 }]}
+                style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.82 }]}
                 onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close receipt"
               >
-                <MaterialIcons name="close" size={14} color="rgba(255,255,255,0.85)" />
+                <MaterialIcons name="close" size={15} color="#475569" />
                 <Text style={styles.closeBtnText}>Close</Text>
               </Pressable>
             </View>
@@ -586,7 +649,7 @@ const C = {
 };
 
 const styles = StyleSheet.create({
-  // ===== BACKDROP =====
+  // ===== BACKDROP (dark overlay) =====
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 0,
@@ -610,19 +673,31 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
 
-  // ===== MODAL TOPBAR =====
+  // ═══════════════════════════════════════════
+  // MODAL TOPBAR  (NOT captured)
+  // ═══════════════════════════════════════════
   topbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
     paddingVertical: 10,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   topbarTitle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 9,
+  },
+  topbarTitleIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   topbarTitleText: {
     fontSize: 15,
@@ -649,7 +724,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: C.white,
     ...Shadow.xl,
-    // Strong shadow for the paper effect
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 22 },
     shadowOpacity: 0.5,
@@ -660,8 +734,8 @@ const styles = StyleSheet.create({
   // ── 1. Blue Gradient Header ──
   receiptHead: {
     backgroundColor: C.blue900,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 18,
+    paddingBottom: 18,
     paddingHorizontal: 16,
     alignItems: 'center',
     position: 'relative',
@@ -680,51 +754,51 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 12,
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
     borderRadius: 6,
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 3,
     zIndex: 2,
   },
   receiptNoText: {
-    fontSize: 9.5,
-    fontWeight: FontWeight.semibold,
-    color: 'rgba(255,255,255,0.92)',
-    letterSpacing: 0.2,
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   receiptBuildingIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.18)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
+    borderColor: 'rgba(255,255,255,0.32)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
     zIndex: 1,
   },
   receiptBusinessName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: FontWeight.extrabold,
     color: C.white,
-    letterSpacing: 0.9,
+    letterSpacing: 1,
     textAlign: 'center',
     zIndex: 1,
   },
   receiptCompanySub: {
-    fontSize: 10,
+    fontSize: 10.5,
     color: 'rgba(255,255,255,0.85)',
     marginTop: 2,
     fontWeight: FontWeight.medium,
     zIndex: 1,
   },
   receiptPayPill: {
-    marginTop: 8,
+    marginTop: 9,
     backgroundColor: C.white,
     borderRadius: 999,
     paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingHorizontal: 13,
     zIndex: 1,
   },
   receiptPayPillText: {
@@ -738,12 +812,20 @@ const styles = StyleSheet.create({
   receiptDistStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: C.blue50,
-    paddingVertical: 7,
+    gap: 8,
+    backgroundColor: C.blue100,
+    paddingVertical: 8,
     paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: C.blue100,
+    borderBottomColor: '#BFDBFE',
+  },
+  receiptDistIconWrap: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   receiptDistLab: {
     fontSize: 11,
@@ -752,7 +834,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   receiptDistVal: {
-    fontSize: 11,
+    fontSize: 11.5,
     color: C.blue800,
     fontWeight: FontWeight.bold,
     marginLeft: 'auto',
@@ -763,7 +845,7 @@ const styles = StyleSheet.create({
   receiptDashedDivider: {
     height: 1,
     marginHorizontal: 14,
-    marginTop: 8,
+    marginTop: 10,
     borderBottomWidth: 1,
     borderBottomColor: C.gray300,
     borderStyle: 'dashed',
@@ -793,7 +875,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: C.gray500,
     fontWeight: FontWeight.medium,
-    minWidth: 60,
+    minWidth: 62,
   },
   receiptRowVal: {
     flex: 1,
@@ -816,7 +898,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 9,
     backgroundColor: C.gray50,
-    paddingVertical: 8,
+    paddingVertical: 9,
     paddingHorizontal: 14,
     borderTopWidth: 1,
     borderTopColor: C.gray200,
@@ -870,6 +952,20 @@ const styles = StyleSheet.create({
     color: C.gray900,
     fontWeight: FontWeight.bold,
   },
+  // Green received amount with down-arrow icon
+  receiptAmtGreenWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  receiptAmtArrow: {
+    width: 18,
+    height: 18,
+    borderRadius: 6,
+    backgroundColor: C.green100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   receiptAmtValGreen: {
     fontSize: 13,
     color: C.green600,
@@ -885,7 +981,7 @@ const styles = StyleSheet.create({
     marginVertical: 1,
   },
   receiptAmtRowHighlight: {
-    paddingVertical: 9,
+    paddingVertical: 10,
   },
   receiptAmtLabHighlight: {
     fontSize: 12.5,
@@ -902,9 +998,9 @@ const styles = StyleSheet.create({
   // ── 7. Success Badge ──
   receiptSuccess: {
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 14,
-    paddingBottom: 12,
+    paddingBottom: 14,
   },
   receiptCheckRing: {
     width: 58,
@@ -912,10 +1008,9 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     borderWidth: 2,
     borderColor: C.green500,
-    opacity: 0.99,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 7,
+    marginBottom: 8,
   },
   receiptCheckCircle: {
     width: 46,
@@ -948,7 +1043,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: C.amber100,
     borderStyle: 'dashed',
-    paddingVertical: 8,
+    paddingVertical: 9,
     paddingHorizontal: 14,
   },
   receiptUrduIcon: {
@@ -967,7 +1062,7 @@ const styles = StyleSheet.create({
   // ── 9. Blue Gradient Footer ──
   receiptFooter: {
     backgroundColor: C.blue900,
-    paddingVertical: 10,
+    paddingVertical: 11,
     paddingHorizontal: 14,
     alignItems: 'center',
     position: 'relative',
@@ -1002,21 +1097,21 @@ const styles = StyleSheet.create({
   // ACTION BUTTONS (below receipt, not captured)
   // ═══════════════════════════════════════════
   actionsContainer: {
-    marginTop: 10,
+    marginTop: 12,
     paddingHorizontal: 2,
     paddingBottom: 16,
   },
 
-  // WhatsApp button — full width green
+  // WhatsApp button — full width green (prominent)
   waBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    gap: 8,
     backgroundColor: C.waGreen,
-    borderRadius: 12,
-    paddingVertical: 13,
-    marginBottom: 8,
+    borderRadius: 14,
+    paddingVertical: 14,
+    marginBottom: 10,
     ...Shadow.md,
     shadowColor: C.waGreen,
     shadowOffset: { width: 0, height: 8 },
@@ -1025,9 +1120,10 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   waBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: FontWeight.bold,
     color: C.white,
+    letterSpacing: 0.2,
   },
 
   // Save + Close row
@@ -1041,12 +1137,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    gap: 7,
+    backgroundColor: 'rgba(37, 99, 235, 0.06)',
     borderWidth: 1.5,
-    borderColor: C.blue500,
+    borderColor: C.blue700,
     borderRadius: 12,
-    paddingVertical: 11,
+    paddingVertical: 12,
   },
   saveBtnDisabled: {
     opacity: 0.6,
@@ -1054,25 +1150,25 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 12.5,
     fontWeight: FontWeight.semibold,
-    color: C.blue500,
+    color: C.blue700,
   },
-  // Close button — white outline
+  // Close button — visible gray outline
   closeBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+    gap: 7,
+    backgroundColor: 'rgba(148, 163, 184, 0.10)',
+    borderWidth: 1.5,
+    borderColor: C.gray400,
     borderRadius: 12,
-    paddingVertical: 11,
+    paddingVertical: 12,
   },
   closeBtnText: {
     fontSize: 12.5,
     fontWeight: FontWeight.semibold,
-    color: 'rgba(255,255,255,0.85)',
+    color: C.gray600,
   },
 
   // Resend row (subtle)

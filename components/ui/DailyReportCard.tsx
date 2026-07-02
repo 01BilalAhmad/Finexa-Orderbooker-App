@@ -1,3 +1,7 @@
+// Powered by Finexa
+// Daily Report Card — Modern Blue design (Screen 8 mockup).
+// White shareable card with blue gradient header, visit progress, recovery summary,
+// company-wise breakdown, messages pills. All functionality preserved.
 import React, { useRef, useState } from 'react';
 import {
   View,
@@ -8,7 +12,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -16,7 +19,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { captureRef } from '@/utils/captureRef';
 import * as Sharing from 'expo-sharing';
 import * as Linking from 'expo-linking';
-import { Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { Spacing, FontWeight, Shadow } from '@/constants/theme';
 import { getTodayLabel, formatPKR } from '@/utils/format';
 
 
@@ -61,12 +64,12 @@ export function DailyReportCard({
 }: DailyReportProps) {
   const cardRef = useRef<View>(null);
   const [isCapturing, setIsCapturing] = useState(false);
-  const totalMessages = smsSent + whatsappSent;
   const todayLabel = getTodayLabel();
   const visitPct = totalShops > 0 ? Math.round((shopsVisited / totalShops) * 100) : 0;
 
   // Recovery progress: how much of total outstanding was recovered today
-  const recoveryPct = totalOutstanding > 0 ? Math.min(Math.round((totalRecovery / totalOutstanding) * 100), 100) : 0;
+  const recoveryPct =
+    totalOutstanding > 0 ? Math.min(Math.round((totalRecovery / totalOutstanding) * 100), 100) : 0;
 
   const buildTextMessage = () => {
     const lines = [
@@ -173,6 +176,7 @@ export function DailyReportCard({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      {/* ── Dark Overlay ── */}
       <Pressable style={styles.backdrop} onPress={onClose}>
         <View style={styles.backdropFade} />
       </Pressable>
@@ -188,39 +192,55 @@ export function DailyReportCard({
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.container}>
-            {/* ════════════════════════════════════════════ */}
-            {/* MODAL HEADER (not captured)                    */}
-            {/* ════════════════════════════════════════════ */}
+            {/* ════════════════════════════════════════════════════════ */}
+            {/* MODAL HEADER  (NOT captured)                              */}
+            {/* ════════════════════════════════════════════════════════ */}
             <View style={styles.modalHeader}>
               <View style={styles.modalHeaderTitle}>
-                <MaterialIcons name="description" size={18} color="#2563EB" />
+                <View style={styles.modalHeaderIcon}>
+                  <MaterialIcons name="description" size={16} color="#2563EB" />
+                </View>
                 <Text style={styles.modalHeaderTitleText}>Daily Recovery Report</Text>
               </View>
-              <Pressable style={styles.modalHeaderClose} onPress={onClose} hitSlop={12}>
+              <Pressable
+                style={({ pressed }) => [styles.modalHeaderClose, pressed && { opacity: 0.7 }]}
+                onPress={onClose}
+                hitSlop={12}
+                accessibilityLabel="Close daily report"
+              >
                 <MaterialIcons name="close" size={18} color="#475569" />
               </Pressable>
             </View>
 
-            {/* ════════════════════════════════════════════ */}
-            {/* SHAREABLE CARD — captured as image (cardRef)  */}
-            {/* ════════════════════════════════════════════ */}
+            {/* ════════════════════════════════════════════════════════ */}
+            {/* SHAREABLE CARD  — captured as image (cardRef)            */}
+            {/* ════════════════════════════════════════════════════════ */}
             <View ref={cardRef} collapsable={false} style={styles.card}>
-              {/* ── Blue Gradient Header ── */}
+              {/* ────────────────────────────────────────────────────── */}
+              {/* 1. BLUE GRADIENT HEADER                               */}
+              {/* ────────────────────────────────────────────────────── */}
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderOverlay} />
+
+                {/* F logo + brand name */}
                 <View style={styles.brandRow}>
                   <View style={styles.brandLogo}>
                     <Text style={styles.brandLogoText}>F</Text>
                   </View>
                   <Text style={styles.brandName}>Finexa Recovery App</Text>
                 </View>
+
+                {/* Date */}
                 <Text style={styles.cardDate}>{todayLabel}</Text>
-                <Text style={styles.cardName}>{orderbookerName}</Text>
+
+                {/* Orderbooker name (large) */}
+                <Text style={styles.cardName} numberOfLines={2}>{orderbookerName}</Text>
               </View>
 
-              {/* ── White Body ── */}
+              {/* ────────────────────────────────────────────────────── */}
+              {/* 2. VISIT PROGRESS SECTION                             */}
+              {/* ────────────────────────────────────────────────────── */}
               <View style={styles.cardBody}>
-                {/* ── Block 1: Visit Progress ── */}
                 <View style={styles.block}>
                   <Text style={styles.blockLab}>SHOPS VISITED</Text>
                   <View style={styles.blockBigRow}>
@@ -229,11 +249,15 @@ export function DailyReportCard({
                     <Text style={styles.blockPct}>({visitPct}%)</Text>
                   </View>
                   <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { width: `${Math.min(visitPct, 100)}%` }]} />
+                    <View
+                      style={[styles.progressFill, { width: `${Math.min(visitPct, 100)}%` }]}
+                    />
                   </View>
                 </View>
 
-                {/* ── Block 2: Recovery Summary ── */}
+                {/* ───────────────────────────────────────────────────── */}
+                {/* 3. RECOVERY SUMMARY SECTION                           */}
+                {/* ───────────────────────────────────────────────────── */}
                 <View style={styles.block}>
                   <Text style={styles.blockLab}>TODAY&apos;S RECOVERY</Text>
                   <Text style={styles.recoveryBig}>{formatPKR(totalRecovery)}</Text>
@@ -245,20 +269,27 @@ export function DailyReportCard({
                   </View>
                 </View>
 
-                {/* ── Block 3: Company-wise Breakdown ── */}
+                {/* ───────────────────────────────────────────────────── */}
+                {/* 4. COMPANY-WISE BREAKDOWN                             */}
+                {/* ───────────────────────────────────────────────────── */}
                 {companyBreakdown.length > 0 ? (
                   <View style={styles.block}>
                     <View style={styles.coTitleRow}>
-                      <MaterialIcons name="business" size={13} color="#2563EB" />
+                      <View style={styles.coTitleIcon}>
+                        <MaterialIcons name="business" size={13} color="#2563EB" />
+                      </View>
                       <Text style={styles.coTitle}>Company-wise Recovery</Text>
                     </View>
+
                     {companyBreakdown.map((cb, idx) => {
                       const dotColor = COMPANY_DOT_COLORS[idx % COMPANY_DOT_COLORS.length];
                       return (
                         <View key={cb.companyId} style={styles.coRow}>
                           <View style={styles.coLeft}>
                             <View style={[styles.coDot, { backgroundColor: dotColor }]} />
-                            <Text style={styles.coName} numberOfLines={1}>{cb.companyName}</Text>
+                            <Text style={styles.coName} numberOfLines={1}>
+                              {cb.companyName}
+                            </Text>
                           </View>
                           <View style={styles.coRight}>
                             <Text style={styles.coAmt}>{formatPKR(cb.totalRecovery)}</Text>
@@ -272,18 +303,25 @@ export function DailyReportCard({
                   </View>
                 ) : null}
 
-                {/* ── Block 4: Messages ── */}
+                {/* ───────────────────────────────────────────────────── */}
+                {/* 5. MESSAGES SECTION                                   */}
+                {/* ───────────────────────────────────────────────────── */}
                 <View style={styles.block}>
                   <Text style={styles.blockLab}>MESSAGES SENT</Text>
                   <View style={styles.msgRow}>
-                    <View style={styles.msgPill}>
+                    {/* SMS pill — BLUE */}
+                    <View style={styles.msgPillBlue}>
                       <MaterialIcons name="sms" size={12} color="#1D4ED8" />
-                      <Text style={styles.msgPillText}>SMS: {smsSent}</Text>
+                      <Text style={styles.msgPillBlueText}>SMS: {smsSent}</Text>
                     </View>
-                    <View style={styles.msgPill}>
-                      <MaterialIcons name="chat" size={12} color="#1D4ED8" />
-                      <Text style={styles.msgPillText}>WhatsApp: {whatsappSent}</Text>
+
+                    {/* WhatsApp pill — GREEN */}
+                    <View style={styles.msgPillGreen}>
+                      <MaterialIcons name="chat" size={12} color="#15803D" />
+                      <Text style={styles.msgPillGreenText}>WhatsApp: {whatsappSent}</Text>
                     </View>
+
+                    {/* Pending pill — AMBER (only if > 0) */}
                     {pendingMessages > 0 ? (
                       <View style={styles.msgPillAmber}>
                         <MaterialIcons name="schedule" size={12} color="#B45309" />
@@ -293,18 +331,20 @@ export function DailyReportCard({
                   </View>
                 </View>
 
-                {/* ── Footer ── */}
+                {/* ───────────────────────────────────────────────────── */}
+                {/* 6. FOOTER                                             */}
+                {/* ───────────────────────────────────────────────────── */}
                 <View style={styles.cardFooter}>
                   <Text style={styles.cardFooterText}>Powered by Finexa Recovery App</Text>
                 </View>
               </View>
             </View>
 
-            {/* ════════════════════════════════════════════ */}
-            {/* ACTION BUTTONS (not captured)                  */}
-            {/* ════════════════════════════════════════════ */}
+            {/* ════════════════════════════════════════════════════════ */}
+            {/* ACTION BUTTONS  (NOT captured)                           */}
+            {/* ════════════════════════════════════════════════════════ */}
             <View style={styles.actions}>
-              {/* Share as Image — blue gradient */}
+              {/* Share as Image — blue, full width */}
               <Pressable
                 style={({ pressed }) => [
                   styles.shareImgBtn,
@@ -313,6 +353,8 @@ export function DailyReportCard({
                 ]}
                 onPress={handleShareAsImage}
                 disabled={isCapturing}
+                accessibilityRole="button"
+                accessibilityLabel="Share daily report as image"
               >
                 {isCapturing ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
@@ -328,6 +370,8 @@ export function DailyReportCard({
               <Pressable
                 style={({ pressed }) => [styles.shareTextBtn, pressed && { opacity: 0.85 }]}
                 onPress={handleShareAsText}
+                accessibilityRole="button"
+                accessibilityLabel="Share daily report as text via WhatsApp"
               >
                 <MaterialIcons name="chat" size={17} color="#16A34A" />
                 <Text style={styles.shareTextBtnText}>Share as Text (WhatsApp)</Text>
@@ -337,6 +381,8 @@ export function DailyReportCard({
               <Pressable
                 style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
                 onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close daily report"
               >
                 <Text style={styles.closeBtnText}>Close</Text>
               </Pressable>
@@ -359,6 +405,7 @@ const C = {
   blue500: '#60A5FA',
   blue100: '#DBEAFE',
   blue50: '#EFF6FF',
+  green700: '#15803D',
   green600: '#16A34A',
   green500: '#22C55E',
   green100: '#DCFCE7',
@@ -410,7 +457,7 @@ const styles = StyleSheet.create({
   },
 
   // ═══════════════════════════════════════════
-  // MODAL HEADER (not captured)
+  // MODAL HEADER (NOT captured)
   // ═══════════════════════════════════════════
   modalHeader: {
     flexDirection: 'row',
@@ -428,7 +475,15 @@ const styles = StyleSheet.create({
   modalHeaderTitle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 9,
+  },
+  modalHeaderIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    backgroundColor: C.blue100,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalHeaderTitleText: {
     fontSize: 15,
@@ -461,7 +516,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 
-  // ── Blue Gradient Header ──
+  // ── 1. Blue Gradient Header ──
   cardHeader: {
     backgroundColor: C.blue900,
     paddingHorizontal: 18,
@@ -486,28 +541,31 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   brandLogo: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 7,
     backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.30)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   brandLogoText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: FontWeight.bold,
     color: C.white,
   },
   brandName: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: FontWeight.semibold,
-    color: 'rgba(255,255,255,0.9)',
+    color: 'rgba(255,255,255,0.92)',
+    letterSpacing: 0.2,
   },
   cardDate: {
     fontSize: 13,
     fontWeight: FontWeight.semibold,
     color: 'rgba(255,255,255,0.95)',
-    marginTop: 10,
+    marginTop: 12,
     zIndex: 1,
   },
   cardName: {
@@ -522,7 +580,7 @@ const styles = StyleSheet.create({
   // ── White Body ──
   cardBody: {
     paddingHorizontal: 18,
-    paddingTop: 14,
+    paddingTop: 4,
     paddingBottom: 14,
     backgroundColor: C.white,
   },
@@ -535,11 +593,11 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   blockLab: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: C.gray500,
-    fontWeight: FontWeight.semibold,
-    letterSpacing: 0.5,
-    marginBottom: 4,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.6,
+    marginBottom: 6,
   },
   blockBigRow: {
     flexDirection: 'row',
@@ -547,10 +605,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   blockBigVal: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: FontWeight.bold,
     color: C.gray900,
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   blockBigSub: {
     fontSize: 18,
@@ -569,7 +627,7 @@ const styles = StyleSheet.create({
     backgroundColor: C.gray100,
     borderRadius: 999,
     overflow: 'hidden',
-    marginTop: 8,
+    marginTop: 10,
   },
   progressFill: {
     height: 8,
@@ -591,10 +649,10 @@ const styles = StyleSheet.create({
 
   // ── Recovery summary ──
   recoveryBig: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: FontWeight.bold,
     color: C.blue700,
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   recoverySub: {
     fontSize: 11,
@@ -607,11 +665,19 @@ const styles = StyleSheet.create({
   coTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
+    gap: 7,
+    marginBottom: 10,
+  },
+  coTitleIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    backgroundColor: C.blue100,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   coTitle: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: FontWeight.bold,
     color: C.gray900,
   },
@@ -619,23 +685,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: C.appBorder,
   },
   coLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 9,
     flex: 1,
   },
   coDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
   },
   coName: {
-    fontSize: 12,
+    fontSize: 12.5,
     color: C.gray700,
     fontWeight: FontWeight.semibold,
     flex: 1,
@@ -644,7 +710,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   coAmt: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: FontWeight.bold,
     color: C.gray900,
   },
@@ -655,46 +721,69 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  // ── Messages ──
+  // ── Messages pills ──
   msgRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
     flexWrap: 'wrap',
     marginTop: 4,
   },
-  msgPill: {
+  // SMS — BLUE
+  msgPillBlue: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     backgroundColor: C.blue50,
+    borderWidth: 1,
+    borderColor: C.blue100,
     borderRadius: 999,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 11,
   },
-  msgPillText: {
+  msgPillBlueText: {
     fontSize: 11,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.bold,
     color: C.blue800,
   },
+  // WhatsApp — GREEN
+  msgPillGreen: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: C.green100,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 11,
+  },
+  msgPillGreenText: {
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+    color: C.green700,
+  },
+  // Pending — AMBER
   msgPillAmber: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     backgroundColor: C.amber50,
+    borderWidth: 1,
+    borderColor: C.amber100,
     borderRadius: 999,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 11,
   },
   msgPillAmberText: {
     fontSize: 11,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.bold,
     color: C.amber800,
   },
 
   // ── Card Footer ──
   cardFooter: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: C.appBorder,
     marginTop: 4,
@@ -703,10 +792,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: C.gray500,
     fontWeight: FontWeight.medium,
+    letterSpacing: 0.2,
   },
 
   // ═══════════════════════════════════════════
-  // ACTION BUTTONS (not captured)
+  // ACTION BUTTONS (NOT captured)
   // ═══════════════════════════════════════════
   actions: {
     marginTop: 12,
@@ -715,15 +805,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
-  // Share as Image — blue gradient
+  // Share as Image — blue, full width
   shareImgBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     backgroundColor: C.blue700,
-    borderRadius: 12,
-    paddingVertical: 13,
+    borderRadius: 14,
+    paddingVertical: 14,
     ...Shadow.md,
     shadowColor: C.blue700,
     shadowOffset: { width: 0, height: 8 },
@@ -736,8 +826,9 @@ const styles = StyleSheet.create({
   },
   shareImgBtnText: {
     fontSize: 14,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.bold,
     color: C.white,
+    letterSpacing: 0.2,
   },
 
   // Share as Text (WhatsApp) — green outline

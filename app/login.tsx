@@ -1,3 +1,6 @@
+// Powered by Finexa
+// Login Screen — Modern blue-gradient design with white card form,
+// inline error box, and icon-decorated inputs.
 import React, { useState } from 'react';
 import {
   View,
@@ -20,7 +23,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useShops } from '@/hooks/useShops';
 import { useLock } from '@/hooks/useLock';
 import { SecureStorageService } from '@/services/secureStorage';
-import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { Colors, Spacing, FontSize, FontWeight, Shadow } from '@/constants/theme';
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -33,15 +36,17 @@ export default function LoginScreen() {
   const [syncingData, setSyncingData] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleLogin = async () => {
+    setErrorMessage(null);
     if (!username.trim() || !password.trim()) {
-      Alert.alert('Required Fields', 'Please enter username and password.');
+      setErrorMessage('Please enter both username and password.');
       return;
     }
     setIsLoading(true);
     try {
-      const res = await login(username.trim(), password.trim());
+      await login(username.trim(), password.trim());
       setSyncingData(true);
       try {
         const { StorageService } = await import('@/services/storage');
@@ -70,72 +75,81 @@ export default function LoginScreen() {
         router.replace('/');
       }, 100);
     } catch (e: any) {
-      Alert.alert('Login Failed', e.message || 'Invalid username or password.');
+      const msg = e?.message || 'Invalid username or password.';
+      setErrorMessage(msg);
+      Alert.alert('Login Failed', msg);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const busy = isLoading || syncingData;
+
   return (
-    <LinearGradient
-      colors={['#1E40AF', '#2563EB', '#3B82F6']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.root}
-    >
-      {/* Decorative floating circles */}
-      <View style={styles.decorCircle1} />
-      <View style={styles.decorCircle2} />
-      <View style={styles.decorCircle3} />
+    <View style={styles.root}>
+      {/* Full-screen blue gradient background */}
+      <LinearGradient
+        colors={['#1E40AF', '#2563EB', '#3B82F6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Decorative floating bubbles */}
+      <View style={styles.bubbleA} pointerEvents="none" />
+      <View style={styles.bubbleB} pointerEvents="none" />
+      <View style={styles.bubbleC} pointerEvents="none" />
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
+          style={styles.scroll}
           contentContainerStyle={[
-            styles.scroll,
-            { paddingTop: insets.top + Spacing.xxl, paddingBottom: insets.bottom + Spacing.xl },
+            styles.scrollContent,
+            { paddingTop: insets.top, paddingBottom: insets.bottom + Spacing.lg },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          bounces={false}
         >
-          {/* Logo — White circle with building icon */}
-          <View style={styles.logoArea}>
-            <View style={styles.logoCircle}>
-              <View style={styles.logoCircleInner}>
+          {/* ── TOP SECTION (≈40%) — Branding ── */}
+          <View style={styles.brandSection}>
+            <View style={styles.logoOuterCircle}>
+              <View style={styles.logoInnerCircle}>
                 <Image
                   source={require('@/assets/images/logo.png')}
-                  style={styles.logo}
+                  style={styles.logoImage}
                   contentFit="contain"
                 />
               </View>
             </View>
-            <Text style={styles.appTitle}>Finexa</Text>
-            <View style={styles.subtitleWrap}>
-              <View style={styles.subtitleDot} />
-              <Text style={styles.appSubtitle}>Credit &amp; Recovery System</Text>
-              <View style={styles.subtitleDot} />
-            </View>
+            <Text style={styles.brandTitle}>Finexa</Text>
+            <Text style={styles.brandSubtitle}>Credit &amp; Recovery System</Text>
           </View>
 
-          {/* White Login Card */}
-          <View style={styles.card}>
+          {/* ── BOTTOM SECTION — White Login Card ── */}
+          <View style={styles.formCard}>
+            {/* Card header */}
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Welcome Back</Text>
-              <Text style={styles.cardSubtitle}>Sign in to your account to continue</Text>
+              <Text style={styles.cardSubtitle}>Sign in to continue</Text>
             </View>
 
-            {/* Username field */}
-            <Text style={styles.label}>Username</Text>
-            <View style={styles.inputRow}>
-              <View style={styles.inputIconWrap}>
+            {/* Username */}
+            <Text style={styles.fieldLabel}>Username</Text>
+            <View style={styles.inputField}>
+              <View style={styles.inputIconBox}>
                 <MaterialIcons name="person" size={20} color="#2563EB" />
               </View>
               <TextInput
-                style={styles.input}
+                style={styles.inputText}
                 value={username}
-                onChangeText={setUsername}
+                onChangeText={(v) => {
+                  setUsername(v);
+                  if (errorMessage) setErrorMessage(null);
+                }}
                 placeholder="Enter your username"
                 placeholderTextColor={Colors.textMuted}
                 autoCapitalize="none"
@@ -144,16 +158,19 @@ export default function LoginScreen() {
               />
             </View>
 
-            {/* Password field */}
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.inputRow}>
-              <View style={styles.inputIconWrap}>
+            {/* Password */}
+            <Text style={styles.fieldLabel}>Password</Text>
+            <View style={styles.inputField}>
+              <View style={styles.inputIconBox}>
                 <MaterialIcons name="lock" size={20} color="#2563EB" />
               </View>
               <TextInput
-                style={styles.input}
+                style={styles.inputText}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  if (errorMessage) setErrorMessage(null);
+                }}
                 placeholder="Enter your password"
                 placeholderTextColor={Colors.textMuted}
                 secureTextEntry={!showPassword}
@@ -162,8 +179,8 @@ export default function LoginScreen() {
               />
               <Pressable
                 onPress={() => setShowPassword((v) => !v)}
-                hitSlop={12}
-                style={styles.eyeBtn}
+                hitSlop={10}
+                style={styles.eyeToggle}
               >
                 <MaterialIcons
                   name={showPassword ? 'visibility-off' : 'visibility'}
@@ -173,23 +190,30 @@ export default function LoginScreen() {
               </Pressable>
             </View>
 
-            {/* Login button */}
+            {/* Inline error message box */}
+            {errorMessage ? (
+              <View style={styles.errorBox}>
+                <MaterialIcons name="error-outline" size={16} color="#DC2626" />
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
+            {/* Sign In Button — blue gradient, 56px tall, 14px radius */}
             <Pressable
               style={({ pressed }) => [
-                styles.signInBtnWrap,
-                (isLoading || !username || !password) && styles.signInBtnDisabled,
-                pressed && !isLoading && styles.signInBtnPressed,
+                styles.signInBtn,
+                pressed && !busy && { opacity: 0.92 },
               ]}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={busy}
             >
               <LinearGradient
-                colors={['#2563EB', '#1E40AF']}
+                colors={['#2563EB', '#3B82F6']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.signInBtnGradient}
               >
-                {isLoading || syncingData ? (
+                {busy ? (
                   <>
                     <ActivityIndicator size="small" color="#FFFFFF" />
                     <Text style={styles.signInBtnText}>
@@ -204,66 +228,70 @@ export default function LoginScreen() {
                 )}
               </LinearGradient>
             </Pressable>
-
-            {/* Error area placeholder — red if any (rendered by Alert, kept for layout) */}
           </View>
 
           {/* Footer */}
-          <View style={styles.footerWrap}>
-            <View style={styles.footerLine} />
-            <Text style={styles.footer}>Powered by Finexa</Text>
-            <View style={styles.footerLine} />
-          </View>
+          <Text style={styles.footerText}>Powered by Finexa</Text>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: '#1E40AF',
   },
-  decorCircle1: {
+  // Decorative bubbles
+  bubbleA: {
     position: 'absolute',
-    top: -100,
-    right: -100,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
+    top: -120,
+    right: -120,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
     backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  decorCircle2: {
+  bubbleB: {
     position: 'absolute',
-    bottom: -80,
-    left: -80,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+    bottom: -90,
+    left: -90,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
-  decorCircle3: {
+  bubbleC: {
     position: 'absolute',
-    top: '40%',
-    left: -60,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    top: '38%',
+    right: -50,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
   keyboardAvoid: {
     flex: 1,
   },
   scroll: {
+    flex: 1,
+  },
+  scrollContent: {
     flexGrow: 1,
     paddingHorizontal: Spacing.lg,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
-  logoArea: {
+
+  // ── Brand / Top Section ──
+  brandSection: {
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    justifyContent: 'center',
+    paddingVertical: Spacing.xxl,
+    // ~40% of screen — give it room to breathe
+    minHeight: 280,
   },
-  logoCircle: {
+  logoOuterCircle: {
     width: 112,
     height: 112,
     borderRadius: 56,
@@ -273,50 +301,41 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     ...Shadow.xl,
   },
-  logoCircleInner: {
-    width: 92,
-    height: 92,
-    borderRadius: 46,
+  logoInnerCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logo: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
+  logoImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 10,
   },
-  appTitle: {
-    fontSize: 42,
+  brandTitle: {
+    fontSize: 40,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 1.5,
-    marginBottom: 6,
+    letterSpacing: 1.2,
+    marginBottom: 4,
   },
-  subtitleWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  subtitleDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-  },
-  appSubtitle: {
+  brandSubtitle: {
     fontSize: FontSize.sm,
-    color: 'rgba(255,255,255,0.9)',
+    color: 'rgba(255,255,255,0.92)',
     fontWeight: FontWeight.semibold,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
-  card: {
+
+  // ── White Form Card ──
+  formCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 28,
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.lg,
     ...Shadow.xl,
-    marginBottom: Spacing.lg,
   },
   cardHeader: {
     alignItems: 'center',
@@ -331,87 +350,102 @@ const styles = StyleSheet.create({
   cardSubtitle: {
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
-    textAlign: 'center',
   },
-  label: {
+
+  // ── Field labels & inputs ──
+  fieldLabel: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.bold,
     color: Colors.textSecondary,
-    marginBottom: Spacing.xs,
+    marginBottom: 6,
     marginLeft: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
-  inputRow: {
+  inputField: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 54,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
-    borderRadius: 16,
-    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
     marginBottom: Spacing.md,
-    height: 54,
-    paddingHorizontal: Spacing.xs,
+    paddingRight: 6,
+    paddingLeft: 6,
   },
-  inputIconWrap: {
-    width: 40,
-    height: 40,
+  inputIconBox: {
+    width: 42,
+    height: 42,
     borderRadius: 12,
     backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 4,
+    marginRight: Spacing.xs,
   },
-  input: {
+  inputText: {
     flex: 1,
     fontSize: FontSize.base,
     color: Colors.text,
-    paddingHorizontal: Spacing.sm,
+    paddingVertical: 0,
+    height: '100%',
   },
-  eyeBtn: {
+  eyeToggle: {
     width: 40,
     height: 40,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  signInBtnWrap: {
-    borderRadius: 16,
-    marginTop: Spacing.sm,
+
+  // ── Error box ──
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: Spacing.md,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    color: '#DC2626',
+    fontWeight: FontWeight.semibold,
+  },
+
+  // ── Sign In button ──
+  signInBtn: {
+    height: 56,
+    borderRadius: 14,
     overflow: 'hidden',
     ...Shadow.md,
   },
   signInBtnGradient: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    paddingVertical: 16,
   },
-  signInBtnDisabled: { opacity: 0.5 },
-  signInBtnPressed: { opacity: 0.9 },
   signInBtnText: {
     fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
-  footerWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-  },
-  footerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  footer: {
+
+  // ── Footer ──
+  footerText: {
+    textAlign: 'center',
+    marginTop: Spacing.lg,
     fontSize: FontSize.xs,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.85)',
     fontWeight: FontWeight.semibold,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
 });

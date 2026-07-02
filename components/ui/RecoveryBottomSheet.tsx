@@ -52,17 +52,25 @@ function getOsmStaticUrl(lat: number, lng: number): string {
   return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=${zoom}&size=600x260&markers=${lat},${lng},red`;
 }
 
-// Animated pulse for GPS indicator (configurable color)
-function GpsPulse({ active, color = '#2563EB' }: { active: boolean; color?: string }) {
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// Animated pulse dot used by the GPS-captured indicator
+function GpsPulse({ active, color = '#10B981' }: { active: boolean; color?: string }) {
   const scale = React.useRef(new Animated.Value(1)).current;
-  const colorRgb = hexToRgba(color, 0.15);
-  const colorRgbInner = hexToRgba(color, 0.35);
+  const colorRgb = hexToRgba(color, 0.18);
+  const colorRgbInner = hexToRgba(color, 0.4);
 
   React.useEffect(() => {
     if (!active) return;
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.3, duration: 800, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1.35, duration: 800, useNativeDriver: true }),
         Animated.timing(scale, { toValue: 1, duration: 800, useNativeDriver: true }),
       ])
     );
@@ -79,27 +87,18 @@ function GpsPulse({ active, color = '#2563EB' }: { active: boolean; color?: stri
   );
 }
 
-function hexToRgba(hex: string, alpha: number): string {
-  // Quick conversion for our theme hex colors
-  const h = hex.replace('#', '');
-  const r = parseInt(h.substring(0, 2), 16);
-  const g = parseInt(h.substring(2, 4), 16);
-  const b = parseInt(h.substring(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 const pulseStyles = StyleSheet.create({
   outer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
   inner: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
 });
 
@@ -194,6 +193,11 @@ const successStyles = StyleSheet.create({
   },
 });
 
+// Format a quick amount value as "Rs. 1,000"
+function formatQuickAmount(val: number): string {
+  return `Rs. ${val.toLocaleString('en-US')}`;
+}
+
 export function RecoveryBottomSheet({
   visible,
   shop,
@@ -240,7 +244,7 @@ export function RecoveryBottomSheet({
     const val = parseInt(amount, 10);
     if (val > 0) {
       Animated.sequence([
-        Animated.timing(amountScaleAnim, { toValue: 1.02, duration: 100, useNativeDriver: true }),
+        Animated.timing(amountScaleAnim, { toValue: 1.03, duration: 100, useNativeDriver: true }),
         Animated.timing(amountScaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
       ]).start();
     }
@@ -270,6 +274,7 @@ export function RecoveryBottomSheet({
 
   const handleFullBalance = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const { balance: displayBalance } = getShopDisplayBalance(shop as Shop, companyId);
     setAmount(String(Math.max(displayBalance, 0)));
   };
 
@@ -417,6 +422,23 @@ export function RecoveryBottomSheet({
   const isValid = numericAmount >= MIN_RECOVERY && numericAmount <= MAX_RECOVERY && numericAmount <= displayBalance;
   const remainingBalance = displayBalance - numericAmount;
   const isFullBalance = numericAmount > 0 && numericAmount === displayBalance;
+  const shopBalanceColor = displayBalance > 50000 ? '#EF4444' : displayBalance >= 10000 ? '#F59E0B' : '#10B981';
+
+  // Quick amount chips: Rs. 1,000 / 2,000 / 5,000 / 10,000 / Full Balance
+  const quickAmountChips = QUICK_AMOUNTS.filter((v) => v >= 1000).map((val) => ({
+    key: `quick-${val}`,
+    label: formatQuickAmount(val),
+    value: val,
+    isActive: amount === String(val),
+    onPress: () => handleQuickAmount(val),
+  }));
+  quickAmountChips.push({
+    key: 'full',
+    label: 'Full Balance',
+    value: displayBalance,
+    isActive: isFullBalance,
+    onPress: handleFullBalance,
+  });
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
@@ -426,7 +448,7 @@ export function RecoveryBottomSheet({
           <Animated.View style={[styles.backdropFade, { opacity: fadeAnim }]} />
         </Pressable>
 
-        {/* Sheet container - stays at bottom, shrinks with keyboard on Android */}
+        {/* Sheet container — stays at bottom, shrinks with keyboard on Android */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -437,458 +459,421 @@ export function RecoveryBottomSheet({
               { transform: [{ translateY: slideAnim }], opacity: fadeAnim },
             ]}
           >
-          <ConfettiOverlay visible={showSuccess} />
-          <SuccessCheckmark visible={showSuccess} />
+            <ConfettiOverlay visible={showSuccess} />
+            <SuccessCheckmark visible={showSuccess} />
 
-          {/* Handle */}
-          <View style={styles.handle} />
-
-          {/* Header bar: title + close */}
-          <View style={styles.headerBar}>
-            <View style={styles.headerBarLeft}>
-              <View style={styles.headerBarIcon}>
-                <MaterialIcons name="payments" size={18} color="#FFFFFF" />
+            {/* ============ HEADER BAR (title + close X) ============ */}
+            <View style={styles.headerBar}>
+              <View style={styles.headerBarLeft}>
+                <View style={styles.headerBarIcon}>
+                  <MaterialIcons name="payments" size={18} color="#FFFFFF" />
+                </View>
+                <View>
+                  <Text style={styles.headerTitle}>New Recovery</Text>
+                  <Text style={styles.headerSub}>Enter collection details</Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.headerTitle}>New Recovery</Text>
-                <Text style={styles.headerSub}>Enter collection details</Text>
+              <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={12}>
+                <MaterialIcons name="close" size={20} color="#64748B" />
+              </Pressable>
+            </View>
+
+            {/* ============ SELECTED SHOP MINI CARD ============ */}
+            <View style={styles.shopMiniCard}>
+              <LinearGradient
+                colors={shopBalanceColor === '#EF4444' ? ['#EF4444', '#DC2626'] : shopBalanceColor === '#F59E0B' ? ['#F59E0B', '#D97706'] : ['#10B981', '#059669']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.shopMiniAvatar}
+              >
+                <Text style={styles.shopMiniAvatarText}>{shop.name.charAt(0).toUpperCase()}</Text>
+              </LinearGradient>
+              <View style={styles.shopMiniInfo}>
+                <Text style={styles.shopMiniName} numberOfLines={1}>{shop.name}</Text>
+                <Text style={styles.shopMiniOwner} numberOfLines={1}>{shop.ownerName || shop.area}</Text>
+              </View>
+              <View style={styles.shopMiniBalanceCol}>
+                <Text style={styles.shopMiniBalanceLabel}>BALANCE</Text>
+                <Text style={[styles.shopMiniBalance, { color: shopBalanceColor }]}>
+                  {formatPKR(displayBalance)}
+                </Text>
               </View>
             </View>
-            <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={12}>
-              <MaterialIcons name="close" size={22} color={Colors.textSecondary} />
-            </Pressable>
-          </View>
 
-          {/* Selected shop card (small) */}
-          <View style={styles.shopMiniCard}>
-            <View style={styles.shopMiniAvatar}>
-              <Text style={styles.shopMiniAvatarText}>{shop.name.charAt(0).toUpperCase()}</Text>
-            </View>
-            <View style={styles.shopMiniInfo}>
-              <Text style={styles.shopMiniName} numberOfLines={1}>{shop.name}</Text>
-              <Text style={styles.shopMiniOwner} numberOfLines={1}>{shop.ownerName || shop.area}</Text>
-            </View>
-            <View style={styles.shopMiniBalanceCol}>
-              <Text style={styles.shopMiniBalanceLabel}>Balance</Text>
-              <Text style={[
-                styles.shopMiniBalance,
-                { color: displayBalance > 50000 ? Colors.danger : displayBalance >= 10000 ? Colors.secondary : Colors.success },
-              ]}>{formatPKR(displayBalance)}</Text>
-            </View>
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.scrollView}>
-            {/* Amount section - Modern calculator style */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Amount (PKR) *</Text>
-              </View>
-
-              {/* Big amount display with blue gradient */}
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.scrollView}>
+              {/* ============ BIG AMOUNT INPUT (blue gradient) ============ */}
               <Animated.View style={[{ transform: [{ scale: amountScaleAnim }] }]}>
                 <LinearGradient
-                  colors={['#1E40AF', '#2563EB', '#3B82F6']}
+                  colors={['#2563EB', '#1E40AF']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={styles.amountDisplay}
+                  style={styles.amountHero}
                 >
-                  <View style={styles.amountDisplayBubble1} />
-                  <View style={styles.amountDisplayBubble2} />
-                  <View style={styles.amountCurrencyTag}>
-                    <Text style={styles.amountCurrencyText}>Rs.</Text>
+                  <View style={styles.amountBubble1} />
+                  <View style={styles.amountBubble2} />
+
+                  <Text style={styles.amountHeroLabel}>ENTER AMOUNT</Text>
+
+                  <View style={styles.amountHeroRow}>
+                    <Text style={styles.amountCurrency}>Rs.</Text>
+                    <TextInput
+                      style={styles.amountInput}
+                      value={amount}
+                      onChangeText={setAmount}
+                      keyboardType="numeric"
+                      placeholder="0"
+                      placeholderTextColor="rgba(255,255,255,0.4)"
+                      maxLength={7}
+                      onFocus={() => setFocusedField('amount')}
+                      onBlur={() => setFocusedField(null)}
+                      autoFocus
+                      selectTextOnFocus
+                    />
+                    {amount ? (
+                      <Pressable
+                        onPress={() => { setAmount(''); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                        style={styles.amountClear}
+                        hitSlop={8}
+                      >
+                        <MaterialIcons name="backspace" size={20} color="rgba(255,255,255,0.85)" />
+                      </Pressable>
+                    ) : (
+                      <MaterialIcons name="keyboard" size={18} color="rgba(255,255,255,0.5)" />
+                    )}
                   </View>
-                  <TextInput
-                    style={styles.amountInput}
-                    value={amount}
-                    onChangeText={setAmount}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor="rgba(255,255,255,0.45)"
-                    maxLength={7}
-                    onFocus={() => setFocusedField('amount')}
-                    onBlur={() => setFocusedField(null)}
-                    autoFocus
-                    selectTextOnFocus
-                  />
-                  {amount ? (
-                    <Pressable
-                      onPress={() => { setAmount(''); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
-                      style={styles.amountClear}
-                      hitSlop={8}
-                    >
-                      <MaterialIcons name="backspace" size={20} color="rgba(255,255,255,0.85)" />
-                    </Pressable>
-                  ) : (
-                    <MaterialIcons name="keyboard" size={20} color="rgba(255,255,255,0.5)" />
-                  )}
+
+                  {/* Inline validation hint inside hero */}
+                  {amount && numericAmount > 0 && numericAmount < MIN_RECOVERY ? (
+                    <View style={styles.amountHintRow}>
+                      <MaterialIcons name="info" size={12} color="rgba(255,255,255,0.85)" />
+                      <Text style={styles.amountHintText}>Min: {formatPKR(MIN_RECOVERY)}</Text>
+                    </View>
+                  ) : numericAmount > displayBalance ? (
+                    <View style={styles.amountHintRow}>
+                      <MaterialIcons name="warning" size={12} color="#FECACA" />
+                      <Text style={[styles.amountHintText, { color: '#FECACA' }]}>
+                        Exceeds balance of {formatPKR(displayBalance)}
+                      </Text>
+                    </View>
+                  ) : null}
                 </LinearGradient>
               </Animated.View>
 
-              {/* Validation hint */}
-              {amount && numericAmount > 0 && numericAmount < MIN_RECOVERY ? (
-                <View style={styles.hintRow}>
-                  <MaterialIcons name="info" size={13} color={Colors.secondary} />
-                  <Text style={styles.hintText}>Min: {formatPKR(MIN_RECOVERY)}</Text>
-                </View>
-              ) : numericAmount > displayBalance ? (
-                <View style={styles.hintRow}>
-                  <MaterialIcons name="warning" size={13} color={Colors.danger} />
-                  <Text style={[styles.hintText, { color: Colors.danger }]}>Exceeds balance of {formatPKR(displayBalance)}</Text>
-                </View>
-              ) : null}
+              {/* ============ QUICK AMOUNT CHIPS (horizontal row) ============ */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.quickChipsRow}
+              >
+                {quickAmountChips.map((chip) => (
+                  <Pressable
+                    key={chip.key}
+                    style={({ pressed }) => [
+                      styles.quickChip,
+                      chip.isActive && styles.quickChipActive,
+                      pressed && styles.quickChipPressed,
+                    ]}
+                    onPress={chip.onPress}
+                  >
+                    {chip.isActive ? (
+                      <MaterialIcons name="check" size={12} color="#FFFFFF" />
+                    ) : null}
+                    <Text style={[styles.quickChipText, chip.isActive && styles.quickChipTextActive]}>
+                      {chip.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
 
-              {/* Quick amounts - Rs. 1000, 2000, 5000, 10000, Full Balance */}
-              <View style={styles.quickGrid}>
-                {QUICK_AMOUNTS.filter((v) => v >= 1000).map((val) => {
-                  const isActive = amount === String(val);
-                  return (
-                    <Pressable
-                      key={val}
-                      style={({ pressed }) => [
-                        styles.quickBtn,
-                        isActive && styles.quickBtnActive,
-                        pressed && styles.quickBtnPressed,
-                      ]}
-                      onPress={() => handleQuickAmount(val)}
-                    >
-                      <Text style={[styles.quickBtnText, isActive && styles.quickBtnTextActive]}>
-                        {isActive ? '✓ ' : ''}Rs. {val >= 1000 ? `${val / 1000}K` : val}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.quickBtn,
-                    isFullBalance && styles.quickBtnActive,
-                    pressed && styles.quickBtnPressed,
-                  ]}
-                  onPress={handleFullBalance}
-                >
-                  <Text style={[styles.quickBtnText, isFullBalance && styles.quickBtnTextActive]}>
-                    {isFullBalance ? '✓ ' : ''}Full
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-
-            {/* New Balance Preview Card */}
-            {numericAmount > 0 && numericAmount <= displayBalance ? (
-              <View style={styles.balancePreviewCard}>
-                <LinearGradient
-                  colors={['#DBEAFE', '#BFDBFE']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.balancePreviewGradient}
-                >
+              {/* ============ BALANCE PREVIEW (after recovery) ============ */}
+              {numericAmount > 0 && numericAmount <= displayBalance ? (
+                <View style={styles.balancePreviewCard}>
                   <View style={styles.balancePreviewHeader}>
-                    <MaterialIcons name="trending-down" size={16} color={Colors.primaryDark} />
-                    <Text style={styles.balancePreviewTitle}>After This Recovery</Text>
+                    <MaterialIcons name="trending-down" size={14} color="#1E40AF" />
+                    <Text style={styles.balancePreviewTitle}>AFTER THIS RECOVERY</Text>
                   </View>
                   <View style={styles.balancePreviewRow}>
                     <View style={styles.balancePreviewItem}>
                       <Text style={styles.balancePreviewLabel}>Current</Text>
-                      <Text style={[styles.balancePreviewValue, { color: Colors.danger }]}>
+                      <Text style={[styles.balancePreviewValue, { color: '#EF4444' }]}>
                         {formatPKR(displayBalance)}
                       </Text>
                     </View>
-                    <MaterialIcons name="arrow-forward" size={16} color={Colors.primary} />
+                    <MaterialIcons name="arrow-forward" size={16} color="#2563EB" />
                     <View style={styles.balancePreviewItem}>
                       <Text style={styles.balancePreviewLabel}>Remaining</Text>
-                      <Text style={[styles.balancePreviewValue, { color: remainingBalance > 0 ? Colors.secondary : Colors.primary }]}>
+                      <Text style={[styles.balancePreviewValue, { color: remainingBalance > 0 ? '#F59E0B' : '#10B981' }]}>
                         {formatPKR(remainingBalance)}
                       </Text>
                     </View>
                   </View>
-                  {/* Reduction bar */}
                   <View style={styles.reductionBar}>
                     <View style={[styles.reductionBarFill, {
-                      width: `${Math.min((numericAmount / displayBalance) * 100, 100)}%`,
+                      width: `${Math.min((numericAmount / Math.max(displayBalance, 1)) * 100, 100)}%`,
                     }]} />
                   </View>
                   <Text style={styles.reductionText}>
-                    {((numericAmount / displayBalance) * 100).toFixed(0)}% reduction
+                    {((numericAmount / Math.max(displayBalance, 1)) * 100).toFixed(0)}% reduction
                   </Text>
-                </LinearGradient>
-              </View>
-            ) : null}
+                </View>
+              ) : null}
 
-            {/* Note section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Description</Text>
-                <View style={styles.optionalBadge}>
-                  <Text style={styles.optionalText}>Optional</Text>
+              {/* ============ DESCRIPTION FIELD (optional) ============ */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Description (optional)</Text>
+                </View>
+                <View style={[styles.noteWrap, focusedField === 'note' && styles.noteWrapFocused]}>
+                  <TextInput
+                    style={styles.noteInput}
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="e.g. Cash received, cheque, partial payment..."
+                    placeholderTextColor={Colors.textMuted}
+                    maxLength={200}
+                    multiline
+                    numberOfLines={2}
+                    onFocus={() => setFocusedField('note')}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                  {description ? (
+                    <Pressable
+                      onPress={() => setDescription('')}
+                      style={styles.noteClear}
+                      hitSlop={8}
+                    >
+                      <MaterialIcons name="close" size={16} color={Colors.textMuted} />
+                    </Pressable>
+                  ) : null}
                 </View>
               </View>
-              <View style={[
-                styles.noteWrap,
-                focusedField === 'note' && styles.noteWrapFocused,
-              ]}>
-                <TextInput
-                  style={styles.noteInput}
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder="e.g. Cash received, cheque, partial payment..."
-                  placeholderTextColor={Colors.textMuted}
-                  maxLength={200}
-                  multiline
-                  numberOfLines={2}
-                  onFocus={() => setFocusedField('note')}
-                  onBlur={() => setFocusedField(null)}
-                />
-                {description ? (
-                  <Pressable
-                    onPress={() => setDescription('')}
-                    style={styles.noteClear}
-                    hitSlop={8}
-                  >
-                    <MaterialIcons name="close" size={16} color={Colors.textMuted} />
-                  </Pressable>
-                ) : null}
-              </View>
-            </View>
 
-            {/* GPS Store Visit Toggle */}
-            <View style={styles.section}>
-              <View style={[styles.gpsVisitCard, markGpsVisit && styles.gpsVisitCardActive]}>
-                <View style={styles.gpsVisitLeft}>
-                  <View style={styles.gpsVisitIconWrap}>
-                    <MaterialIcons
-                      name="storefront"
-                      size={22}
-                      color={markGpsVisit ? '#2563EB' : Colors.textMuted}
-                    />
+              {/* ============ GPS STORE VISIT TOGGLE ============ */}
+              <View style={styles.section}>
+                <View style={[styles.gpsVisitCard, markGpsVisit && styles.gpsVisitCardActive]}>
+                  <View style={styles.gpsVisitLeft}>
+                    <View style={styles.gpsVisitIconWrap}>
+                      <MaterialIcons
+                        name="storefront"
+                        size={20}
+                        color={markGpsVisit ? '#2563EB' : Colors.textMuted}
+                      />
+                    </View>
+                    <View style={styles.gpsVisitTextWrap}>
+                      <Text style={styles.gpsVisitTitle}>GPS Store Visit</Text>
+                      <Text style={styles.gpsVisitSub}>
+                        {markGpsVisit
+                          ? 'GPS will be captured and shop marked as visited'
+                          : 'Shop visit will not be recorded'}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.gpsVisitTextWrap}>
-                    <Text style={styles.gpsVisitTitle}>GPS Store Visit</Text>
-                    <Text style={styles.gpsVisitSub}>
-                      {markGpsVisit
-                        ? 'GPS will be captured and shop marked as visited'
-                        : 'Shop visit will not be recorded'}
-                    </Text>
-                  </View>
+                  <Switch
+                    value={markGpsVisit}
+                    onValueChange={handleToggleGpsVisit}
+                    trackColor={{ false: Colors.border, true: '#93C5FD' }}
+                    thumbColor={Platform.OS === 'android' ? (markGpsVisit ? '#2563EB' : Colors.textMuted) : undefined}
+                    ios_backgroundColor={Colors.border}
+                  />
                 </View>
-                <Switch
-                  value={markGpsVisit}
-                  onValueChange={handleToggleGpsVisit}
-                  trackColor={{ false: Colors.border, true: Colors.primaryLight }}
-                  thumbColor={Platform.OS === 'android' ? (markGpsVisit ? Colors.primary : Colors.textMuted) : undefined}
-                  ios_backgroundColor={Colors.border}
-                />
-              </View>
 
-              {/* GPS Location captured indicator — green pill with pulse */}
-              {markGpsVisit && hasGps && (
-                <View style={styles.gpsCapturedPill}>
-                  <GpsPulse active={true} color={Colors.success} />
-                  <View style={styles.gpsCapturedPillText}>
-                    <MaterialIcons name="check-circle" size={14} color={Colors.success} />
-                    <Text style={styles.gpsCapturedPillLabel}>
+                {/* GPS Location captured indicator — green pill with pulse */}
+                {markGpsVisit && hasGps && (
+                  <View style={styles.gpsCapturedPill}>
+                    <GpsPulse active={true} color="#10B981" />
+                    <MaterialIcons name="location-on" size={13} color="#10B981" />
+                    <Text style={styles.gpsCapturedPillLabel} numberOfLines={1}>
                       Location captured · {gpsAddress || `${gpsLat!.toFixed(4)}, ${gpsLng!.toFixed(4)}`}
                     </Text>
                   </View>
-                </View>
-              )}
+                )}
 
-              {markGpsVisit && capturingGps && (
-                <View style={styles.gpsCapturingPill}>
-                  <ActivityIndicator size="small" color={Colors.primary} />
-                  <Text style={styles.gpsCapturingPillLabel}>Capturing GPS location...</Text>
-                </View>
-              )}
-            </View>
-
-            {/* GPS section - Modern card style */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>GPS Location</Text>
-                <View style={styles.optionalBadge}>
-                  <Text style={styles.optionalText}>Optional</Text>
-                </View>
-                {hasGps ? (
-                  <View style={styles.gpsStatusBadge}>
-                    <GpsPulse active={hasGps} color={Colors.success} />
-                    <Text style={[styles.gpsStatusText, { color: Colors.success }]}>Captured</Text>
+                {markGpsVisit && capturingGps && (
+                  <View style={styles.gpsCapturingPill}>
+                    <ActivityIndicator size="small" color="#2563EB" />
+                    <Text style={styles.gpsCapturingPillLabel}>Capturing GPS location...</Text>
                   </View>
-                ) : null}
+                )}
               </View>
 
-              {hasGps ? (
-                <View style={styles.gpsCard}>
-                  {/* Map thumbnail */}
-                  <View style={styles.mapContainer}>
-                    {mapLoading ? (
-                      <View style={styles.mapLoader}>
-                        <ActivityIndicator size="small" color={Colors.primary} />
-                        <Text style={styles.mapLoaderText}>Loading map...</Text>
+              {/* ============ GPS DETAIL CARD (when captured) ============ */}
+              {markGpsVisit && hasGps ? (
+                <View style={styles.section}>
+                  <View style={styles.gpsCard}>
+                    <View style={styles.mapContainer}>
+                      {mapLoading ? (
+                        <View style={styles.mapLoader}>
+                          <ActivityIndicator size="small" color="#2563EB" />
+                          <Text style={styles.mapLoaderText}>Loading map...</Text>
+                        </View>
+                      ) : null}
+                      {mapUrl ? (
+                        <Image
+                          source={{ uri: mapUrl }}
+                          style={[styles.mapImage, mapLoading && { opacity: 0 }]}
+                          contentFit="cover"
+                          transition={300}
+                          onLoad={() => setMapLoading(false)}
+                          onError={() => setMapLoading(false)}
+                        />
+                      ) : null}
+                      <View style={styles.mapPinOverlay}>
+                        <View style={styles.mapPin}>
+                          <MaterialIcons name="location-on" size={28} color="#EF4444" />
+                        </View>
                       </View>
-                    ) : null}
-                    {mapUrl ? (
-                      <Image
-                        source={{ uri: mapUrl }}
-                        style={[styles.mapImage, mapLoading && { opacity: 0 }]}
-                        contentFit="cover"
-                        transition={300}
-                        onLoad={() => setMapLoading(false)}
-                        onError={() => setMapLoading(false)}
-                      />
-                    ) : null}
-                    <View style={styles.mapPinOverlay}>
-                      <View style={styles.mapPin}>
-                        <MaterialIcons name="location-on" size={28} color={Colors.danger} />
+                      <View style={styles.mapZoomBadge}>
+                        <MaterialIcons name="zoom-in" size={12} color={Colors.textInverse} />
+                        <Text style={styles.mapZoomText}>Street level</Text>
                       </View>
                     </View>
-                    <View style={styles.mapZoomBadge}>
-                      <MaterialIcons name="zoom-in" size={12} color={Colors.textInverse} />
-                      <Text style={styles.mapZoomText}>Street level</Text>
-                    </View>
-                  </View>
 
-                  <View style={styles.gpsInfo}>
-                    <View style={styles.coordsRow}>
-                      <View style={styles.coordsBadge}>
-                        <MaterialIcons name="gps-fixed" size={13} color={Colors.primaryDark} />
-                        <Text style={styles.coordsText}>
-                          {gpsLat!.toFixed(5)}, {gpsLng!.toFixed(5)}
-                        </Text>
+                    <View style={styles.gpsInfo}>
+                      <View style={styles.coordsRow}>
+                        <View style={styles.coordsBadge}>
+                          <MaterialIcons name="gps-fixed" size={13} color="#1E40AF" />
+                          <Text style={styles.coordsText}>
+                            {gpsLat!.toFixed(5)}, {gpsLng!.toFixed(5)}
+                          </Text>
+                        </View>
+                        <Pressable
+                          onPress={() => { setGpsLat(undefined); setGpsLng(undefined); setGpsAddress(undefined); }}
+                          style={styles.gpsRemoveBtn}
+                          hitSlop={8}
+                        >
+                          <MaterialIcons name="delete-outline" size={16} color="#EF4444" />
+                        </Pressable>
                       </View>
+
+                      {gpsAddress ? (
+                        <View style={styles.addressRow}>
+                          <MaterialIcons name="place" size={13} color={Colors.textSecondary} />
+                          <Text style={styles.addressText} numberOfLines={2}>{gpsAddress}</Text>
+                        </View>
+                      ) : null}
+
                       <Pressable
-                        onPress={() => { setGpsLat(undefined); setGpsLng(undefined); setGpsAddress(undefined); }}
-                        style={styles.gpsRemoveBtn}
-                        hitSlop={8}
+                        onPress={captureGPS}
+                        style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.7 }]}
+                        disabled={capturingGps}
                       >
-                        <MaterialIcons name="delete-outline" size={16} color={Colors.danger} />
+                        <MaterialIcons
+                          name={capturingGps ? 'sync' : 'refresh'}
+                          size={14}
+                          color="#1E40AF"
+                          style={capturingGps ? { transform: [{ rotate: '180deg' }] } : {}}
+                        />
+                        <Text style={styles.retryBtnText}>
+                          {capturingGps ? 'Updating...' : 'Update Location'}
+                        </Text>
                       </Pressable>
                     </View>
-
-                    {gpsAddress ? (
-                      <View style={styles.addressRow}>
-                        <MaterialIcons name="place" size={13} color={Colors.textSecondary} />
-                        <Text style={styles.addressText} numberOfLines={2}>{gpsAddress}</Text>
-                      </View>
-                    ) : null}
-
-                    <Pressable
-                      onPress={captureGPS}
-                      style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.7 }]}
-                      disabled={capturingGps}
-                    >
-                      <MaterialIcons
-                        name={capturingGps ? 'sync' : 'refresh'}
-                        size={14}
-                        color={Colors.primaryDark}
-                        style={capturingGps ? { transform: [{ rotate: '180deg' }] } : {}}
-                      />
-                      <Text style={styles.retryBtnText}>
-                        {capturingGps ? 'Updating...' : 'Update Location'}
-                      </Text>
-                    </Pressable>
                   </View>
+                </View>
+              ) : markGpsVisit && !hasGps ? (
+                <View style={styles.section}>
+                  <Pressable
+                    style={({ pressed }) => [styles.captureBtn, pressed && styles.captureBtnPressed]}
+                    onPress={captureGPS}
+                    disabled={capturingGps}
+                  >
+                    <View style={styles.captureBtnInner}>
+                      <View style={styles.captureBtnIconWrap}>
+                        {capturingGps ? (
+                          <ActivityIndicator size="small" color="#2563EB" />
+                        ) : (
+                          <MaterialIcons name="add-location-alt" size={22} color="#2563EB" />
+                        )}
+                      </View>
+                      <View style={styles.captureBtnTextWrap}>
+                        <Text style={styles.captureBtnTitle}>
+                          {capturingGps ? 'Getting location...' : 'Capture GPS Location'}
+                        </Text>
+                        <Text style={styles.captureBtnSub}>
+                          {capturingGps ? 'Please wait...' : 'Verify your presence at the shop'}
+                        </Text>
+                      </View>
+                      <MaterialIcons name="chevron-right" size={20} color={Colors.textMuted} />
+                    </View>
+                  </Pressable>
+                </View>
+              ) : null}
+
+              {/* ============ PHOTO PROOF BUTTON (dashed border) ============ */}
+              <View style={styles.section}>
+                <Pressable
+                  style={({ pressed }) => [styles.photoProofBtn, pressed && styles.photoProofBtnPressed]}
+                  onPress={handlePhotoProof}
+                >
+                  <View style={styles.photoProofIconWrap}>
+                    <MaterialIcons name="photo-camera" size={20} color="#2563EB" />
+                  </View>
+                  <View style={styles.photoProofTextWrap}>
+                    <Text style={styles.photoProofTitle}>Add Photo Proof</Text>
+                    <Text style={styles.photoProofSub}>Optional · Capture receipt or cash photo</Text>
+                  </View>
+                  <MaterialIcons name="add-a-photo" size={20} color={Colors.textMuted} />
+                </Pressable>
+              </View>
+
+              <View style={styles.bottomPad} />
+            </ScrollView>
+
+            {/* ============ SUBMIT FOOTER ============ */}
+            <View style={styles.footer}>
+              {numericAmount > 0 && isValid ? (
+                <View style={styles.amountPreview}>
+                  <View>
+                    <Text style={styles.amountPreviewLabel}>Recovery Amount</Text>
+                    <Text style={styles.amountPreviewSub}>
+                      This will reduce the outstanding balance
+                      {markGpsVisit ? ' · GPS visit will be marked' : ''}
+                    </Text>
+                  </View>
+                  <Text style={styles.amountPreviewValue}>{formatPKR(numericAmount)}</Text>
+                </View>
+              ) : null}
+
+              {showSuccess ? (
+                <View style={styles.successFooter}>
+                  <LinearGradient colors={['#2563EB', '#1D4ED8']} style={styles.successFooterInner}>
+                    <MaterialIcons name="check-circle" size={24} color="#FFFFFF" />
+                    <Text style={styles.successFooterText}>Recovery Submitted Successfully!</Text>
+                  </LinearGradient>
                 </View>
               ) : (
                 <Pressable
-                  style={({ pressed }) => [styles.captureBtn, pressed && styles.captureBtnPressed]}
-                  onPress={captureGPS}
-                  disabled={capturingGps}
+                  style={({ pressed }) => [
+                    styles.submitBtn,
+                    (!isValid || isSubmitting) && styles.submitBtnDisabled,
+                    pressed && isValid && !isSubmitting && styles.submitBtnPressed,
+                  ]}
+                  onPress={handleSubmit}
+                  disabled={!isValid || isSubmitting}
                 >
-                  <View style={styles.captureBtnInner}>
-                    <View style={styles.captureBtnIconWrap}>
-                      {capturingGps ? (
-                        <ActivityIndicator size="small" color="#2563EB" />
-                      ) : (
-                        <MaterialIcons name="add-location-alt" size={22} color="#2563EB" />
-                      )}
-                    </View>
-                    <View style={styles.captureBtnTextWrap}>
-                      <Text style={styles.captureBtnTitle}>
-                        {capturingGps ? 'Getting location...' : 'Capture GPS Location'}
-                      </Text>
-                      <Text style={styles.captureBtnSub}>
-                        {capturingGps ? 'Please wait...' : 'Verify your presence at the shop'}
-                      </Text>
-                    </View>
-                    <MaterialIcons name="chevron-right" size={20} color={Colors.textMuted} />
-                  </View>
+                  {isSubmitting ? (
+                    <>
+                      <ActivityIndicator size="small" color={Colors.textInverse} />
+                      <Text style={styles.submitBtnText}>Submitting...</Text>
+                    </>
+                  ) : (
+                    <>
+                      <View style={styles.submitBtnIcon}>
+                        <MaterialIcons name="check" size={18} color={Colors.textInverse} />
+                      </View>
+                      <Text style={styles.submitBtnText}>Submit Recovery</Text>
+                    </>
+                  )}
                 </Pressable>
               )}
-            </View>
 
-            {/* Photo proof button */}
-            <View style={styles.section}>
-              <Pressable
-                style={({ pressed }) => [styles.photoProofBtn, pressed && styles.photoProofBtnPressed]}
-                onPress={handlePhotoProof}
-              >
-                <View style={styles.photoProofIconWrap}>
-                  <MaterialIcons name="photo-camera" size={20} color="#2563EB" />
-                </View>
-                <View style={styles.photoProofTextWrap}>
-                  <Text style={styles.photoProofTitle}>Add Photo Proof</Text>
-                  <Text style={styles.photoProofSub}>Optional · Capture receipt or cash photo</Text>
-                </View>
-                <MaterialIcons name="add-a-photo" size={20} color={Colors.textMuted} />
-              </Pressable>
-            </View>
-
-            <View style={styles.bottomPad} />
-          </ScrollView>
-
-          {/* Submit footer */}
-          <View style={styles.footer}>
-            {numericAmount > 0 && isValid ? (
-              <View style={styles.amountPreview}>
-                <View>
-                  <Text style={styles.amountPreviewLabel}>Recovery Amount</Text>
-                  <Text style={styles.amountPreviewSub}>
-                    This will reduce the outstanding balance
-                    {markGpsVisit ? ' · GPS visit will be marked' : ''}
-                  </Text>
-                </View>
-                <Text style={styles.amountPreviewValue}>{formatPKR(numericAmount)}</Text>
+              {/* Auto-approved note */}
+              <View style={styles.autoApproveNote}>
+                <MaterialIcons name="info" size={12} color="#94A3B8" />
+                <Text style={styles.autoApproveText}>Recovery will be auto-approved by admin</Text>
               </View>
-            ) : null}
-
-            {showSuccess ? (
-              <View style={styles.successFooter}>
-                <LinearGradient colors={['#2563EB', '#1D4ED8']} style={styles.successFooterInner}>
-                  <MaterialIcons name="check-circle" size={24} color="#FFFFFF" />
-                  <Text style={styles.successFooterText}>Recovery Submitted Successfully!</Text>
-                </LinearGradient>
-              </View>
-            ) : (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.submitBtn,
-                  (!isValid || isSubmitting) && styles.submitBtnDisabled,
-                  pressed && isValid && !isSubmitting && styles.submitBtnPressed,
-                ]}
-                onPress={handleSubmit}
-                disabled={!isValid || isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <ActivityIndicator size="small" color={Colors.textInverse} />
-                    <Text style={styles.submitBtnText}>Submitting...</Text>
-                  </>
-                ) : (
-                  <>
-                    <View style={styles.submitBtnIcon}>
-                      <MaterialIcons name="check" size={18} color={Colors.textInverse} />
-                    </View>
-                    <Text style={styles.submitBtnText}>Submit Recovery</Text>
-                  </>
-                )}
-              </Pressable>
-            )}
-
-            {/* Auto-approved note */}
-            <View style={styles.autoApproveNote}>
-              <MaterialIcons name="verified" size={12} color={Colors.success} />
-              <Text style={styles.autoApproveText}>Recovery will be auto-approved by admin</Text>
             </View>
-          </View>
-        </Animated.View>
+          </Animated.View>
         </KeyboardAvoidingView>
       </View>
     </Modal>
@@ -919,22 +904,13 @@ const styles = StyleSheet.create({
     maxHeight: '93%',
     ...Shadow.lg,
   },
-  handle: {
-    width: 44,
-    height: 5,
-    backgroundColor: Colors.border,
-    borderRadius: Radius.full,
-    alignSelf: 'center',
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.xs,
-  },
-  // Header bar
+  // ===== Header bar =====
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.xs,
+    paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
   },
   headerBarLeft: {
@@ -947,9 +923,10 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: Colors.primary,
+    backgroundColor: '#2563EB',
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadow.sm,
   },
   headerTitle: {
     fontSize: FontSize.lg,
@@ -962,32 +939,31 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.background,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Selected shop mini card
+  // ===== Selected shop mini card =====
   shopMiniCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F8FAFC',
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     marginHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: '#E2E8F0',
   },
   shopMiniAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1014,20 +990,180 @@ const styles = StyleSheet.create({
   },
   shopMiniBalanceLabel: {
     fontSize: 9,
-    color: Colors.textMuted,
+    color: '#94A3B8',
     fontWeight: FontWeight.bold,
     letterSpacing: 0.4,
-    textTransform: 'uppercase',
   },
   shopMiniBalance: {
     fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
     marginTop: 1,
   },
-  // ScrollView
+  // ===== ScrollView =====
   scrollView: {
     paddingHorizontal: Spacing.md,
   },
+  // ===== BIG AMOUNT HERO (blue gradient) =====
+  amountHero: {
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    position: 'relative',
+    overflow: 'hidden',
+    ...Shadow.md,
+  },
+  amountBubble1: {
+    position: 'absolute',
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    top: -45,
+    right: -25,
+  },
+  amountBubble2: {
+    position: 'absolute',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    bottom: -25,
+    left: -10,
+  },
+  amountHeroLabel: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  amountHeroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  amountCurrency: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: 'rgba(255,255,255,0.7)',
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 34,
+    fontWeight: FontWeight.bold,
+    color: '#FFFFFF',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    letterSpacing: -0.5,
+  },
+  amountClear: {
+    padding: 4,
+  },
+  amountHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: Spacing.sm,
+  },
+  amountHintText: {
+    fontSize: FontSize.xs,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: FontWeight.medium,
+  },
+  // ===== Quick amount chips (horizontal) =====
+  quickChipsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+    paddingRight: Spacing.md,
+  },
+  quickChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+  },
+  quickChipActive: {
+    borderColor: '#2563EB',
+    backgroundColor: '#2563EB',
+  },
+  quickChipPressed: { opacity: 0.85, transform: [{ scale: 0.97 }] },
+  quickChipText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    color: '#2563EB',
+  },
+  quickChipTextActive: {
+    color: '#FFFFFF',
+  },
+  // ===== Balance preview card =====
+  balancePreviewCard: {
+    marginTop: Spacing.md,
+    borderRadius: Radius.md,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    padding: Spacing.md,
+    ...Shadow.sm,
+  },
+  balancePreviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: Spacing.sm,
+  },
+  balancePreviewTitle: {
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    color: '#1E40AF',
+    letterSpacing: 0.6,
+  },
+  balancePreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  balancePreviewItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+  },
+  balancePreviewLabel: {
+    fontSize: 10,
+    color: '#64748B',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    fontWeight: FontWeight.medium,
+  },
+  balancePreviewValue: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+  reductionBar: {
+    height: 4,
+    backgroundColor: 'rgba(37, 99, 235, 0.18)',
+    borderRadius: Radius.full,
+    overflow: 'hidden',
+    marginTop: Spacing.sm,
+  },
+  reductionBarFill: {
+    height: 4,
+    backgroundColor: '#2563EB',
+    borderRadius: Radius.full,
+  },
+  reductionText: {
+    fontSize: FontSize.xs,
+    color: '#1E40AF',
+    fontWeight: FontWeight.semibold,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  // ===== Section =====
   section: {
     marginTop: Spacing.lg,
   },
@@ -1043,183 +1179,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
     flex: 1,
   },
-  optionalBadge: {
-    backgroundColor: Colors.borderLight,
-    borderRadius: Radius.full,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  optionalText: {
-    fontSize: 10,
-    color: Colors.textMuted,
-    fontWeight: FontWeight.medium,
-  },
-  gpsStatusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.successLight,
-    borderRadius: Radius.full,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  gpsStatusText: {
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-  },
-  // Amount display - BIG calculator style with blue gradient
-  amountDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-    position: 'relative',
-    ...Shadow.md,
-  },
-  amountDisplayBubble1: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    top: -40,
-    right: -20,
-  },
-  amountDisplayBubble2: {
-    position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    bottom: -25,
-    left: -10,
-  },
-  amountCurrencyTag: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.lg,
-    justifyContent: 'center',
-  },
-  amountCurrencyText: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    color: '#FFFFFF',
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 34,
-    fontWeight: FontWeight.bold,
-    color: '#FFFFFF',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.sm,
-    letterSpacing: -0.5,
-  },
-  amountClear: {
-    paddingHorizontal: Spacing.md,
-  },
-  hintRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: Spacing.xs,
-  },
-  hintText: {
-    fontSize: FontSize.xs,
-    color: Colors.secondary,
-    fontWeight: FontWeight.medium,
-  },
-  // Quick amounts - blue outline default, blue filled when active
-  quickGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginTop: Spacing.sm,
-  },
-  quickBtn: {
-    flex: 1,
-    minWidth: '30%',
-    alignItems: 'center',
-    paddingVertical: 11,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.surface,
-    borderWidth: 1.5,
-    borderColor: '#BFDBFE',
-  },
-  quickBtnActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary,
-  },
-  quickBtnPressed: { opacity: 0.8, transform: [{ scale: 0.97 }] },
-  quickBtnText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
-    color: Colors.primary,
-  },
-  quickBtnTextActive: {
-    color: '#FFFFFF',
-  },
-  // Balance Preview Card
-  balancePreviewCard: {
-    marginTop: Spacing.md,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-    ...Shadow.sm,
-  },
-  balancePreviewGradient: {
-    padding: Spacing.md,
-  },
-  balancePreviewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: Spacing.sm,
-  },
-  balancePreviewTitle: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.bold,
-    color: Colors.primaryDark,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  balancePreviewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  balancePreviewItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-  },
-  balancePreviewLabel: {
-    fontSize: 10,
-    color: Colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  balancePreviewValue: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-  },
-  reductionBar: {
-    height: 4,
-    backgroundColor: 'rgba(37, 99, 235, 0.2)',
-    borderRadius: Radius.full,
-    overflow: 'hidden',
-    marginTop: Spacing.sm,
-  },
-  reductionBarFill: {
-    height: 4,
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.full,
-  },
-  reductionText: {
-    fontSize: FontSize.xs,
-    color: Colors.primaryDark,
-    fontWeight: FontWeight.semibold,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  // Note
+  // ===== Note input =====
   noteWrap: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1231,8 +1191,8 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   noteWrapFocused: {
-    borderColor: Colors.primary,
-    backgroundColor: '#F0F7FF',
+    borderColor: '#2563EB',
+    backgroundColor: '#EFF6FF',
   },
   noteInput: {
     flex: 1,
@@ -1245,7 +1205,7 @@ const styles = StyleSheet.create({
   noteClear: {
     marginTop: Spacing.sm,
   },
-  // GPS Store Visit Toggle
+  // ===== GPS Store Visit toggle =====
   gpsVisitCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1258,8 +1218,8 @@ const styles = StyleSheet.create({
     ...Shadow.sm,
   },
   gpsVisitCardActive: {
-    borderColor: Colors.primary,
-    backgroundColor: '#F0F7FF',
+    borderColor: '#2563EB',
+    backgroundColor: '#EFF6FF',
   },
   gpsVisitLeft: {
     flexDirection: 'row',
@@ -1271,7 +1231,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1288,12 +1248,12 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 1,
   },
-  // Green GPS captured pill with pulse
+  // ===== Green GPS captured pill =====
   gpsCapturedPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.successLight,
+    gap: 8,
+    backgroundColor: '#D1FAE5',
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 8,
@@ -1301,15 +1261,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#A7F3D0',
   },
-  gpsCapturedPillText: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flex: 1,
-  },
   gpsCapturedPillLabel: {
     fontSize: FontSize.xs,
-    color: Colors.success,
+    color: '#059669',
     fontWeight: FontWeight.semibold,
     flex: 1,
   },
@@ -1328,17 +1282,17 @@ const styles = StyleSheet.create({
     color: '#92400E',
     fontWeight: FontWeight.medium,
   },
-  // GPS captured card
+  // ===== GPS detail card =====
   gpsCard: {
     borderRadius: Radius.lg,
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: '#2563EB',
     ...Shadow.md,
   },
   mapContainer: {
-    height: 180,
+    height: 170,
     backgroundColor: '#E5E7EB',
     position: 'relative',
     overflow: 'hidden',
@@ -1402,14 +1356,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     flex: 1,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: '#DBEAFE',
     borderRadius: Radius.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 6,
   },
   coordsText: {
     fontSize: FontSize.xs,
-    color: Colors.primaryDark,
+    color: '#1E40AF',
     fontWeight: FontWeight.semibold,
     fontVariant: ['tabular-nums'],
   },
@@ -1438,14 +1392,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginTop: Spacing.xs,
     borderRadius: Radius.sm,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: '#DBEAFE',
   },
   retryBtnText: {
     fontSize: FontSize.sm,
-    color: Colors.primaryDark,
+    color: '#1E40AF',
     fontWeight: FontWeight.semibold,
   },
-  // GPS capture button
+  // ===== GPS capture button =====
   captureBtn: {
     borderRadius: Radius.lg,
     backgroundColor: Colors.surface,
@@ -1482,7 +1436,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 1,
   },
-  // Photo proof button
+  // ===== Photo proof button (dashed border) =====
   photoProofBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1499,7 +1453,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1519,7 +1473,7 @@ const styles = StyleSheet.create({
   bottomPad: {
     height: Spacing.lg,
   },
-  // Footer
+  // ===== Footer =====
   footer: {
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.sm,
@@ -1539,31 +1493,31 @@ const styles = StyleSheet.create({
   },
   amountPreviewLabel: {
     fontSize: FontSize.sm,
-    color: Colors.primaryDark,
+    color: '#1E40AF',
     fontWeight: FontWeight.bold,
   },
   amountPreviewSub: {
     fontSize: FontSize.xs,
-    color: Colors.primary,
+    color: '#2563EB',
     marginTop: 1,
   },
   amountPreviewValue: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.primaryDark,
+    color: '#1E40AF',
   },
   submitBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.primary,
+    backgroundColor: '#2563EB',
     borderRadius: 30,
     paddingVertical: 16,
     ...Shadow.md,
   },
   submitBtnDisabled: {
-    backgroundColor: Colors.textMuted,
+    backgroundColor: '#CBD5E1',
     elevation: 0,
     shadowOpacity: 0,
   },
@@ -1597,7 +1551,7 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: '#FFFFFF',
   },
-  // Auto-approved note
+  // ===== Auto-approved note =====
   autoApproveNote: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1607,7 +1561,7 @@ const styles = StyleSheet.create({
   },
   autoApproveText: {
     fontSize: FontSize.xs,
-    color: Colors.success,
+    color: '#94A3B8',
     fontWeight: FontWeight.medium,
   },
 });
