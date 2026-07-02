@@ -41,7 +41,7 @@ export function RecoveryReminder({ shops, onShopPress }: RecoveryReminderProps) 
 
   const getShopArea = (shopId: string): string => {
     const shop = shops.find((s) => s.id === shopId);
-    return shop?.area || '';
+    return shop?.address || shop?.area || '';
   };
 
   const getDaysSince = (dateStr: string): number => {

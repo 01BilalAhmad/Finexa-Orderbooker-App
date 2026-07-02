@@ -438,7 +438,7 @@ export function PendingMessagesSheet({
 
           {/* Gradient Header */}
           <LinearGradient
-            colors={['#4F46E5', '#6366F1', '#818CF8']}
+            colors={['#2563EB', '#3B82F6', '#60A5FA']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.sheetHeader}
@@ -818,7 +818,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     paddingHorizontal: 24,
     paddingVertical: 20,
-    backgroundColor: '#4338CA',
+    backgroundColor: '#1D4ED8',
     overflow: 'hidden',
   },
   receiptSystemHeader: {

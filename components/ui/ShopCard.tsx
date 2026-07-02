@@ -40,6 +40,14 @@ interface ShopCardProps {
   companyId?: string;
 }
 
+// Map a balance to its color tier per the modern design spec.
+// Red > 50000, Amber 10000-50000, Green < 10000
+function getBalanceColor(balance: number): string {
+  if (balance > 50000) return Colors.danger;
+  if (balance >= 10000) return Colors.secondary;
+  return Colors.success;
+}
+
 export const ShopCard = memo(function ShopCard({
   shop,
   isVisited,
@@ -57,6 +65,7 @@ export const ShopCard = memo(function ShopCard({
   const isApproachingLimit = !isOverLimit && rawUtilisation >= 90;
   const isZeroBalance = displayBalance === 0;
   const barColor = isOverLimit ? Colors.danger : rawUtilisation >= 90 ? Colors.secondary : utilisation > 80 ? Colors.secondary : Colors.primary;
+  const balanceColor = getBalanceColor(displayBalance);
 
   // Recovery submitted = blue accent, visited (GPS only) = lighter blue
   const showRecoveryAccent = hasRecovery;
@@ -88,6 +97,11 @@ export const ShopCard = memo(function ShopCard({
     if (shop.phone) Linking.openURL(`tel:${shop.phone}`);
   };
 
+  // First route day label (for the small pill badge)
+  const firstRouteDay = shop.routeDays && shop.routeDays.length > 0
+    ? shop.routeDays[0].charAt(0).toUpperCase() + shop.routeDays[0].slice(1).slice(0, 2)
+    : null;
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -102,7 +116,7 @@ export const ShopCard = memo(function ShopCard({
       {/* Gradient stripe on left */}
       {showRecoveryAccent && (
         <LinearGradient
-          colors={['#6366F1', '#4F46E5']}
+          colors={['#3B82F6', '#2563EB']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={styles.recoveryStripe}
@@ -110,46 +124,71 @@ export const ShopCard = memo(function ShopCard({
       )}
       {isVisited && !showRecoveryAccent && (
         <LinearGradient
-          colors={['#818CF8', '#6366F1']}
+          colors={['#60A5FA', '#3B82F6']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={styles.visitedStripe}
         />
       )}
 
-      {/* Top row: Avatar + Info + Balance */}
+      {/* Top row: Avatar + Info + Balance + Chevron */}
       <View style={styles.topRow}>
-        {/* Rounded Square Avatar */}
-        <View style={[
-          styles.shopAvatar,
-          showRecoveryAccent && styles.shopAvatarRecovery,
-          isVisited && !showRecoveryAccent && styles.shopAvatarVisited,
-        ]}>
-          <Text style={[
-            styles.shopAvatarText,
-            showRecoveryAccent && styles.shopAvatarTextRecovery,
-            isVisited && !showRecoveryAccent && styles.shopAvatarTextVisited,
-          ]}>
-            {shop.name.charAt(0).toUpperCase()}
-          </Text>
-        </View>
+        {/* Circular Avatar with gradient when active */}
+        {showRecoveryAccent || (isVisited && !showRecoveryAccent) ? (
+          <LinearGradient
+            colors={showRecoveryAccent ? ['#3B82F6', '#2563EB'] : ['#60A5FA', '#3B82F6']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.shopAvatar}
+          >
+            <Text style={styles.shopAvatarTextActive}>
+              {shop.name.charAt(0).toUpperCase()}
+            </Text>
+          </LinearGradient>
+        ) : (
+          <View style={styles.shopAvatar}>
+            <Text style={styles.shopAvatarText}>
+              {shop.name.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
+
         <View style={styles.shopInfo}>
           {isOverdue && (
-            <Text style={styles.overdueLabel}>OVERDUE</Text>
+            <View style={styles.overdueBadge}>
+              <MaterialIcons name="priority-high" size={9} color="#FFFFFF" />
+              <Text style={styles.overdueLabel}>OVERDUE</Text>
+            </View>
           )}
-          <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
-          <Text style={styles.shopMeta} numberOfLines={1}>
-            {shop.ownerName}  ·  {shop.area}
-          </Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
+            {firstRouteDay ? (
+              <View style={styles.routeDayBadge}>
+                <MaterialIcons name="event" size={9} color={Colors.primaryDark} />
+                <Text style={styles.routeDayText}>{firstRouteDay}</Text>
+              </View>
+            ) : null}
+          </View>
+          {shop.ownerName ? (
+            <Text style={styles.shopOwner} numberOfLines={1}>{shop.ownerName}</Text>
+          ) : null}
+          {(shop.address || shop.area) ? (
+            <View style={styles.addressRow}>
+              <MaterialIcons name="location-on" size={11} color={Colors.primary} />
+              <Text style={styles.shopAddress} numberOfLines={1}>{shop.address || shop.area}</Text>
+            </View>
+          ) : null}
         </View>
+
         <View style={styles.balanceCol}>
-          <Text style={[styles.balance, { color: displayBalance > 0 ? Colors.danger : Colors.success }]}>
+          <Text style={[styles.balance, { color: balanceColor }]}>
             {formatPKR(displayBalance)}
           </Text>
+          <Text style={styles.balanceLabel}>Balance</Text>
           {showRecoveryAccent ? (
             <View style={styles.recoveryBadge}>
               <MaterialIcons name="check-circle" size={11} color="#FFFFFF" />
-              <Text style={styles.recoveryBadgeText}>Recovery Added</Text>
+              <Text style={styles.recoveryBadgeText}>Recovered</Text>
             </View>
           ) : isVisited ? (
             <View style={styles.visitedBadge}>
@@ -158,6 +197,8 @@ export const ShopCard = memo(function ShopCard({
             </View>
           ) : null}
         </View>
+
+        <MaterialIcons name="chevron-right" size={20} color={Colors.textMuted} style={styles.chevron} />
       </View>
 
       {/* Over limit banner */}
@@ -185,7 +226,7 @@ export const ShopCard = memo(function ShopCard({
         <View style={styles.creditTrack}>
           {utilisation > 0 ? (
             <LinearGradient
-              colors={barColor === Colors.danger ? ['#EF4444', '#F87171'] : barColor === Colors.secondary ? ['#F59E0B', '#FBBF24'] : ['#6366F1', '#818CF8']}
+              colors={barColor === Colors.danger ? ['#EF4444', '#F87171'] : barColor === Colors.secondary ? ['#F59E0B', '#FBBF24'] : ['#3B82F6', '#60A5FA']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.creditFill, { width: `${utilisation}%` }]}
@@ -220,7 +261,7 @@ export const ShopCard = memo(function ShopCard({
             disabled={isZeroBalance}
           >
             <LinearGradient
-              colors={isZeroBalance ? ['#CBD5E1', '#CBD5E1'] : ['#4F46E5', '#6366F1']}
+              colors={isZeroBalance ? ['#CBD5E1', '#CBD5E1'] : ['#2563EB', '#3B82F6']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.collectBtnGradient}
@@ -241,7 +282,7 @@ export const ShopCard = memo(function ShopCard({
           <MaterialIcons
             name={isVisited ? 'check-circle' : 'my-location'}
             size={18}
-            color={isVisited ? Colors.primary : '#4F46E5'}
+            color={isVisited ? Colors.primary : '#2563EB'}
           />
         </Pressable>
         {/* Call - circle button */}
@@ -268,8 +309,8 @@ export const ShopCard = memo(function ShopCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 20,
-    padding: Spacing.md,
+    borderRadius: 16,
+    padding: 14,
     marginBottom: Spacing.sm,
     ...Shadow.md,
     borderWidth: 1,
@@ -279,19 +320,19 @@ const styles = StyleSheet.create({
   },
   // Recovery submitted - blue accent card
   cardRecoverySubmitted: {
-    borderColor: '#4F46E5',
+    borderColor: '#2563EB',
     borderWidth: 1.5,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#F8FAFC',
   },
   cardVisited: {
     borderColor: Colors.primary,
     borderWidth: 1.5,
-    backgroundColor: '#F5F3FF',
+    backgroundColor: '#F8FAFC',
   },
   cardZeroBalance: {
-    opacity: 0.75,
+    opacity: 0.78,
   },
-  cardPressed: { opacity: 0.94, transform: [{ scale: 0.99 }] },
+  cardPressed: { opacity: 0.96, transform: [{ scale: 0.98 }] },
   // Gradient stripe - recovery submitted
   recoveryStripe: {
     position: 'absolute',
@@ -299,8 +340,8 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 5,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
   },
   // Visited stripe
   visitedStripe: {
@@ -309,86 +350,127 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     marginBottom: Spacing.sm,
-    paddingLeft: 2,
   },
-  // Rounded Square Avatar
+  // Circular Avatar (46px)
   shopAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#EEF2FF',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  shopAvatarRecovery: {
-    backgroundColor: '#4F46E5',
-  },
-  shopAvatarVisited: {
-    backgroundColor: Colors.primary,
   },
   shopAvatarText: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: '#4F46E5',
+    color: '#2563EB',
   },
-  shopAvatarTextRecovery: {
+  shopAvatarTextActive: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
     color: '#FFFFFF',
-  },
-  shopAvatarTextVisited: {
-    color: Colors.textInverse,
   },
   shopInfo: {
     flex: 1,
+    minWidth: 0,
+  },
+  overdueBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
   },
   overdueLabel: {
     fontSize: 9,
     fontWeight: FontWeight.bold,
     color: '#FFFFFF',
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    overflow: 'hidden',
-    alignSelf: 'flex-start',
-    marginBottom: 4,
     letterSpacing: 0.5,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 1,
   },
   shopName: {
     fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
     color: Colors.text,
-    marginBottom: 2,
+    flexShrink: 1,
   },
-  shopMeta: {
+  routeDayBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#DBEAFE',
+    borderRadius: Radius.full,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  routeDayText: {
+    fontSize: 9,
+    color: Colors.primaryDark,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.3,
+  },
+  shopOwner: {
     fontSize: FontSize.xs,
     color: Colors.textSecondary,
+    marginBottom: 2,
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  shopAddress: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    flex: 1,
   },
   balanceCol: {
     alignItems: 'flex-end',
-    gap: 3,
+    gap: 2,
+    minWidth: 70,
   },
   balance: {
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
+  balanceLabel: {
+    fontSize: 9,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  chevron: {
+    marginLeft: -2,
+  },
   // Recovery submitted badge - blue filled
   recoveryBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
     borderRadius: Radius.full,
     paddingHorizontal: 6,
     paddingVertical: 2,
+    marginTop: 2,
   },
   recoveryBadgeText: {
     fontSize: 10,
@@ -403,6 +485,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     paddingHorizontal: 6,
     paddingVertical: 2,
+    marginTop: 2,
   },
   visitedText: {
     fontSize: 10,
@@ -418,7 +501,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     marginBottom: Spacing.xs,
-    marginLeft: 2,
   },
   overLimitText: {
     fontSize: FontSize.xs,
@@ -434,7 +516,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     marginBottom: Spacing.xs,
-    marginLeft: 2,
   },
   approachingLimitText: {
     fontSize: FontSize.xs,
@@ -451,7 +532,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     marginBottom: Spacing.xs,
-    marginLeft: 2,
   },
   zeroBalanceText: {
     fontSize: FontSize.xs,
@@ -475,7 +555,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     marginBottom: 3,
-    marginLeft: 2,
   },
   creditTrack: {
     flex: 1,
@@ -498,14 +577,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.textMuted,
     marginBottom: Spacing.sm,
-    marginLeft: 2,
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
     marginTop: 2,
-    marginLeft: 2,
   },
   // Recovery already done - blue filled button
   recoveryDoneBtn: {
@@ -514,7 +591,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
     borderRadius: 30,
     paddingVertical: 10,
     paddingHorizontal: Spacing.sm,
@@ -548,16 +625,16 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
     color: Colors.textInverse,
   },
-  // GPS - circle button with indigo theme
+  // GPS - circle button with blue theme
   gpsBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
     borderWidth: 1.5,
-    borderColor: '#C7D2FE',
+    borderColor: '#BFDBFE',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
   },
   gpsBtnVisited: {
     borderColor: Colors.primary,

@@ -94,19 +94,19 @@ function TxnRow({ item }: { item: Transaction }) {
   return (
     <View style={txnStyles.row}>
       {/* Type indicator icon */}
-      <View style={[txnStyles.typeIcon, { backgroundColor: isCredit ? '#FEF3C7' : '#EEF2FF' }]}>
+      <View style={[txnStyles.typeIcon, { backgroundColor: isCredit ? '#FEF3C7' : '#DBEAFE' }]}>
         <MaterialIcons
           name={isCredit ? 'add-circle' : 'remove-circle'}
           size={20}
-          color={isCredit ? Colors.secondary : '#4F46E5'}
+          color={isCredit ? Colors.secondary : '#2563EB'}
         />
       </View>
 
       <View style={txnStyles.body}>
         <View style={txnStyles.topRow}>
           <View style={txnStyles.badges}>
-            <View style={[txnStyles.typeBadge, { backgroundColor: isCredit ? '#FEF3C7' : '#EEF2FF' }]}>
-              <Text style={[txnStyles.typeBadgeText, { color: isCredit ? '#92400E' : '#4F46E5' }]}>
+            <View style={[txnStyles.typeBadge, { backgroundColor: isCredit ? '#FEF3C7' : '#DBEAFE' }]}>
+              <Text style={[txnStyles.typeBadgeText, { color: isCredit ? '#92400E' : '#2563EB' }]}>
                 {isCredit ? 'CREDIT' : 'RECOVERY'}
               </Text>
             </View>
@@ -121,7 +121,7 @@ function TxnRow({ item }: { item: Transaction }) {
               </View>
             ) : null}
           </View>
-          <Text style={[txnStyles.amount, { color: isCredit ? Colors.secondary : '#4F46E5' }]}>
+          <Text style={[txnStyles.amount, { color: isCredit ? Colors.secondary : '#2563EB' }]}>
             {isCredit ? '+' : '-'}{formatPKR(item.amount)}
           </Text>
         </View>
@@ -262,13 +262,13 @@ export default function LedgerScreen() {
   const reversedTxns = ledger ? [...ledger.transactions].reverse() : [];
 
   const balanceColor =
-    (ledger?.summary.currentBalance ?? 0) > 0 ? Colors.danger : '#4F46E5';
+    (ledger?.summary.currentBalance ?? 0) > 0 ? Colors.danger : '#2563EB';
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* ── Gradient header ── */}
       <LinearGradient
-        colors={['#4F46E5', '#6366F1', '#818CF8']}
+        colors={['#2563EB', '#3B82F6', '#60A5FA']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}
@@ -316,7 +316,7 @@ export default function LedgerScreen() {
         onPress={() => setShowShopPicker(true)}
       >
         <View style={styles.shopSelectorIcon}>
-          <MaterialIcons name="store" size={18} color="#4F46E5" />
+          <MaterialIcons name="store" size={18} color="#2563EB" />
         </View>
         <Text
           style={[styles.shopSelectorText, !selectedShop && styles.shopSelectorPlaceholder]}
@@ -330,9 +330,9 @@ export default function LedgerScreen() {
       {/* ── Content ── */}
       {!selectedShop ? (
         <View style={styles.emptyContainer}>
-          <LinearGradient colors={['#EEF2FF', '#F8FAFC']} style={styles.emptyGrad}>
+          <LinearGradient colors={['#DBEAFE', '#F8FAFC']} style={styles.emptyGrad}>
             <View style={styles.emptyIconWrap}>
-              <MaterialIcons name="menu-book" size={48} color="#4F46E5" />
+              <MaterialIcons name="menu-book" size={48} color="#2563EB" />
             </View>
             <Text style={styles.emptyTitle}>Select a Shop</Text>
             <Text style={styles.emptySubtitle}>
@@ -342,7 +342,7 @@ export default function LedgerScreen() {
         </View>
       ) : isLoadingLedger ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4F46E5" />
+          <ActivityIndicator size="large" color="#2563EB" />
           <Text style={styles.loadingText}>Loading ledger...</Text>
         </View>
       ) : ledger ? (
@@ -366,7 +366,7 @@ export default function LedgerScreen() {
                     <Text style={styles.shopInfoOwner}>{ledger.shop.ownerName}</Text>
                     <View style={styles.shopInfoMeta}>
                       <MaterialIcons name="location-on" size={13} color={Colors.textMuted} />
-                      <Text style={styles.shopInfoMetaText}>{ledger.shop.area}</Text>
+                      <Text style={styles.shopInfoMetaText}>{ledger.shop.address || ledger.shop.area}</Text>
                       {ledger.shop.phone ? (
                         <>
                           <Text style={styles.shopInfoDot}>·</Text>
@@ -404,10 +404,10 @@ export default function LedgerScreen() {
                       ? `${(ledger.summary.totalRecovery / 1000).toFixed(0)}K`
                       : formatPKR(ledger.summary.totalRecovery)
                   }
-                  color="#4F46E5"
-                  bg="#EEF2FF"
+                  color="#2563EB"
+                  bg="#DBEAFE"
                   icon="trending-up"
-                  borderColor="#4F46E5"
+                  borderColor="#2563EB"
                 />
                 <SummaryCard
                   label="Balance"
@@ -420,7 +420,7 @@ export default function LedgerScreen() {
                   }
                   color={balanceColor}
                   bg={
-                    ledger.summary.currentBalance > 0 ? Colors.dangerLight : '#EEF2FF'
+                    ledger.summary.currentBalance > 0 ? Colors.dangerLight : '#DBEAFE'
                   }
                   icon="account-balance-wallet"
                   borderColor={balanceColor}
@@ -434,7 +434,7 @@ export default function LedgerScreen() {
                 disabled={isGeneratingPdf}
               >
                 <LinearGradient
-                  colors={['#4F46E5', '#6366F1']}
+                  colors={['#2563EB', '#3B82F6']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.pdfGradient}
@@ -463,7 +463,7 @@ export default function LedgerScreen() {
               {/* Transaction header */}
               <View style={styles.txnHeader}>
                 <View style={styles.txnHeaderIcon}>
-                  <MaterialIcons name="receipt-long" size={16} color="#4F46E5" />
+                  <MaterialIcons name="receipt-long" size={16} color="#2563EB" />
                 </View>
                 <Text style={styles.txnHeaderTitle}>
                   Transactions
@@ -508,7 +508,7 @@ export default function LedgerScreen() {
           <View style={styles.pickerHandle} />
           <View style={styles.pickerHeader}>
             <View style={styles.pickerHeaderIcon}>
-              <MaterialIcons name="store" size={18} color="#4F46E5" />
+              <MaterialIcons name="store" size={18} color="#2563EB" />
             </View>
             <Text style={styles.pickerTitle}>Select Shop</Text>
             <Pressable onPress={() => setShowShopPicker(false)} hitSlop={12}>
@@ -527,7 +527,7 @@ export default function LedgerScreen() {
             />
           </View>
           {isLoadingAll ? (
-            <ActivityIndicator color="#4F46E5" style={{ marginVertical: Spacing.md }} />
+            <ActivityIndicator color="#2563EB" style={{ marginVertical: Spacing.md }} />
           ) : (
             <FlatList
               data={filteredShops}
@@ -552,11 +552,11 @@ export default function LedgerScreen() {
                     </View>
                   </View>
                   <View style={styles.shopPickerRight}>
-                    <Text style={[styles.shopPickerBalance, { color: getShopDisplayBalance(item, selectedCompanyId || user?.companyId).balance > 0 ? Colors.danger : '#4F46E5' }]}>
+                    <Text style={[styles.shopPickerBalance, { color: getShopDisplayBalance(item, selectedCompanyId || user?.companyId).balance > 0 ? Colors.danger : '#2563EB' }]}>
                       {formatPKR(getShopDisplayBalance(item, selectedCompanyId || user?.companyId).balance)}
                     </Text>
                     {item.id === selectedShop?.id ? (
-                      <MaterialIcons name="check-circle" size={16} color="#4F46E5" />
+                      <MaterialIcons name="check-circle" size={16} color="#2563EB" />
                     ) : null}
                   </View>
                 </Pressable>
@@ -640,11 +640,11 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#DBEAFE',
   },
   shopSelectorText: { flex: 1, fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: Colors.text },
   shopSelectorPlaceholder: { color: Colors.textMuted, fontWeight: FontWeight.regular },
@@ -667,13 +667,13 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#4F46E5',
+    borderColor: '#2563EB',
   },
-  shopInitialsText: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: '#4F46E5' },
+  shopInitialsText: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: '#2563EB' },
   shopInfoName: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.text },
   shopInfoOwner: { fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: 1, marginBottom: 4 },
   shopInfoMeta: { flexDirection: 'row', alignItems: 'center', gap: 3, flexWrap: 'wrap' },
@@ -728,13 +728,13 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
   txnHeaderTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.text },
   txnCountBadge: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
     borderRadius: Radius.full,
     minWidth: 24,
     height: 24,
@@ -762,11 +762,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#C7D2FE',
+    borderColor: '#BFDBFE',
     marginBottom: Spacing.md,
   },
   emptyTitle: {
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
   loadingText: { fontSize: FontSize.base, color: Colors.textSecondary },
   retryBtn: {
     marginTop: Spacing.md,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
     borderRadius: 30,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
@@ -823,7 +823,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -851,22 +851,22 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.borderLight,
     borderRadius: Radius.sm,
   },
-  shopPickerItemActive: { backgroundColor: '#EEF2FF' },
+  shopPickerItemActive: { backgroundColor: '#DBEAFE' },
   shopPickerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: Spacing.md, gap: Spacing.sm },
   shopPickerAvatar: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#C7D2FE',
+    borderColor: '#BFDBFE',
   },
   shopPickerAvatarText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
-    color: '#4F46E5',
+    color: '#2563EB',
   },
   shopPickerName: { fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: Colors.text, marginBottom: 2 },
   shopPickerArea: { fontSize: FontSize.sm, color: Colors.textSecondary },

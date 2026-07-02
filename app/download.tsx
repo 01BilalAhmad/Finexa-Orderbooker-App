@@ -66,7 +66,7 @@ export default function DownloadScreen() {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={['#4F46E5', '#6366F1', '#818CF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.gradient}>
+      <LinearGradient colors={['#2563EB', '#3B82F6', '#60A5FA']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.gradient}>
         <View style={styles.content}>
           {/* Icon */}
           <View style={styles.iconCircle}>
@@ -98,7 +98,7 @@ export default function DownloadScreen() {
             onPress={handleDownload}
             disabled={isDownloading || yesterdaySyncPending}
           >
-            <LinearGradient colors={['#4F46E5', '#6366F1']} style={styles.btnGradient}>
+            <LinearGradient colors={['#2563EB', '#3B82F6']} style={styles.btnGradient}>
               {isDownloading ? (
                 <>
                   <ActivityIndicator size="small" color="#FFFFFF" />
@@ -123,7 +123,7 @@ export default function DownloadScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#4F46E5' },
+  root: { flex: 1, backgroundColor: '#2563EB' },
   gradient: { flex: 1 },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.xl },
   iconCircle: {

@@ -1,8 +1,8 @@
 // Finexa Recovery App — Modern Indigo Theme
 export const Colors = {
-  primary: '#4F46E5',
-  primaryLight: '#EEF2FF',
-  primaryDark: '#3730A3',
+  primary: '#2563EB',
+  primaryLight: '#DBEAFE',
+  primaryDark: '#1E40AF',
   secondary: '#F59E0B',
   secondaryLight: '#FEF3C7',
   danger: '#EF4444',
@@ -25,12 +25,12 @@ export const Colors = {
 
   tabBar: '#FFFFFF',
   tabBarBorder: '#E2E8F0',
-  tabActive: '#4F46E5',
+  tabActive: '#2563EB',
   tabInactive: '#94A3B8',
 
   // Extended palette
-  blue: '#6366F1',
-  blueLight: '#EEF2FF',
+  blue: '#3B82F6',
+  blueLight: '#DBEAFE',
   purple: '#7C3AED',
   purpleLight: '#F5F3FF',
   orange: '#EA580C',
@@ -72,6 +72,7 @@ export const FontWeight = {
   medium: '500' as const,
   semibold: '600' as const,
   bold: '700' as const,
+  extrabold: '800' as const,
 };
 
 export const Shadow = {

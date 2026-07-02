@@ -1050,7 +1050,7 @@ export default function TodayRouteScreen() {
             <View>
               {/* Hero Card - All Routes */}
               <LinearGradient
-                colors={['#4F46E5', '#6366F1', '#818CF8']}
+                colors={['#2563EB', '#3B82F6', '#60A5FA']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroCard}
@@ -1361,7 +1361,7 @@ export default function TodayRouteScreen() {
             <View>
               {/* Hero Card - Normal */}
               <LinearGradient
-                colors={['#4F46E5', '#6366F1', '#818CF8']}
+                colors={['#2563EB', '#3B82F6', '#60A5FA']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroCard}
@@ -1861,7 +1861,7 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: 'rgba(129,140,248,0.15)',
+    backgroundColor: 'rgba(96,165,250,0.15)',
     top: -50,
     right: -40,
   },
@@ -1870,7 +1870,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(129,140,248,0.10)',
+    backgroundColor: 'rgba(96,165,250,0.10)',
     bottom: -30,
     left: -20,
   },

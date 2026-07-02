@@ -436,7 +436,7 @@ export default function RouteSummaryScreen() {
     <SafeAreaView style={styles.root}>
       {/* Header (gradient) */}
       <LinearGradient
-        colors={['#4F46E5', '#4338CA', '#3730A3']}
+        colors={['#2563EB', '#1D4ED8', '#1E40AF']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.header, { paddingTop: insets.top + Spacing.md }]}
@@ -459,7 +459,7 @@ export default function RouteSummaryScreen() {
           </View>
           <View style={styles.totalStatRight}>
             <View style={styles.totalStatPill}>
-              <MaterialIcons name="store" size={12} color="#4338CA" />
+              <MaterialIcons name="store" size={12} color="#1D4ED8" />
               <Text style={styles.totalStatPillText}>{shops.length} Shops</Text>
             </View>
             {totalApproved > 0 ? (
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm, paddingVertical: 3,
   },
-  totalStatPillText: { fontSize: FontSize.xs, color: '#4338CA', fontWeight: FontWeight.bold },
+  totalStatPillText: { fontSize: FontSize.xs, color: '#1D4ED8', fontWeight: FontWeight.bold },
   pillApprovedBg: { backgroundColor: '#D1FAE5' },
   pillApprovedTextSmall: { fontSize: FontSize.xs, color: '#047857', fontWeight: FontWeight.bold },
 

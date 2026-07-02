@@ -46,9 +46,9 @@ export async function performSyncUpload(): Promise<SyncUploadResult> {
       try {
         const res = await RouteTrackingService.startRoute({
           orderbookerId: startInfo.orderbookerId,
-          startLat: startInfo.startLat,
-          startLng: startInfo.startLng,
-          startAddress: startInfo.startAddress,
+          startLat: startInfo.startLat ?? undefined,
+          startLng: startInfo.startLng ?? undefined,
+          startAddress: startInfo.startAddress ?? undefined,
         });
         serverSessionId = res.session.id;
         result.routeUploaded = true;
@@ -80,9 +80,20 @@ export async function performSyncUpload(): Promise<SyncUploadResult> {
             // Send in batches of 500 (API limit)
             for (let i = 0; i < locations.length; i += 500) {
               const batch = locations.slice(i, i + 500);
+              // Convert null fields to undefined to match API type
+              const apiBatch = batch.map((l) => ({
+                lat: l.lat,
+                lng: l.lng,
+                accuracy: l.accuracy ?? undefined,
+                speed: l.speed ?? undefined,
+                altitude: l.altitude ?? undefined,
+                batteryLevel: l.batteryLevel ?? undefined,
+                isOffline: l.isOffline,
+                recordedAt: l.recordedAt,
+              }));
               await RouteTrackingService.sendLocationsBatch({
                 sessionId: effectiveSessionId,
-                locations: batch,
+                locations: apiBatch,
               });
               result.locationsUploaded += batch.length;
             }
@@ -110,9 +121,9 @@ export async function performSyncUpload(): Promise<SyncUploadResult> {
         try {
           await RouteTrackingService.endRoute({
             sessionId,
-            endLat: endInfo.endLat,
-            endLng: endInfo.endLng,
-            endAddress: endInfo.endAddress,
+            endLat: endInfo.endLat ?? undefined,
+            endLng: endInfo.endLng ?? undefined,
+            endAddress: endInfo.endAddress ?? undefined,
           });
           await StorageService.clearRouteEndInfo();
           console.log('[SyncUpload] Route end synced');

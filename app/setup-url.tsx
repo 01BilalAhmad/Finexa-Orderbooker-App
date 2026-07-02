@@ -52,7 +52,7 @@ export default function SetupUrlScreen() {
   };
 
   return (
-    <LinearGradient colors={['#4F46E5', '#6366F1', '#818CF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.root}>
+    <LinearGradient colors={['#2563EB', '#3B82F6', '#60A5FA']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.root}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <View style={styles.logoArea}>
@@ -95,7 +95,7 @@ export default function SetupUrlScreen() {
               onPress={handleSave}
               disabled={isSaving || !url.trim()}
             >
-              <LinearGradient colors={['#4F46E5', '#6366F1']} style={styles.saveBtnGradient}>
+              <LinearGradient colors={['#2563EB', '#3B82F6']} style={styles.saveBtnGradient}>
                 {isSaving ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (

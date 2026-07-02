@@ -14,7 +14,7 @@
       "package": "com.finexa.smartcreditroutes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#1E40AF"
       },
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -35,7 +35,7 @@
           "image": "./assets/images/splash.png",
           "imageWidth": 280,
           "resizeMode": "contain",
-          "backgroundColor": "#4338CA"
+          "backgroundColor": "#1D4ED8"
         }
       ],
       [
@@ -74,7 +74,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "238e1d6b-5f9e-499d-b0df-92510db9f49c"
+        "projectId": "eac50628-557b-4969-b25c-15fbe7fee092"
       }
     },
     "owner": "bilalahmadobapk"

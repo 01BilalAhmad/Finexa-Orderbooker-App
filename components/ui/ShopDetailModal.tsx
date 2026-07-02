@@ -233,6 +233,49 @@ export const ShopDetailModal = memo(function ShopDetailModal({
     Linking.openURL(`https://wa.me/${formattedPhone}`);
   }
 
+  function handleCallPress() {
+    if (!shop) return;
+    if (!currentPhone) {
+      Alert.alert(
+        'No Phone Number',
+        "This shop doesn't have a phone number saved.",
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Add Phone Number',
+            onPress: () => {
+              setPhoneInput('');
+              setEditingPhone(true);
+            },
+          },
+        ]
+      );
+      return;
+    }
+    Linking.openURL(`tel:${currentPhone}`);
+  }
+
+  function handleNavigatePress() {
+    if (!shop) return;
+    if (shop.lat != null && shop.lng != null) {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${shop.lat},${shop.lng}`);
+    } else if (shop.address) {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.address)}`);
+    } else if (shop.area) {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.area)}`);
+    } else {
+      Alert.alert('No Location', 'This shop has no address or coordinates saved.');
+    }
+  }
+
+  function handleSharePress() {
+    if (!shop) return;
+    const shareText = `Shop: ${shop.name}\nOwner: ${currentOwnerName || '-'}\nPhone: ${currentPhone || '-'}\nAddress: ${shop.address || shop.area || '-'}\nOutstanding: ${formatPKR(getShopDisplayBalance(shop, companyId).balance)}`;
+    Linking.openURL(`mailto:?subject=Shop Info: ${shop.name}&body=${encodeURIComponent(shareText)}`).catch(() => {
+      Alert.alert('Shop Info', shareText);
+    });
+  }
+
   async function handleSavePhone() {
     if (!shop) return;
     const trimmed = phoneInput.trim();
@@ -273,116 +316,147 @@ export const ShopDetailModal = memo(function ShopDetailModal({
   const totalRecovery = chartData.recoveries.reduce((s, v) => s + v, 0);
   const totalCredit = chartData.credits.reduce((s, v) => s + v, 0);
 
+  // Last visit: most recent recovery txn, or "Today"/"N/A"
+  const lastRecoveryTxn = recentTxns.find((t) => t.type === 'recovery');
+  const lastVisitLabel = lastRecoveryTxn ? formatDateTime(lastRecoveryTxn.createdAt) : (hasRecoveryToday ? 'Today' : 'N/A');
+
+  // Per-company breakdown
+  const companyBalances = shop.companyBalances && shop.companyBalances.length > 0 ? shop.companyBalances : null;
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.container}>
-          {/* Handle */}
-          <View style={styles.handle} />
-
-          {/* Gradient Header */}
+          {/* Gradient Hero Header */}
           <LinearGradient
-            colors={['#4F46E5', '#6366F1', '#818CF8']}
+            colors={['#1E40AF', '#2563EB', '#3B82F6']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.header}
           >
             <View style={styles.headerBubble1} />
             <View style={styles.headerBubble2} />
-            <View style={styles.shopIconWrap}>
-              <Text style={styles.shopIcon}>{shop.name.charAt(0).toUpperCase()}</Text>
-            </View>
-            <View style={styles.headerInfo}>
-              <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
-              <Text style={styles.owner}>{currentOwnerName || shop.ownerName}</Text>
-            </View>
+
+            {/* Close button */}
             <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={12}>
-              <MaterialIcons name="close" size={22} color="rgba(255,255,255,0.8)" />
+              <MaterialIcons name="close" size={22} color="#FFFFFF" />
             </Pressable>
+
+            {/* Avatar + Name + Owner */}
+            <View style={styles.headerTopRow}>
+              <View style={styles.shopAvatarWrap}>
+                <Text style={styles.shopAvatarText}>{shop.name.charAt(0).toUpperCase()}</Text>
+              </View>
+              <View style={styles.headerInfo}>
+                {isOverLimit ? (
+                  <View style={styles.overLimitPill}>
+                    <MaterialIcons name="warning" size={10} color="#FFFFFF" />
+                    <Text style={styles.overLimitPillText}>OVER LIMIT</Text>
+                  </View>
+                ) : null}
+                <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
+                <Text style={styles.owner}>{currentOwnerName || shop.ownerName}</Text>
+              </View>
+            </View>
+
+            {/* Address with map pin */}
+            {(shop.address || shop.area) ? (
+              <View style={styles.addressRow}>
+                <MaterialIcons name="location-on" size={13} color="rgba(255,255,255,0.85)" />
+                <Text style={styles.addressText} numberOfLines={1}>{shop.address || shop.area}</Text>
+              </View>
+            ) : null}
+
+            {/* Quick action pill buttons */}
+            <View style={styles.actionPillRow}>
+              <Pressable
+                style={({ pressed }) => [styles.actionPill, pressed && styles.actionPillPressed]}
+                onPress={handleCallPress}
+              >
+                <MaterialIcons name="call" size={15} color="#FFFFFF" />
+                <Text style={styles.actionPillText}>Call</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.actionPill, pressed && styles.actionPillPressed]}
+                onPress={handleSmsPress}
+              >
+                <MaterialIcons name="sms" size={15} color="#FFFFFF" />
+                <Text style={styles.actionPillText}>SMS</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.actionPill, pressed && styles.actionPillPressed]}
+                onPress={handleWhatsappPress}
+              >
+                <MaterialIcons name="chat" size={15} color="#FFFFFF" />
+                <Text style={styles.actionPillText}>WhatsApp</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.actionPill, pressed && styles.actionPillPressed]}
+                onPress={handleSharePress}
+              >
+                <MaterialIcons name="share" size={15} color="#FFFFFF" />
+                <Text style={styles.actionPillText}>Share</Text>
+              </Pressable>
+            </View>
           </LinearGradient>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-            {/* Info chips */}
-            <View style={styles.chipRow}>
-              {shop.area ? (
-                <View style={styles.chip}>
-                  <MaterialIcons name="location-on" size={13} color={Colors.textSecondary} />
-                  <Text style={styles.chipText}>{shop.area}</Text>
+            {/* Phone chip / edit row */}
+            {currentPhone ? (
+              <View style={styles.phoneRow}>
+                <Pressable
+                  style={({ pressed }) => [styles.phoneChip, pressed && { opacity: 0.8 }]}
+                  onPress={() => Linking.openURL(`tel:${currentPhone}`)}
+                >
+                  <MaterialIcons name="call" size={13} color="#2563EB" />
+                  <Text style={styles.phoneChipText}>{currentPhone}</Text>
+                </Pressable>
+                <Pressable onPress={handleEditPhone} hitSlop={8} style={styles.phoneEditBtn}>
+                  <MaterialIcons name="edit" size={14} color="#2563EB" />
+                  <Text style={styles.phoneEditText}>Edit</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable
+                style={({ pressed }) => [styles.noPhoneChip, pressed && { opacity: 0.8 }]}
+                onPress={handleEditPhone}
+              >
+                <MaterialIcons name="phone-disabled" size={13} color="#D97706" />
+                <Text style={styles.noPhoneText}>No phone number — tap to add</Text>
+                <MaterialIcons name="add-circle-outline" size={13} color="#D97706" />
+              </Pressable>
+            )}
+
+            {/* Balance breakdown card */}
+            <View style={styles.balanceCard}>
+              <View style={styles.balanceCardHeader}>
+                <View style={styles.balanceCardTitleRow}>
+                  <View style={styles.balanceCardIconWrap}>
+                    <MaterialIcons name="account-balance-wallet" size={16} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.balanceCardTitle}>Balance Breakdown</Text>
                 </View>
-              ) : null}
-              {shop.routeDays && shop.routeDays.length > 0 ? (
-                <View style={[styles.chip, { backgroundColor: Colors.primaryLight }]}>
-                  <MaterialIcons name="calendar-today" size={13} color={Colors.primaryDark} />
-                  <Text style={[styles.chipText, { color: Colors.primaryDark }]}>
-                    {shop.routeDays.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(', ')}
+                <View style={[styles.balanceCardTotalPill, isOverLimit && { backgroundColor: '#FEE2E2' }]}>
+                  <Text style={[styles.balanceCardTotalLabel, isOverLimit && { color: Colors.danger }]}>Total</Text>
+                  <Text style={[styles.balanceCardTotalValue, { color: isOverLimit ? Colors.danger : Colors.primary }]}>
+                    {formatPKR(displayBalance)}
                   </Text>
                 </View>
+              </View>
+
+              {companyBalances ? (
+                <View style={styles.companyBreakdownList}>
+                  {companyBalances.map((cb, idx) => (
+                    <View key={cb.companyId || idx} style={styles.companyBreakdownRow}>
+                      <View style={styles.companyDot} />
+                      <Text style={styles.companyName} numberOfLines={1}>{cb.companyName || `Company ${idx + 1}`}</Text>
+                      <Text style={styles.companyBalance}>{formatPKR(cb.balance || 0)}</Text>
+                    </View>
+                  ))}
+                </View>
               ) : null}
-              {currentPhone ? (
-                <View style={styles.phoneChipRow}>
-                  <Pressable
-                    style={[styles.chip, { backgroundColor: '#EEF2FF' }]}
-                    onPress={() => Linking.openURL(`tel:${currentPhone}`)}
-                  >
-                    <MaterialIcons name="call" size={13} color="#4F46E5" />
-                    <Text style={[styles.chipText, { color: '#4F46E5' }]}>{currentPhone}</Text>
-                  </Pressable>
-                  <Pressable onPress={handleEditPhone} hitSlop={8} style={styles.phoneEditBtn}>
-                    <MaterialIcons name="edit" size={14} color="#4F46E5" />
-                  </Pressable>
-                </View>
-              ) : (
-                <Pressable
-                  style={[styles.chip, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B', borderWidth: 1 }]}
-                  onPress={handleEditPhone}
-                >
-                  <MaterialIcons name="phone-disabled" size={13} color="#D97706" />
-                  <Text style={[styles.chipText, { color: '#D97706' }]}>No phone</Text>
-                  <MaterialIcons name="add-circle-outline" size={12} color="#D97706" />
-                </Pressable>
-              )}
-              {/* SMS & WhatsApp action chips */}
-              <Pressable
-                style={[styles.chip, { backgroundColor: '#E0F2FE' }]}
-                onPress={handleSmsPress}
-              >
-                <MaterialIcons name="sms" size={13} color="#0284C7" />
-                <Text style={[styles.chipText, { color: '#0284C7' }]}>SMS</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.chip, { backgroundColor: '#DCFCE7' }]}
-                onPress={handleWhatsappPress}
-              >
-                <MaterialIcons name="chat" size={13} color="#16A34A" />
-                <Text style={[styles.chipText, { color: '#16A34A' }]}>WhatsApp</Text>
-              </Pressable>
-            </View>
 
-            {/* Balance + Credit cards */}
-            <View style={styles.balanceRow}>
-              <View style={styles.balanceCard}>
-                <View style={[styles.balanceIconWrap, { backgroundColor: Colors.dangerLight }]}>
-                  <MaterialIcons name="account-balance-wallet" size={20} color={Colors.danger} />
-                </View>
-                <Text style={styles.balanceLabel}>Outstanding</Text>
-                <Text style={[styles.balanceValue, { color: Colors.danger }]}>
-                  {formatPKR(displayBalance)}
-                </Text>
-              </View>
-              <View style={styles.balanceDivider} />
-              <View style={styles.balanceCard}>
-                <View style={[styles.balanceIconWrap, { backgroundColor: '#EEF2FF' }]}>
-                  <MaterialIcons name="credit-card" size={20} color="#4F46E5" />
-                </View>
-                <Text style={styles.balanceLabel}>Credit Limit</Text>
-                <Text style={[styles.balanceValue, { color: '#4F46E5' }]}>
-                  {formatPKR(displayCreditLimit)}
-                </Text>
-              </View>
-            </View>
-
-            {/* Credit utilisation */}
-            <View style={styles.utilisationCard}>
+              {/* Credit utilisation */}
               <View style={styles.utilisationHeader}>
                 <Text style={styles.utilisationLabel}>Credit Utilisation</Text>
                 <Text style={[styles.utilisationPct, { color: isOverLimit ? Colors.danger : utilisationPct > 80 ? Colors.secondary : Colors.primary }]}>
@@ -390,22 +464,86 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                 </Text>
               </View>
               <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${utilisationPct}%`,
-                      backgroundColor: isOverLimit ? Colors.danger : utilisationPct > 80 ? Colors.secondary : Colors.primary,
-                    },
-                  ]}
+                <LinearGradient
+                  colors={isOverLimit ? ['#EF4444', '#F87171'] : utilisationPct > 80 ? ['#F59E0B', '#FBBF24'] : ['#2563EB', '#3B82F6']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.progressFill, { width: `${utilisationPct}%` }]}
                 />
               </View>
-              {isOverLimit ? (
-                <View style={styles.overLimitRow}>
-                  <MaterialIcons name="warning" size={14} color={Colors.danger} />
-                  <Text style={styles.overLimitText}>Over Credit Limit by {formatPKR(displayBalance - displayCreditLimit)}</Text>
+              <Text style={styles.creditLimitText}>
+                Limit: {formatPKR(displayCreditLimit)}
+                {isOverLimit ? `  ·  Over by ${formatPKR(displayBalance - displayCreditLimit)}` : ''}
+              </Text>
+            </View>
+
+            {/* Stats row (3 mini cards) */}
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <View style={[styles.statIconWrap, { backgroundColor: Colors.secondaryLight }]}>
+                  <MaterialIcons name="trending-up" size={14} color={Colors.secondary} />
                 </View>
-              ) : null}
+                <Text style={styles.statLabel}>Total Credit</Text>
+                <Text style={[styles.statValue, { color: Colors.secondary }]} numberOfLines={1}>
+                  {formatPKR(totalCredit)}
+                </Text>
+              </View>
+              <View style={styles.statCard}>
+                <View style={[styles.statIconWrap, { backgroundColor: Colors.primaryLight }]}>
+                  <MaterialIcons name="trending-down" size={14} color={Colors.primary} />
+                </View>
+                <Text style={styles.statLabel}>Total Recovery</Text>
+                <Text style={[styles.statValue, { color: Colors.primary }]} numberOfLines={1}>
+                  {formatPKR(totalRecovery)}
+                </Text>
+              </View>
+              <View style={styles.statCard}>
+                <View style={[styles.statIconWrap, { backgroundColor: Colors.successLight }]}>
+                  <MaterialIcons name="history" size={14} color={Colors.success} />
+                </View>
+                <Text style={styles.statLabel}>Last Visit</Text>
+                <Text style={[styles.statValue, { color: Colors.text, fontSize: FontSize.xs }]} numberOfLines={2}>
+                  {lastVisitLabel}
+                </Text>
+              </View>
+            </View>
+
+            {/* Action buttons row (4 buttons) */}
+            <View style={styles.actionRow}>
+              <Pressable
+                style={({ pressed }) => [styles.actionBtn, styles.actionBtnPrimary, pressed && { opacity: 0.85 }]}
+                onPress={() => { onClose(); onCollect(); }}
+              >
+                <MaterialIcons name="payments" size={20} color="#FFFFFF" />
+                <Text style={styles.actionBtnTextPrimary}>Recovery</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
+                onPress={handleCallPress}
+              >
+                <View style={[styles.actionBtnIcon, { backgroundColor: Colors.successLight }]}>
+                  <MaterialIcons name="call" size={18} color={Colors.success} />
+                </View>
+                <Text style={styles.actionBtnText}>Call</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
+                onPress={handleNavigatePress}
+              >
+                <View style={[styles.actionBtnIcon, { backgroundColor: Colors.primaryLight }]}>
+                  <MaterialIcons name="directions" size={18} color={Colors.primary} />
+                </View>
+                <Text style={styles.actionBtnText}>Navigate</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
+                onPress={handleWhatsappPress}
+              >
+                <View style={[styles.actionBtnIcon, { backgroundColor: '#DCFCE7' }]}>
+                  <MaterialIcons name="chat" size={18} color="#16A34A" />
+                </View>
+                <Text style={styles.actionBtnText}>WhatsApp</Text>
+              </Pressable>
             </View>
 
             {/* 6-Month Performance Chart */}
@@ -413,29 +551,13 @@ export const ShopDetailModal = memo(function ShopDetailModal({
               <View style={styles.chartTitleRow}>
                 <View>
                   <Text style={styles.sectionTitle}>6-Month Performance</Text>
-                  <Text style={styles.chartSubtitle}>Credit vs Recovery trend</Text>
+                  <Text style={styles.chartSubtitle}>Recovery trend</Text>
                 </View>
                 <View style={styles.chartLegend}>
-                  <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: Colors.secondary }]} />
-                    <Text style={styles.legendText}>Credit</Text>
-                  </View>
                   <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
                     <Text style={styles.legendText}>Recovery</Text>
                   </View>
-                </View>
-              </View>
-
-              {/* Summary pills */}
-              <View style={styles.chartPills}>
-                <View style={[styles.chartPill, { backgroundColor: Colors.secondaryLight }]}>
-                  <Text style={styles.chartPillLabel}>Total Credit</Text>
-                  <Text style={[styles.chartPillValue, { color: Colors.secondary }]}>{formatPKR(totalCredit)}</Text>
-                </View>
-                <View style={[styles.chartPill, { backgroundColor: Colors.primaryLight }]}>
-                  <Text style={styles.chartPillLabel}>Total Recovery</Text>
-                  <Text style={[styles.chartPillValue, { color: Colors.primary }]}>{formatPKR(totalRecovery)}</Text>
                 </View>
               </View>
 
@@ -456,7 +578,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                     datasets: [
                       {
                         data: chartData.recoveries.map((v) => Math.max(v, 0)),
-                        color: (opacity = 1) => `rgba(79, 70, 229, ${opacity})`,
+                        color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
                       },
                     ],
                   }}
@@ -469,7 +591,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                     backgroundGradientFrom: Colors.surface,
                     backgroundGradientTo: Colors.surface,
                     decimalPlaces: 0,
-                    color: (opacity = 1) => `rgba(79, 70, 229, ${opacity})`,
+                    color: (opacity = 1) => `rgba(37, 99, 235, ${opacity})`,
                     labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
                     barPercentage: 0.7,
                     propsForBackgroundLines: {
@@ -484,8 +606,15 @@ export const ShopDetailModal = memo(function ShopDetailModal({
               )}
             </View>
 
-            {/* Recent transactions */}
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
+            {/* Recent transactions preview */}
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Recent Transactions</Text>
+              {recentTxns.length > 0 ? (
+                <View style={styles.countPill}>
+                  <Text style={styles.countPillText}>{recentTxns.length}</Text>
+                </View>
+              ) : null}
+            </View>
 
             {/* Notes Section */}
             <View style={styles.notesSection}>
@@ -591,7 +720,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                         onPress={() => onEditPendingRecovery(txn)}
                         hitSlop={6}
                       >
-                        <MaterialIcons name="edit" size={14} color="#4F46E5" />
+                        <MaterialIcons name="edit" size={14} color="#2563EB" />
                         <Text style={styles.txnEditBtnText}>Edit</Text>
                       </Pressable>
                     ) : null}
@@ -613,7 +742,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                   onPress={() => { onClose(); onCollect(); }}
                 >
                   <MaterialIcons name="payments" size={20} color={Colors.textInverse} />
-                  <Text style={styles.collectBtnText}>Collect</Text>
+                  <Text style={styles.collectBtnText}>Post Recovery</Text>
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [styles.resendBtn, pressed && styles.collectBtnPressed]}
@@ -629,7 +758,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                 onPress={() => { onClose(); onCollect(); }}
               >
                 <MaterialIcons name="payments" size={20} color={Colors.textInverse} />
-                <Text style={styles.collectBtnText}>Collect Recovery</Text>
+                <Text style={styles.collectBtnText}>Post Recovery</Text>
               </Pressable>
             )}
           </View>
@@ -644,7 +773,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
             <View style={styles.phoneEditCard}>
               <View style={styles.phoneEditHeader}>
                 <View style={styles.phoneEditIconWrap}>
-                  <MaterialIcons name="phone" size={22} color="#4F46E5" />
+                  <MaterialIcons name="phone" size={22} color="#2563EB" />
                 </View>
                 <Text style={styles.phoneEditTitle}>Edit Phone & Owner</Text>
                 <Text style={styles.phoneEditSubtitle}>{shop.name}</Text>
@@ -730,158 +859,289 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
-    paddingTop: Spacing.sm,
     maxHeight: '92%',
     ...Shadow.lg,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: Colors.border,
-    borderRadius: Radius.full,
-    alignSelf: 'center',
-    marginBottom: Spacing.sm,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
-    gap: Spacing.sm,
     overflow: 'hidden',
+  },
+  // Gradient header
+  header: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.md,
     position: 'relative',
+    overflow: 'hidden',
   },
   headerBubble1: {
     position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    top: -50,
-    right: -30,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    top: -60,
+    right: -40,
   },
   headerBubble2: {
     position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    bottom: -20,
-    left: -15,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    bottom: -30,
+    left: -20,
   },
-  shopIconWrap: {
-    width: 48,
-    height: 48,
+  closeBtn: {
+    position: 'absolute',
+    top: Spacing.sm,
+    right: Spacing.md,
+    width: 32,
+    height: 32,
     borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.3)',
+    zIndex: 10,
   },
-  shopIcon: {
-    fontSize: FontSize.xl,
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
+    paddingRight: 40,
+  },
+  shopAvatarWrap: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  shopAvatarText: {
+    fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
     color: '#FFFFFF',
   },
   headerInfo: {
     flex: 1,
   },
+  overLimitPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(239, 68, 68, 0.85)',
+    borderRadius: Radius.full,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
+    marginBottom: 3,
+  },
+  overLimitPillText: {
+    fontSize: 9,
+    color: '#FFFFFF',
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.4,
+  },
   shopName: {
-    fontSize: FontSize.lg,
+    fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
     color: '#FFFFFF',
   },
   owner: {
     fontSize: FontSize.sm,
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 1,
+    color: 'rgba(255,255,255,0.78)',
+    marginTop: 2,
   },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.sm,
+    paddingRight: 40,
+  },
+  addressText: {
+    fontSize: FontSize.xs,
+    color: 'rgba(255,255,255,0.85)',
+    flex: 1,
+  },
+  // Action pills
+  actionPillRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  actionPill: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: Radius.full,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
+  actionPillPressed: { opacity: 0.8, transform: [{ scale: 0.97 }] },
+  actionPillText: {
+    fontSize: FontSize.xs,
+    color: '#FFFFFF',
+    fontWeight: FontWeight.semibold,
+  },
+  // Scroll content
   scroll: {
     padding: Spacing.md,
     paddingBottom: Spacing.sm,
   },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.xs,
-    marginBottom: Spacing.md,
-  },
-  chip: {
+  // Phone chip row
+  phoneRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.background,
+    gap: 6,
+    marginBottom: Spacing.md,
+  },
+  phoneChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#DBEAFE',
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 5,
+    paddingVertical: 6,
   },
-  chipText: {
+  phoneChipText: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    fontWeight: FontWeight.medium,
+    color: '#2563EB',
+    fontWeight: FontWeight.semibold,
   },
-  balanceRow: {
+  phoneEditBtn: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 6,
+  },
+  phoneEditText: {
+    fontSize: FontSize.xs,
+    color: '#2563EB',
+    fontWeight: FontWeight.semibold,
+  },
+  noPhoneChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 8,
+    marginBottom: Spacing.md,
+    justifyContent: 'center',
+  },
+  noPhoneText: {
+    flex: 1,
+    fontSize: FontSize.xs,
+    color: '#D97706',
+    fontWeight: FontWeight.semibold,
+  },
+  // Balance breakdown card
+  balanceCard: {
     backgroundColor: Colors.background,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     ...Shadow.sm,
   },
-  balanceCard: {
-    flex: 1,
+  balanceCardHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
   },
-  balanceDivider: {
-    width: 1,
-    backgroundColor: Colors.border,
-    marginVertical: Spacing.xs,
+  balanceCardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  balanceIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  balanceCardIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
-  balanceLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
+  balanceCardTitle: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+  },
+  balanceCardTotalPill: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    alignItems: 'flex-end',
+  },
+  balanceCardTotalLabel: {
+    fontSize: 9,
+    color: Colors.primaryDark,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.4,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    fontWeight: FontWeight.medium,
   },
-  balanceValue: {
-    fontSize: FontSize.lg,
+  balanceCardTotalValue: {
+    fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
   },
-  utilisationCard: {
-    backgroundColor: Colors.background,
+  // Per-company breakdown
+  companyBreakdownList: {
+    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
-    padding: Spacing.md,
+    padding: Spacing.sm,
     marginBottom: Spacing.md,
-    ...Shadow.sm,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
+  companyBreakdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 5,
+  },
+  companyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.primary,
+  },
+  companyName: {
+    flex: 1,
+    fontSize: FontSize.xs,
+    color: Colors.text,
+    fontWeight: FontWeight.medium,
+  },
+  companyBalance: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+  },
+  // Utilisation
   utilisationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   utilisationLabel: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.xs,
     color: Colors.textSecondary,
     fontWeight: FontWeight.medium,
   },
@@ -890,26 +1150,91 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
   },
   progressTrack: {
-    height: 10,
+    height: 8,
     backgroundColor: Colors.border,
     borderRadius: Radius.full,
     overflow: 'hidden',
   },
   progressFill: {
-    height: 10,
+    height: 8,
     borderRadius: Radius.full,
   },
-  overLimitRow: {
+  creditLimitText: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    marginTop: 6,
+  },
+  // Stats row
+  statsRow: {
     flexDirection: 'row',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    padding: Spacing.sm,
+    alignItems: 'center',
+    gap: 3,
+    ...Shadow.sm,
+  },
+  statIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 9,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  statValue: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+    textAlign: 'center',
+  },
+  // Action buttons row
+  actionRow: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    marginBottom: Spacing.md,
+  },
+  actionBtn: {
+    flex: 1,
     alignItems: 'center',
     gap: 4,
-    marginTop: Spacing.xs,
+    paddingVertical: Spacing.sm,
   },
-  overLimitText: {
+  actionBtnPrimary: {
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.md,
+    paddingVertical: 14,
+    ...Shadow.sm,
+  },
+  actionBtnIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBtnText: {
     fontSize: FontSize.xs,
-    color: Colors.danger,
+    color: Colors.textSecondary,
     fontWeight: FontWeight.semibold,
   },
+  actionBtnTextPrimary: {
+    fontSize: FontSize.xs,
+    color: '#FFFFFF',
+    fontWeight: FontWeight.bold,
+  },
+  // Chart
   chartCard: {
     backgroundColor: Colors.background,
     borderRadius: Radius.lg,
@@ -921,6 +1246,12 @@ const styles = StyleSheet.create({
   chartTitleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: Spacing.sm,
   },
@@ -953,26 +1284,17 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     color: Colors.textSecondary,
   },
-  chartPills: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  chartPill: {
-    flex: 1,
-    borderRadius: Radius.sm,
-    padding: Spacing.sm,
+  countPill: {
+    backgroundColor: Colors.primaryLight,
+    borderRadius: Radius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    minWidth: 22,
     alignItems: 'center',
   },
-  chartPillLabel: {
+  countPillText: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 2,
-  },
-  chartPillValue: {
-    fontSize: FontSize.sm,
+    color: Colors.primaryDark,
     fontWeight: FontWeight.bold,
   },
   chartLoading: {
@@ -1052,7 +1374,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     borderRadius: Radius.sm,
     paddingHorizontal: 6,
     paddingVertical: 3,
@@ -1060,7 +1382,7 @@ const styles = StyleSheet.create({
   },
   txnEditBtnText: {
     fontSize: FontSize.xs,
-    color: '#4F46E5',
+    color: '#2563EB',
     fontWeight: FontWeight.semibold,
   },
   emptyTxnWrap: {
@@ -1084,7 +1406,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
     borderRadius: 30,
     paddingVertical: 16,
     ...Shadow.md,
@@ -1101,7 +1423,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.sm,
     backgroundColor: '#25D366',
-    borderRadius: Radius.md,
+    borderRadius: 30,
     paddingVertical: 16,
   },
   collectBtnText: {
@@ -1187,20 +1509,6 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: '#FFFFFF',
   },
-  // Phone chip row & edit
-  phoneChipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  phoneEditBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#EEF2FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   // Phone Edit Modal styles
   phoneEditBackdrop: {
     flex: 1,
@@ -1225,7 +1533,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
@@ -1285,7 +1593,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 14,
     borderRadius: Radius.md,
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
   },
   phoneEditSaveBtnDisabled: {
     opacity: 0.5,

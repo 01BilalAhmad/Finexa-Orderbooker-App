@@ -267,7 +267,7 @@ export default function MapScreen() {
     const shopMarkers = shopsWithCoords.map((shop) => ({
       id: shop.id,
       name: shop.name,
-      area: shop.area || '',
+      area: shop.address || shop.area || '',
       lat: shop.lat,
       lng: shop.lng,
       isVisited: visitedShopIds.has(shop.id),
@@ -352,7 +352,7 @@ export default function MapScreen() {
     .shop-popup { font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
     .shop-popup h3 { margin: 0 0 4px 0; font-size: 13px; font-weight: 700; color: #1e1b4b; }
     .shop-popup p { margin: 0; font-size: 11px; color: #6b7280; }
-    .shop-popup .balance { color: #4f46e5; font-weight: 600; }
+    .shop-popup .balance { color: #2563EB; font-weight: 600; }
     .shop-popup .status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-top: 4px; }
     .shop-popup .visited { background: #d1fae5; color: #065f46; }
     .shop-popup .not-visited { background: #f3f4f6; color: #6b7280; }
@@ -448,7 +448,7 @@ export default function MapScreen() {
       });
 
       shops.forEach(function(shop) {
-        var color = shop.isVisited ? '#10B981' : '#6366F1';
+        var color = shop.isVisited ? '#10B981' : '#3B82F6';
         var statusClass = shop.isVisited ? 'visited' : 'not-visited';
         var statusText = shop.isVisited ? 'Visited' : 'Not Visited';
 
@@ -493,8 +493,8 @@ export default function MapScreen() {
           // Add proximity circle
           var circle = L.circle([shop.lat, shop.lng], {
             radius: proximityRadius || 30,
-            color: shop.isVisited ? '#10B981' : '#6366F1',
-            fillColor: shop.isVisited ? '#10B981' : '#6366F1',
+            color: shop.isVisited ? '#10B981' : '#3B82F6',
+            fillColor: shop.isVisited ? '#10B981' : '#3B82F6',
             fillOpacity: 0.08,
             weight: 1,
             opacity: 0.5,
@@ -524,7 +524,7 @@ export default function MapScreen() {
         });
         if (coords.length > 1) {
           routeLine = L.polyline(coords, {
-            color: '#4F46E5',
+            color: '#2563EB',
             weight: 4,
             opacity: 0.8,
             smoothFactor: 1
@@ -718,9 +718,9 @@ export default function MapScreen() {
             <Text style={[styles.statText, { color: '#065F46' }]}>{visitedCount} visited</Text>
           </View>
           {routePoints.length > 0 && (
-            <View style={[styles.statChip, { backgroundColor: '#EEF2FF' }]}>
-              <MaterialIcons name="route" size={14} color="#4F46E5" />
-              <Text style={[styles.statText, { color: '#3730A3' }]}>{routePoints.length} pts</Text>
+            <View style={[styles.statChip, { backgroundColor: '#DBEAFE' }]}>
+              <MaterialIcons name="route" size={14} color="#2563EB" />
+              <Text style={[styles.statText, { color: '#1E40AF' }]}>{routePoints.length} pts</Text>
             </View>
           )}
         </View>
@@ -733,7 +733,7 @@ export default function MapScreen() {
             <MaterialIcons name="close" size={18} color={Colors.textSecondary} />
           </Pressable>
           <View style={styles.shopCardHeader}>
-            <View style={[styles.shopPin, { backgroundColor: visitedShopIds.has(selectedShop.id) ? '#10B981' : '#6366F1' }]}>
+            <View style={[styles.shopPin, { backgroundColor: visitedShopIds.has(selectedShop.id) ? '#10B981' : '#3B82F6' }]}>
               <MaterialIcons name="store" size={16} color="#FFFFFF" />
             </View>
             <View style={styles.shopCardInfo}>
@@ -843,7 +843,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderLight,
   },
   headerBtnActive: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     borderColor: Colors.primary,
   },
   routeStatusBar: {

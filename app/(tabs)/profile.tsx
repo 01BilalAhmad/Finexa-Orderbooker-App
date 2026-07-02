@@ -37,7 +37,7 @@ function InfoRow({ icon, label, value, valueColor }: { icon: string; label: stri
   return (
     <View style={infoRowStyles.row}>
       <View style={infoRowStyles.iconWrap}>
-        <MaterialIcons name={icon as any} size={18} color="#4F46E5" />
+        <MaterialIcons name={icon as any} size={18} color="#2563EB" />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={infoRowStyles.label}>{label}</Text>
@@ -57,11 +57,11 @@ const infoRowStyles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#DBEAFE',
   },
   label: {
     fontSize: FontSize.xs,
@@ -343,9 +343,9 @@ export default function ProfileScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* ── Hero profile card — 3-color gradient ── */}
+        {/* ── Hero profile card — blue gradient ── */}
         <LinearGradient
-          colors={['#4F46E5', '#6366F1', '#818CF8']}
+          colors={['#1E40AF', '#2563EB', '#3B82F6']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.profileHero}
@@ -355,21 +355,38 @@ export default function ProfileScreen() {
           <View style={styles.bubble2} />
           <View style={styles.bubble3} />
 
-          {/* Rounded Square Avatar */}
+          {/* Circle Avatar */}
           <View style={styles.avatarWrap}>
-            <View style={styles.avatarSquare}>
+            <View style={styles.avatarCircle}>
               <Text style={styles.avatarText}>{initials}</Text>
             </View>
             <View style={styles.activeIndicator} />
           </View>
           <Text style={styles.profileName}>{user.name}</Text>
+
+          {/* Role badge */}
           <View style={styles.roleBadge}>
-            <MaterialIcons name="badge" size={12} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.roleText}>ORDER BOOKER</Text>
+            <MaterialIcons name="badge" size={12} color="rgba(255,255,255,0.95)" />
+            <Text style={styles.roleText}>ORDERBOOKER</Text>
           </View>
+
+          {/* Phone + Status row */}
+          <View style={styles.heroMetaRow}>
+            {user.phone ? (
+              <View style={styles.heroPhone}>
+                <MaterialIcons name="call" size={13} color="rgba(255,255,255,0.95)" />
+                <Text style={styles.heroPhoneText}>{user.phone}</Text>
+              </View>
+            ) : null}
+            <View style={styles.heroStatusBadge}>
+              <View style={styles.statusDot} />
+              <Text style={styles.statusText}>Active</Text>
+            </View>
+          </View>
+
           {companies.length > 1 && selectedCompanyId ? (
             <View style={styles.companyBadge}>
-              <MaterialIcons name="business" size={11} color="rgba(255,255,255,0.8)" />
+              <MaterialIcons name="business" size={11} color="rgba(255,255,255,0.85)" />
               <Text style={styles.companyBadgeText}>
                 {companies.find((c) => c.companyId === selectedCompanyId)?.companyName || user.companyName || ''}
               </Text>
@@ -381,7 +398,7 @@ export default function ProfileScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderIcon}>
-              <MaterialIcons name="person-outline" size={16} color="#4F46E5" />
+              <MaterialIcons name="person-outline" size={16} color="#2563EB" />
             </View>
             <Text style={styles.cardTitle}>Account Details</Text>
           </View>
@@ -390,7 +407,7 @@ export default function ProfileScreen() {
           {/* Phone with edit */}
           <View style={infoRowStyles.row}>
             <View style={infoRowStyles.iconWrap}>
-              <MaterialIcons name="call" size={18} color="#4F46E5" />
+              <MaterialIcons name="call" size={18} color="#2563EB" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={infoRowStyles.label}>Phone Number</Text>
@@ -500,7 +517,7 @@ export default function ProfileScreen() {
         {/* ── Performance KPIs ── */}
         <View style={styles.sectionHeader}>
           <View style={styles.sectionHeaderIcon}>
-            <MaterialIcons name="analytics" size={16} color="#4F46E5" />
+            <MaterialIcons name="analytics" size={16} color="#2563EB" />
           </View>
           <Text style={styles.sectionTitle}>Performance Overview</Text>
         </View>
@@ -549,7 +566,7 @@ export default function ProfileScreen() {
         >
           <View style={styles.analysisToggleLeft}>
             <View style={styles.analysisToggleIcon}>
-              <MaterialIcons name="analytics" size={20} color="#4F46E5" />
+              <MaterialIcons name="analytics" size={20} color="#2563EB" />
             </View>
             <View>
               <Text style={styles.analysisToggleTitle}>Recovery Analysis</Text>
@@ -560,7 +577,7 @@ export default function ProfileScreen() {
             <MaterialIcons
               name={showAnalysis ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
               size={22}
-              color={showAnalysis ? '#4F46E5' : Colors.textSecondary}
+              color={showAnalysis ? '#2563EB' : Colors.textSecondary}
             />
           </View>
         </Pressable>
@@ -573,7 +590,7 @@ export default function ProfileScreen() {
         {/* ── Route Tracking Section ── */}
         <View style={styles.sectionHeader}>
           <View style={styles.sectionHeaderIcon}>
-            <MaterialIcons name="navigation" size={16} color="#4F46E5" />
+            <MaterialIcons name="navigation" size={16} color="#2563EB" />
           </View>
           <Text style={styles.sectionTitle}>Route Tracking</Text>
         </View>
@@ -682,15 +699,15 @@ export default function ProfileScreen() {
         {/* ── Actions Section ── */}
         <View style={styles.sectionHeader}>
           <View style={styles.sectionHeaderIcon}>
-            <MaterialIcons name="settings" size={16} color="#4F46E5" />
+            <MaterialIcons name="settings" size={16} color="#2563EB" />
           </View>
           <Text style={styles.sectionTitle}>Settings</Text>
         </View>
 
         <ActionRow
           icon="pin"
-          iconColor="#4F46E5"
-          iconBg="#EEF2FF"
+          iconColor="#2563EB"
+          iconBg="#DBEAFE"
           title="Change PIN"
           subtitle="Update your 4-digit security PIN"
           onPress={handleChangePin}
@@ -761,27 +778,20 @@ export default function ProfileScreen() {
           }}
         />
 
-        {/* Gradient Logout Button */}
+        {/* Red Outline Logout Button */}
         <Pressable
-          style={({ pressed }) => [styles.logoutBtnWrap, pressed && { opacity: 0.85, transform: [{ scale: 0.995 }] }]}
+          style={({ pressed }) => [styles.logoutBtnOutline, pressed && { opacity: 0.85, transform: [{ scale: 0.995 }] }]}
           onPress={handleLogout}
           disabled={loggingOut}
         >
-          <LinearGradient
-            colors={['#EF4444', '#F87171']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.logoutBtnGradient}
-          >
-            {loggingOut ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <MaterialIcons name="logout" size={20} color={Colors.textInverse} />
-                <Text style={styles.logoutBtnText}>Logout</Text>
-              </>
-            )}
-          </LinearGradient>
+          {loggingOut ? (
+            <ActivityIndicator size="small" color="#EF4444" />
+          ) : (
+            <>
+              <MaterialIcons name="logout" size={20} color="#EF4444" />
+              <Text style={styles.logoutBtnOutlineText}>Logout</Text>
+            </>
+          )}
         </Pressable>
 
         <View style={{ height: Spacing.xxl }} />
@@ -809,7 +819,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: 'rgba(129,140,248,0.15)',
+    backgroundColor: 'rgba(96,165,250,0.15)',
     top: -90,
     right: -70,
   },
@@ -818,7 +828,7 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: 'rgba(129,140,248,0.10)',
+    backgroundColor: 'rgba(96,165,250,0.10)',
     bottom: -50,
     left: -40,
   },
@@ -832,33 +842,34 @@ const styles = StyleSheet.create({
     left: 30,
   },
   avatarWrap: { position: 'relative', marginBottom: Spacing.md },
-  avatarSquare: {
-    width: 92,
-    height: 92,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  avatarCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.35)',
+    borderColor: 'rgba(255,255,255,0.4)',
   },
-  avatarText: { fontSize: FontSize.xxl + 2, fontWeight: FontWeight.bold, color: '#FFFFFF' },
+  avatarText: { fontSize: FontSize.xxxl, fontWeight: FontWeight.bold, color: '#FFFFFF' },
   activeIndicator: {
     position: 'absolute',
     bottom: 4,
     right: 4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#A7F3D0',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#22C55E',
     borderWidth: 3,
-    borderColor: '#4F46E5',
+    borderColor: '#2563EB',
   },
   profileName: {
-    fontSize: FontSize.xl + 2,
+    fontSize: FontSize.xxxl,
     fontWeight: FontWeight.bold,
     color: '#FFFFFF',
     marginBottom: Spacing.sm,
+    letterSpacing: 0.3,
   },
   roleBadge: {
     flexDirection: 'row',
@@ -871,7 +882,52 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.25)',
   },
-  roleText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: '#FFFFFF', letterSpacing: 1 },
+  roleText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: '#FFFFFF', letterSpacing: 1.2 },
+  heroMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  heroPhone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  heroPhoneText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+    color: '#FFFFFF',
+  },
+  heroStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#22C55E',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: 4,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#FFFFFF',
+  },
+  statusText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    color: '#FFFFFF',
+    letterSpacing: 0.4,
+  },
   companyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -909,7 +965,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -935,7 +991,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -972,11 +1028,11 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: '#DBEAFE',
   },
   analysisToggleTitle: { fontSize: FontSize.base, fontWeight: FontWeight.bold, color: Colors.text },
   analysisToggleSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 1 },
@@ -989,23 +1045,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleIconWrapActive: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
   },
 
-  // ── Logout Button ──
-  logoutBtnWrap: {
+  // ── Logout Button (Red Outline) ──
+  logoutBtnOutline: {
     marginHorizontal: Spacing.md,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
     borderRadius: 16,
-    overflow: 'hidden',
-    ...Shadow.md,
-  },
-  logoutBtnGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
     paddingVertical: 15,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#EF4444',
+    ...Shadow.sm,
   },
-  logoutBtnText: { fontSize: FontSize.base, fontWeight: FontWeight.bold, color: Colors.textInverse },
+  logoutBtnOutlineText: { fontSize: FontSize.base, fontWeight: FontWeight.bold, color: '#EF4444' },
 });

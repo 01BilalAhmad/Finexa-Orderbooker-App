@@ -1,9 +1,8 @@
 // Powered by Finexa
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, FontSize, FontWeight } from '@/constants/theme';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -12,7 +11,12 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.tabBarContainer, { paddingBottom: Platform.select({ ios: Math.max(insets.bottom - 8, 4), android: 8, default: 8 }) }]}>
+    <View
+      style={[
+        styles.tabBarContainer,
+        { paddingBottom: Platform.select({ ios: Math.max(insets.bottom, 8), android: 8, default: 8 }) },
+      ]}
+    >
       {state.routes.map((route, index) => {
         const isFocused = state.index === index;
         const { options } = descriptors[route.key];
@@ -53,24 +57,21 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             style={styles.tabItem}
             onPress={onPress}
             onLongPress={onLongPress}
-            android_ripple={{ color: 'rgba(79,70,229,0.08)', borderless: true, radius: 40 }}
+            android_ripple={{ color: 'rgba(37,99,235,0.08)', borderless: true, radius: 40 }}
           >
-            {isFocused ? (
-              <LinearGradient
-                colors={['#4F46E5', '#6366F1']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.tabGradient}
-              >
-                <MaterialIcons name={getIconName(route.name)} size={20} color="#FFFFFF" />
-                <Text style={styles.tabLabelActive}>{label as string}</Text>
-              </LinearGradient>
-            ) : (
-              <View style={styles.tabInactive}>
-                <MaterialIcons name={getIconName(route.name)} size={20} color="#94A3B8" />
-                <Text style={styles.tabLabelInactive}>{label as string}</Text>
-              </View>
-            )}
+            {/* Active indicator dot above the icon */}
+            <View style={styles.dotWrap}>
+              {isFocused ? <View style={styles.activeDot} /> : <View style={styles.dotPlaceholder} />}
+            </View>
+
+            <MaterialIcons
+              name={getIconName(route.name)}
+              size={22}
+              color={isFocused ? Colors.primary : Colors.textMuted}
+            />
+            <Text style={[styles.tabLabel, isFocused ? styles.tabLabelActive : styles.tabLabelInactive]}>
+              {label as string}
+            </Text>
           </Pressable>
         );
       })}
@@ -116,53 +117,51 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBarContainer: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    right: 16,
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 30,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    shadowColor: '#1E293B',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 32,
-    elevation: 12,
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    height: 60,
+    shadowColor: Colors.text,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 6,
   },
-  tabGradient: {
-    flexDirection: 'row',
+  dotWrap: {
+    height: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    marginBottom: 2,
   },
-  tabInactive: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 20,
+  activeDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: Colors.primary,
+  },
+  dotPlaceholder: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'transparent',
+  },
+  tabLabel: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    marginTop: 2,
+    letterSpacing: 0.3,
   },
   tabLabelActive: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
+    color: Colors.primary,
   },
   tabLabelInactive: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#94A3B8',
-    letterSpacing: 0.3,
+    color: Colors.textMuted,
   },
 });

@@ -89,7 +89,7 @@ function generateHtml(data: SummaryData, orderbookerName: string): string {
               ${shop.shopArea ? `<span style="font-size:11px;color:#6B7280;margin-left:8px;">${shop.shopArea}</span>` : ''}
             </div>
             <div style="text-align:right;">
-              <div style="font-size:16px;font-weight:700;color:#4F46E5;">Rs. ${shop.totalRecovery.toLocaleString('en-PK')}</div>
+              <div style="font-size:16px;font-weight:700;color:#2563EB;">Rs. ${shop.totalRecovery.toLocaleString('en-PK')}</div>
               <div style="font-size:10px;color:#6B7280;">Remaining: Rs. ${shop.shopBalance.toLocaleString('en-PK')}</div>
             </div>
           </div>
@@ -134,7 +134,7 @@ function generateHtml(data: SummaryData, orderbookerName: string): string {
     <body>
       <!-- Header -->
       <div style="text-align:center;margin-bottom:24px;">
-        <div style="display:inline-block;background:linear-gradient(135deg,#4F46E5,#6366F1);color:white;padding:12px 32px;border-radius:12px;font-size:20px;font-weight:700;margin-bottom:8px;">
+        <div style="display:inline-block;background:linear-gradient(135deg,#2563EB,#3B82F6);color:white;padding:12px 32px;border-radius:12px;font-size:20px;font-weight:700;margin-bottom:8px;">
           Route Summary
         </div>
         <div style="font-size:14px;color:#6B7280;">${getTodayLabel()}</div>
@@ -143,9 +143,9 @@ function generateHtml(data: SummaryData, orderbookerName: string): string {
 
       <!-- Summary Cards -->
       <div style="display:flex;gap:12px;margin-bottom:24px;">
-        <div style="flex:1;background:#EEF2FF;border-radius:10px;padding:16px;text-align:center;">
+        <div style="flex:1;background:#DBEAFE;border-radius:10px;padding:16px;text-align:center;">
           <div style="font-size:11px;color:#6B7280;margin-bottom:4px;">Total Recovery</div>
-          <div style="font-size:20px;font-weight:700;color:#4F46E5;">Rs. ${totalRecovery.toLocaleString('en-PK')}</div>
+          <div style="font-size:20px;font-weight:700;color:#2563EB;">Rs. ${totalRecovery.toLocaleString('en-PK')}</div>
         </div>
         <div style="flex:1;background:#FEF3C7;border-radius:10px;padding:16px;text-align:center;">
           <div style="font-size:11px;color:#92400E;margin-bottom:4px;">Pending</div>

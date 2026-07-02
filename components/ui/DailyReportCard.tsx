@@ -42,6 +42,9 @@ interface DailyReportProps {
   selectedCompanyName?: string;
 }
 
+// Color palette for company-wise breakdown dots
+const COMPANY_DOT_COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#8B5CF6', '#EC4899'];
+
 export function DailyReportCard({
   visible,
   onClose,
@@ -147,6 +150,25 @@ export function DailyReportCard({
     }
   };
 
+  /**
+   * Share report as text message via WhatsApp
+   */
+  const handleShareAsText = async () => {
+    try {
+      const msg = encodeURIComponent(buildTextMessage());
+      const url = `https://wa.me/?text=${msg}`;
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('WhatsApp Not Available', 'Please install WhatsApp to share.');
+      }
+    } catch (error: any) {
+      console.error('[DailyReport] Text share failed:', error);
+      Alert.alert('Share Failed', 'Could not open WhatsApp. Please try again.');
+    }
+  };
+
   if (!visible) return null;
 
   return (
@@ -166,223 +188,159 @@ export function DailyReportCard({
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.container}>
-            {/* Close button */}
-            <Pressable style={styles.closeTop} onPress={onClose} hitSlop={12}>
-              <View style={styles.closeTopBtn}>
-                <MaterialIcons name="close" size={20} color="rgba(255,255,255,0.9)" />
+            {/* ════════════════════════════════════════════ */}
+            {/* MODAL HEADER (not captured)                    */}
+            {/* ════════════════════════════════════════════ */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderTitle}>
+                <MaterialIcons name="description" size={18} color="#2563EB" />
+                <Text style={styles.modalHeaderTitleText}>Daily Recovery Report</Text>
               </View>
-            </Pressable>
+              <Pressable style={styles.modalHeaderClose} onPress={onClose} hitSlop={12}>
+                <MaterialIcons name="close" size={18} color="#475569" />
+              </Pressable>
+            </View>
 
-            {/* ============================================= */}
-            {/* REPORT CARD — solid bg so captureRef works   */}
-            {/* ============================================= */}
+            {/* ════════════════════════════════════════════ */}
+            {/* SHAREABLE CARD — captured as image (cardRef)  */}
+            {/* ════════════════════════════════════════════ */}
             <View ref={cardRef} collapsable={false} style={styles.card}>
-              {/* Gradient overlay — pure View, not LinearGradient */}
-              <View style={styles.gradientOverlayTop} />
-              <View style={styles.gradientOverlayBottom} />
-
-              {/* Brand Header */}
-              <View style={styles.brandRow}>
-                <View style={styles.brandIcon}>
-                  <MaterialIcons name="account-balance" size={28} color="#FFFFFF" />
-                </View>
-                <View style={styles.brandTextWrap}>
+              {/* ── Blue Gradient Header ── */}
+              <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderOverlay} />
+                <View style={styles.brandRow}>
+                  <View style={styles.brandLogo}>
+                    <Text style={styles.brandLogoText}>F</Text>
+                  </View>
                   <Text style={styles.brandName}>Finexa Recovery App</Text>
-                  <Text style={styles.brandSub}>Daily Recovery Report</Text>
                 </View>
+                <Text style={styles.cardDate}>{todayLabel}</Text>
+                <Text style={styles.cardName}>{orderbookerName}</Text>
               </View>
 
-              {/* Separator */}
-              <View style={styles.separator}>
-                <View style={styles.sepLine} />
-                <View style={styles.sepDiamond} />
-                <View style={styles.sepLine} />
-              </View>
-
-              {/* Date & Name */}
-              <View style={styles.infoSection}>
-                <View style={styles.infoRow}>
-                  <MaterialIcons name="calendar-today" size={18} color="rgba(255,255,255,0.7)" />
-                  <Text style={styles.infoText}>{todayLabel}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <MaterialIcons name="person-outline" size={18} color="rgba(255,255,255,0.7)" />
-                  <Text style={styles.infoText}>{orderbookerName}</Text>
-                </View>
-              </View>
-
-              {/* Big Divider */}
-              <View style={styles.bigDivider} />
-
-              {/* ── RECOVERY PROGRESS BAR with Amount ── */}
-              <View style={styles.progressSection}>
-                <View style={styles.progressHeader}>
-                  <View style={styles.progressHeaderLeft}>
-                    <View style={styles.progressIconWrap}>
-                      <MaterialIcons name="trending-up" size={18} color="#A7F3D0" />
-                    </View>
-                    <View>
-                      <Text style={styles.progressLabel}>RECOVERY PROGRESS</Text>
-                    </View>
+              {/* ── White Body ── */}
+              <View style={styles.cardBody}>
+                {/* ── Block 1: Visit Progress ── */}
+                <View style={styles.block}>
+                  <Text style={styles.blockLab}>SHOPS VISITED</Text>
+                  <View style={styles.blockBigRow}>
+                    <Text style={styles.blockBigVal}>{shopsVisited}</Text>
+                    <Text style={styles.blockBigSub}>/{totalShops}</Text>
+                    <Text style={styles.blockPct}>({visitPct}%)</Text>
                   </View>
-                  <View style={styles.progressPctBadge}>
-                    <Text style={styles.progressPctText}>{recoveryPct}%</Text>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${Math.min(visitPct, 100)}%` }]} />
                   </View>
                 </View>
-                {/* Progress bar track */}
-                <View style={styles.progressBarTrack}>
-                  <View style={[styles.progressBarFill, { width: `${recoveryPct}%` }]} />
-                </View>
-                <View style={styles.progressAmounts}>
-                  <Text style={styles.progressRecovered}>
-                    Recovered: <Text style={styles.progressRecoveredVal}>{formatPKR(totalRecovery)}</Text>
+
+                {/* ── Block 2: Recovery Summary ── */}
+                <View style={styles.block}>
+                  <Text style={styles.blockLab}>TODAY&apos;S RECOVERY</Text>
+                  <Text style={styles.recoveryBig}>{formatPKR(totalRecovery)}</Text>
+                  <Text style={styles.recoverySub}>
+                    of {formatPKR(totalOutstanding)} outstanding ({recoveryPct}%)
                   </Text>
-                  <Text style={styles.progressOutstanding}>
-                    Outstanding: <Text style={styles.progressOutstandingVal}>{formatPKR(totalOutstanding)}</Text>
-                  </Text>
-                </View>
-              </View>
-
-              {/* Main Stat - Visit Progress */}
-              <View style={styles.mainStatCard}>
-                <View style={styles.mainStatLeft}>
-                  <Text style={styles.mainStatValue}>{shopsVisited}/{totalShops}</Text>
-                  <Text style={styles.mainStatLabel}>SHOPS VISITED</Text>
-                </View>
-                <View style={styles.mainStatRight}>
-                  <View style={styles.progressCircle}>
-                    <Text style={styles.progressCircleText}>{visitPct}%</Text>
+                  <View style={styles.progressTrackSm}>
+                    <View style={[styles.progressFillSm, { width: `${recoveryPct}%` }]} />
                   </View>
                 </View>
-              </View>
 
-              {/* Recovery Amount — Highlight */}
-              <View style={styles.recoveryHighlight}>
-                <View style={styles.recoveryIconWrap}>
-                  <MaterialIcons name="payments" size={28} color="#FDE68A" />
-                </View>
-                <View style={styles.recoveryTextWrap}>
-                  <Text style={styles.recoveryLabel}>TOTAL RECOVERY</Text>
-                  <Text style={styles.recoveryAmount}>{formatPKR(totalRecovery)}</Text>
-                </View>
-              </View>
-
-              {/* ── Company-wise Recovery Breakdown with Progress Bars ── */}
-              {companyBreakdown.length > 0 ? (
-                <View style={styles.breakdownSection}>
-                  <View style={styles.breakdownHeader}>
-                    <MaterialIcons name="business" size={16} color="rgba(255,255,255,0.7)" />
-                    <Text style={styles.breakdownTitle}>Company-wise Recovery</Text>
-                  </View>
-                  {companyBreakdown.map((cb, idx) => {
-                    const pct = totalRecovery > 0 ? Math.round((cb.totalRecovery / totalRecovery) * 100) : 0;
-                    const barWidth = totalRecovery > 0 ? Math.round((cb.totalRecovery / totalRecovery) * 100) : 0;
-                    return (
-                      <View key={cb.companyId} style={[styles.breakdownCard, idx === companyBreakdown.length - 1 && styles.breakdownCardLast]}>
-                        {/* Company name row */}
-                        <View style={styles.breakdownCardTop}>
-                          <View style={styles.breakdownLeft}>
-                            <View style={[styles.breakdownDot, { backgroundColor: idx === 0 ? '#93C5FD' : '#A7F3D0' }]} />
-                            <Text style={styles.breakdownName} numberOfLines={1}>{cb.companyName}</Text>
+                {/* ── Block 3: Company-wise Breakdown ── */}
+                {companyBreakdown.length > 0 ? (
+                  <View style={styles.block}>
+                    <View style={styles.coTitleRow}>
+                      <MaterialIcons name="business" size={13} color="#2563EB" />
+                      <Text style={styles.coTitle}>Company-wise Recovery</Text>
+                    </View>
+                    {companyBreakdown.map((cb, idx) => {
+                      const dotColor = COMPANY_DOT_COLORS[idx % COMPANY_DOT_COLORS.length];
+                      return (
+                        <View key={cb.companyId} style={styles.coRow}>
+                          <View style={styles.coLeft}>
+                            <View style={[styles.coDot, { backgroundColor: dotColor }]} />
+                            <Text style={styles.coName} numberOfLines={1}>{cb.companyName}</Text>
                           </View>
-                          <View style={styles.breakdownRight}>
-                            <Text style={styles.breakdownAmount}>{formatPKR(cb.totalRecovery)}</Text>
-                            <View style={styles.breakdownPill}>
-                              <Text style={styles.breakdownPillText}>{pct}%</Text>
-                            </View>
+                          <View style={styles.coRight}>
+                            <Text style={styles.coAmt}>{formatPKR(cb.totalRecovery)}</Text>
+                            <Text style={styles.coShops}>
+                              {cb.shops} shop{cb.shops !== 1 ? 's' : ''}
+                            </Text>
                           </View>
                         </View>
-                        {/* Per-company progress bar */}
-                        <View style={styles.breakdownBarTrack}>
-                          <View style={[styles.breakdownBarFill, { width: `${Math.min(barWidth, 100)}%`, backgroundColor: idx === 0 ? '#93C5FD' : '#A7F3D0' }]} />
-                        </View>
-                        <Text style={styles.breakdownShopsText}>{cb.shops} shops</Text>
+                      );
+                    })}
+                  </View>
+                ) : null}
+
+                {/* ── Block 4: Messages ── */}
+                <View style={styles.block}>
+                  <Text style={styles.blockLab}>MESSAGES SENT</Text>
+                  <View style={styles.msgRow}>
+                    <View style={styles.msgPill}>
+                      <MaterialIcons name="sms" size={12} color="#1D4ED8" />
+                      <Text style={styles.msgPillText}>SMS: {smsSent}</Text>
+                    </View>
+                    <View style={styles.msgPill}>
+                      <MaterialIcons name="chat" size={12} color="#1D4ED8" />
+                      <Text style={styles.msgPillText}>WhatsApp: {whatsappSent}</Text>
+                    </View>
+                    {pendingMessages > 0 ? (
+                      <View style={styles.msgPillAmber}>
+                        <MaterialIcons name="schedule" size={12} color="#B45309" />
+                        <Text style={styles.msgPillAmberText}>{pendingMessages} pending</Text>
                       </View>
-                    );
-                  })}
-                </View>
-              ) : null}
-
-              {/* Stats Row — Cards */}
-              <View style={styles.statsRow}>
-                <View style={styles.statBlock}>
-                  <View style={[styles.statBlockIcon, { backgroundColor: 'rgba(96,165,250,0.25)' }]}>
-                    <MaterialIcons name="sms" size={22} color="#93C5FD" />
+                    ) : null}
                   </View>
-                  <Text style={styles.statBlockValue}>{smsSent}</Text>
-                  <Text style={styles.statBlockLabel}>SMS Shops</Text>
                 </View>
 
-                <View style={styles.statBlock}>
-                  <View style={[styles.statBlockIcon, { backgroundColor: 'rgba(74,222,128,0.25)' }]}>
-                    <MaterialIcons name="chat" size={22} color="#86EFAC" />
-                  </View>
-                  <Text style={styles.statBlockValue}>{whatsappSent}</Text>
-                  <Text style={styles.statBlockLabel}>WA Shops</Text>
+                {/* ── Footer ── */}
+                <View style={styles.cardFooter}>
+                  <Text style={styles.cardFooterText}>Powered by Finexa Recovery App</Text>
                 </View>
-
-                <View style={styles.statBlock}>
-                  <View style={[styles.statBlockIcon, { backgroundColor: 'rgba(250,204,21,0.25)' }]}>
-                    <MaterialIcons name="notifications-active" size={22} color="#FDE68A" />
-                  </View>
-                  <Text style={styles.statBlockValue}>{totalMessages}</Text>
-                  <Text style={styles.statBlockLabel}>Total Shops</Text>
-                </View>
-
-                <View style={styles.statBlock}>
-                  <View style={[styles.statBlockIcon, { backgroundColor: pendingMessages > 0 ? 'rgba(239,68,68,0.25)' : 'rgba(167,243,208,0.25)' }]}>
-                    <MaterialIcons
-                      name={pendingMessages > 0 ? 'warning' : 'check-circle'}
-                      size={22}
-                      color={pendingMessages > 0 ? '#FCA5A5' : '#A7F3D0'}
-                    />
-                  </View>
-                  <Text style={[styles.statBlockValue, pendingMessages > 0 && { color: '#FCA5A5' }]}>
-                    {pendingMessages}
-                  </Text>
-                  <Text style={styles.statBlockLabel}>Pending</Text>
-                </View>
-              </View>
-
-              {/* Pending Warning */}
-              {pendingMessages > 0 ? (
-                <View style={styles.pendingBanner}>
-                  <MaterialIcons name="error-outline" size={18} color="#FDE68A" />
-                  <Text style={styles.pendingBannerText}>
-                    {pendingMessages} message{pendingMessages > 1 ? 's' : ''} pending — send now!
-                  </Text>
-                </View>
-              ) : null}
-
-              {/* Footer */}
-              <View style={styles.footer}>
-                <View style={styles.footerDivider} />
-                <Text style={styles.footerText}>
-                  {todayLabel} · Finexa Recovery App
-                </Text>
               </View>
             </View>
 
-            {/* Share Button */}
-            <Pressable
-              style={[styles.shareBtn, isCapturing && styles.shareBtnDisabled]}
-              onPress={handleShareAsImage}
-              disabled={isCapturing}
-            >
-              <View style={[styles.shareBtnInner, isCapturing && styles.shareBtnInnerDisabled]}>
+            {/* ════════════════════════════════════════════ */}
+            {/* ACTION BUTTONS (not captured)                  */}
+            {/* ════════════════════════════════════════════ */}
+            <View style={styles.actions}>
+              {/* Share as Image — blue gradient */}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.shareImgBtn,
+                  isCapturing && styles.shareImgBtnDisabled,
+                  pressed && !isCapturing && { opacity: 0.9 },
+                ]}
+                onPress={handleShareAsImage}
+                disabled={isCapturing}
+              >
                 {isCapturing ? (
-                  <>
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                    <Text style={styles.shareBtnText}>Generating Image...</Text>
-                  </>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <>
-                    <MaterialIcons name="share" size={22} color="#FFFFFF" />
-                    <Text style={styles.shareBtnText}>Share as Picture</Text>
-                  </>
+                  <MaterialIcons name="share" size={17} color="#FFFFFF" />
                 )}
-              </View>
-            </Pressable>
+                <Text style={styles.shareImgBtnText}>
+                  {isCapturing ? 'Generating Image...' : 'Share as Image'}
+                </Text>
+              </Pressable>
+
+              {/* Share as Text (WhatsApp) — green outline */}
+              <Pressable
+                style={({ pressed }) => [styles.shareTextBtn, pressed && { opacity: 0.85 }]}
+                onPress={handleShareAsText}
+              >
+                <MaterialIcons name="chat" size={17} color="#16A34A" />
+                <Text style={styles.shareTextBtnText}>Share as Text (WhatsApp)</Text>
+              </Pressable>
+
+              {/* Close — text button */}
+              <Pressable
+                style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.7 }]}
+                onPress={onClose}
+              >
+                <Text style={styles.closeBtnText}>Close</Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -390,15 +348,51 @@ export function DailyReportCard({
   );
 }
 
+// ═══════════════════════════════════════════════════════════
+// Modern Blue Theme Colors
+// ═══════════════════════════════════════════════════════════
+const C = {
+  blue900: '#1E40AF',
+  blue800: '#1D4ED8',
+  blue700: '#2563EB',
+  blue600: '#3B82F6',
+  blue500: '#60A5FA',
+  blue100: '#DBEAFE',
+  blue50: '#EFF6FF',
+  green600: '#16A34A',
+  green500: '#22C55E',
+  green100: '#DCFCE7',
+  amber600: '#D97706',
+  amber800: '#B45309',
+  amber100: '#FEF3C7',
+  amber50: '#FFFBEB',
+  gray900: '#0F172A',
+  gray700: '#334155',
+  gray600: '#475569',
+  gray500: '#64748B',
+  gray400: '#94A3B8',
+  gray300: '#CBD5E1',
+  gray200: '#E2E8F0',
+  gray100: '#F1F5F9',
+  gray50: '#F8FAFC',
+  white: '#FFFFFF',
+  appBg: '#F1F5F9',
+  appBorder: '#E2E8F0',
+  overlay: 'rgba(15, 23, 42, 0.8)',
+};
+
 const styles = StyleSheet.create({
+  // ===== BACKDROP =====
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 0,
   },
   backdropFade: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: C.overlay,
   },
+
+  // ===== SCROLL / LAYOUT =====
   keyboardWrap: {
     flex: 1,
   },
@@ -414,491 +408,365 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     position: 'relative',
   },
-  closeTop: {
-    position: 'absolute',
-    top: -4,
-    right: 0,
-    zIndex: 10,
+
+  // ═══════════════════════════════════════════
+  // MODAL HEADER (not captured)
+  // ═══════════════════════════════════════════
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: C.white,
+    borderRadius: 16,
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: C.appBorder,
+    ...Shadow.sm,
   },
-  closeTopBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+  modalHeaderTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalHeaderTitleText: {
+    fontSize: 15,
+    fontWeight: FontWeight.bold,
+    color: C.gray900,
+  },
+  modalHeaderClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: C.gray100,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  // ===== REPORT CARD (Solid bg for captureRef) =====
+  // ═══════════════════════════════════════════
+  // SHAREABLE CARD (captured via cardRef)
+  // ═══════════════════════════════════════════
   card: {
-    borderRadius: Radius.xl,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    backgroundColor: '#4338CA',
+    borderRadius: 18,
     overflow: 'hidden',
+    backgroundColor: C.white,
+    borderWidth: 1,
+    borderColor: C.appBorder,
     ...Shadow.lg,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.14,
+    shadowRadius: 32,
+    elevation: 10,
   },
-  gradientOverlayTop: {
+
+  // ── Blue Gradient Header ──
+  cardHeader: {
+    backgroundColor: C.blue900,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 18,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  cardHeaderOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 80,
-    backgroundColor: 'rgba(5,150,105,0.5)',
-    borderRadius: Radius.xl,
-  },
-  gradientOverlayBottom: {
-    position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
-    height: 40,
-    backgroundColor: 'rgba(0,0,0,0.15)',
-    borderRadius: Radius.xl,
+    backgroundColor: C.blue600,
+    opacity: 0.35,
   },
-
-  // Brand
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: Spacing.md,
+    gap: 8,
     zIndex: 1,
   },
-  brandIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.3)',
+  brandLogo: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandTextWrap: {
-    flex: 1,
+  brandLogoText: {
+    fontSize: 12,
+    fontWeight: FontWeight.bold,
+    color: C.white,
   },
   brandName: {
-    fontSize: 20,
-    fontWeight: FontWeight.bold,
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-  },
-  brandSub: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.65)',
-    marginTop: 2,
-    fontWeight: FontWeight.medium,
-  },
-  // Separator
-  separator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-    zIndex: 1,
-  },
-  sepLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  sepDiamond: {
-    width: 8,
-    height: 8,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    transform: [{ rotate: '45deg' }],
-  },
-  // Info
-  infoSection: {
-    gap: 6,
-    marginBottom: Spacing.md,
-    zIndex: 1,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoText: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.85)',
-    fontWeight: FontWeight.medium,
-  },
-  // Big Divider
-  bigDivider: {
-    height: 1.5,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    marginBottom: Spacing.md,
-    zIndex: 1,
-  },
-
-  // ===== RECOVERY PROGRESS BAR =====
-  progressSection: {
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: Radius.lg,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    zIndex: 1,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  progressHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  progressIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(167,243,208,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressLabel: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
-    fontWeight: FontWeight.bold,
-    letterSpacing: 1,
+    fontWeight: FontWeight.semibold,
+    color: 'rgba(255,255,255,0.9)',
   },
-  progressPctBadge: {
-    backgroundColor: 'rgba(167,243,208,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(167,243,208,0.3)',
-    borderRadius: Radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  progressPctText: {
-    fontSize: 13,
-    fontWeight: FontWeight.bold,
-    color: '#A7F3D0',
-  },
-  progressBarTrack: {
-    height: 10,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 5,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressBarFill: {
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#A7F3D0',
-  },
-  progressAmounts: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  progressRecovered: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.55)',
-    fontWeight: FontWeight.medium,
-  },
-  progressRecoveredVal: {
-    color: '#A7F3D0',
-    fontWeight: FontWeight.bold,
-    fontSize: 12,
-  },
-  progressOutstanding: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.55)',
-    fontWeight: FontWeight.medium,
-  },
-  progressOutstandingVal: {
-    color: '#FDE68A',
-    fontWeight: FontWeight.bold,
-    fontSize: 12,
-  },
-
-  // Main Stat - Visited
-  mainStatCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: Radius.lg,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    zIndex: 1,
-  },
-  mainStatLeft: {
-    flex: 1,
-  },
-  mainStatValue: {
-    fontSize: 36,
-    fontWeight: FontWeight.bold,
-    color: '#FFFFFF',
-  },
-  mainStatLabel: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
-    marginTop: 4,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 1,
-  },
-  mainStatRight: {
-    alignItems: 'center',
-  },
-  progressCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(167,243,208,0.2)',
-    borderWidth: 3,
-    borderColor: '#A7F3D0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressCircleText: {
-    fontSize: 16,
-    fontWeight: FontWeight.bold,
-    color: '#A7F3D0',
-  },
-  // Recovery Highlight
-  recoveryHighlight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: 'rgba(250,204,21,0.12)',
-    borderRadius: Radius.lg,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    marginBottom: Spacing.md,
-    borderWidth: 1.5,
-    borderColor: 'rgba(250,204,21,0.25)',
-    zIndex: 1,
-  },
-  recoveryIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(250,204,21,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recoveryTextWrap: {
-    flex: 1,
-  },
-  recoveryLabel: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
-    fontWeight: FontWeight.bold,
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  recoveryAmount: {
-    fontSize: 28,
-    fontWeight: FontWeight.bold,
-    color: '#FDE68A',
-  },
-
-  // ===== Company Breakdown — Cards with Progress Bars =====
-  breakdownSection: {
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    zIndex: 1,
-  },
-  breakdownHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 10,
-  },
-  breakdownTitle: {
-    fontSize: 12,
-    fontWeight: FontWeight.bold,
-    color: 'rgba(255,255,255,0.7)',
-    letterSpacing: 0.5,
-  },
-  breakdownCard: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
-  breakdownCardLast: {
-    borderBottomWidth: 0,
-    paddingBottom: 0,
-  },
-  breakdownCardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  breakdownLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  breakdownDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#93C5FD',
-  },
-  breakdownName: {
+  cardDate: {
     fontSize: 13,
     fontWeight: FontWeight.semibold,
-    color: 'rgba(255,255,255,0.85)',
-    flex: 1,
-  },
-  breakdownRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  breakdownAmount: {
-    fontSize: 14,
-    fontWeight: FontWeight.bold,
-    color: '#FDE68A',
-  },
-  breakdownPill: {
-    backgroundColor: 'rgba(253,230,138,0.15)',
-    borderRadius: Radius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  breakdownPillText: {
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-    color: '#FDE68A',
-  },
-  // Per-company progress bar
-  breakdownBarTrack: {
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 3,
-  },
-  breakdownBarFill: {
-    height: 6,
-    borderRadius: 3,
-  },
-  breakdownShopsText: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.4)',
-    fontWeight: FontWeight.medium,
-  },
-
-  // Stats Row
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: Spacing.md,
+    color: 'rgba(255,255,255,0.95)',
+    marginTop: 10,
     zIndex: 1,
   },
-  statBlock: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: Radius.md,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  statBlockIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  statBlockValue: {
+  cardName: {
     fontSize: 22,
     fontWeight: FontWeight.bold,
-    color: '#FFFFFF',
-    marginBottom: 2,
+    color: C.white,
+    marginTop: 2,
+    letterSpacing: -0.3,
+    zIndex: 1,
   },
-  statBlockLabel: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.55)',
+
+  // ── White Body ──
+  cardBody: {
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 14,
+    backgroundColor: C.white,
+  },
+
+  // ── Blocks ──
+  block: {
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: C.appBorder,
+    borderStyle: 'dashed',
+  },
+  blockLab: {
+    fontSize: 11,
+    color: C.gray500,
     fontWeight: FontWeight.semibold,
-    textAlign: 'center',
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  // Pending Warning
-  pendingBanner: {
+  blockBigRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  blockBigVal: {
+    fontSize: 22,
+    fontWeight: FontWeight.bold,
+    color: C.gray900,
+    letterSpacing: -0.3,
+  },
+  blockBigSub: {
+    fontSize: 18,
+    color: C.gray400,
+    fontWeight: FontWeight.semibold,
+  },
+  blockPct: {
+    fontSize: 12,
+    color: C.gray500,
+    fontWeight: FontWeight.semibold,
+  },
+
+  // ── Progress bars ──
+  progressTrack: {
+    height: 8,
+    backgroundColor: C.gray100,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  progressFill: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: C.blue700,
+  },
+  progressTrackSm: {
+    height: 5,
+    backgroundColor: C.gray100,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  progressFillSm: {
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: C.blue600,
+  },
+
+  // ── Recovery summary ──
+  recoveryBig: {
+    fontSize: 22,
+    fontWeight: FontWeight.bold,
+    color: C.blue700,
+    letterSpacing: -0.3,
+  },
+  recoverySub: {
+    fontSize: 11,
+    color: C.gray500,
+    fontWeight: FontWeight.medium,
+    marginTop: 4,
+  },
+
+  // ── Company-wise breakdown ──
+  coTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  coTitle: {
+    fontSize: 12,
+    fontWeight: FontWeight.bold,
+    color: C.gray900,
+  },
+  coRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 7,
+    borderTopWidth: 1,
+    borderTopColor: C.appBorder,
+  },
+  coLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(250,204,21,0.12)',
-    borderRadius: Radius.sm,
-    paddingVertical: 10,
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(250,204,21,0.25)',
-    zIndex: 1,
-  },
-  pendingBannerText: {
-    fontSize: 13,
-    fontWeight: FontWeight.bold,
-    color: '#FDE68A',
     flex: 1,
   },
-  // Footer
-  footer: {
+  coDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  coName: {
+    fontSize: 12,
+    color: C.gray700,
+    fontWeight: FontWeight.semibold,
+    flex: 1,
+  },
+  coRight: {
+    alignItems: 'flex-end',
+  },
+  coAmt: {
+    fontSize: 12,
+    fontWeight: FontWeight.bold,
+    color: C.gray900,
+  },
+  coShops: {
+    fontSize: 10,
+    color: C.gray500,
+    fontWeight: FontWeight.medium,
+    marginTop: 1,
+  },
+
+  // ── Messages ──
+  msgRow: {
+    flexDirection: 'row',
+    gap: 10,
+    flexWrap: 'wrap',
+    marginTop: 4,
+  },
+  msgPill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: Spacing.xs,
-    zIndex: 1,
+    gap: 5,
+    backgroundColor: C.blue50,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
-  footerDivider: {
-    width: 40,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    marginBottom: Spacing.sm,
-  },
-  footerText: {
+  msgPillText: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.4)',
+    fontWeight: FontWeight.semibold,
+    color: C.blue800,
+  },
+  msgPillAmber: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: C.amber50,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+  },
+  msgPillAmberText: {
+    fontSize: 11,
+    fontWeight: FontWeight.semibold,
+    color: C.amber800,
+  },
+
+  // ── Card Footer ──
+  cardFooter: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: C.appBorder,
+    marginTop: 4,
+  },
+  cardFooterText: {
+    fontSize: 10,
+    color: C.gray500,
     fontWeight: FontWeight.medium,
   },
 
-  // ===== Share Button =====
-  shareBtn: {
-    marginTop: Spacing.md,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-    ...Shadow.md,
+  // ═══════════════════════════════════════════
+  // ACTION BUTTONS (not captured)
+  // ═══════════════════════════════════════════
+  actions: {
+    marginTop: 12,
+    paddingHorizontal: 4,
+    paddingBottom: 8,
+    gap: 8,
   },
-  shareBtnDisabled: {
-    opacity: 0.7,
-  },
-  shareBtnInner: {
+
+  // Share as Image — blue gradient
+  shareImgBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: 16,
-    backgroundColor: '#4338CA',
+    gap: 8,
+    backgroundColor: C.blue700,
+    borderRadius: 12,
+    paddingVertical: 13,
+    ...Shadow.md,
+    shadowColor: C.blue700,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 8,
   },
-  shareBtnInnerDisabled: {
-    backgroundColor: '#4B5563',
+  shareImgBtnDisabled: {
+    opacity: 0.7,
   },
-  shareBtnText: {
-    fontSize: 16,
-    fontWeight: FontWeight.bold,
-    color: '#FFFFFF',
+  shareImgBtnText: {
+    fontSize: 14,
+    fontWeight: FontWeight.semibold,
+    color: C.white,
+  },
+
+  // Share as Text (WhatsApp) — green outline
+  shareTextBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: C.green600,
+    borderRadius: 12,
+    paddingVertical: 12,
+  },
+  shareTextBtnText: {
+    fontSize: 14,
+    fontWeight: FontWeight.semibold,
+    color: C.green600,
+  },
+
+  // Close — text button
+  closeBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  closeBtnText: {
+    fontSize: 13,
+    fontWeight: FontWeight.semibold,
+    color: C.gray500,
   },
 });

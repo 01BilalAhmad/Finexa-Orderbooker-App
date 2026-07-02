@@ -52,9 +52,11 @@ function getOsmStaticUrl(lat: number, lng: number): string {
   return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=${zoom}&size=600x260&markers=${lat},${lng},red`;
 }
 
-// Animated pulse for GPS indicator
-function GpsPulse({ active }: { active: boolean }) {
+// Animated pulse for GPS indicator (configurable color)
+function GpsPulse({ active, color = '#2563EB' }: { active: boolean; color?: string }) {
   const scale = React.useRef(new Animated.Value(1)).current;
+  const colorRgb = hexToRgba(color, 0.15);
+  const colorRgbInner = hexToRgba(color, 0.35);
 
   React.useEffect(() => {
     if (!active) return;
@@ -70,18 +72,27 @@ function GpsPulse({ active }: { active: boolean }) {
 
   return (
     <Animated.View style={[{ transform: [{ scale }] }]}>
-      <View style={pulseStyles.outer}>
-        <View style={pulseStyles.inner} />
+      <View style={[pulseStyles.outer, { backgroundColor: colorRgb }]}>
+        <View style={[pulseStyles.inner, { backgroundColor: colorRgbInner }]} />
       </View>
     </Animated.View>
   );
 }
+
+function hexToRgba(hex: string, alpha: number): string {
+  // Quick conversion for our theme hex colors
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 const pulseStyles = StyleSheet.create({
   outer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(79, 70, 229, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -89,7 +100,6 @@ const pulseStyles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(79, 70, 229, 0.3)',
   },
 });
 
@@ -100,7 +110,7 @@ function ConfettiOverlay({ visible }: { visible: boolean }) {
       id: i,
       x: Math.random() * SCREEN_WIDTH,
       delay: Math.random() * 300,
-      color: ['#4F46E5', '#F59E0B', '#EF4444', '#10B981', '#7C3AED'][i % 5],
+      color: ['#2563EB', '#F59E0B', '#EF4444', '#10B981', '#7C3AED'][i % 5],
       size: 4 + Math.random() * 6,
       rotation: Math.random() * 360,
     }))
@@ -161,7 +171,7 @@ function SuccessCheckmark({ visible }: { visible: boolean }) {
 
   return (
     <Animated.View style={[successStyles.container, { opacity: opacityAnim, transform: [{ scale: scaleAnim }] }]}>
-      <LinearGradient colors={['#4F46E5', '#4338CA']} style={successStyles.badge}>
+      <LinearGradient colors={['#2563EB', '#1D4ED8']} style={successStyles.badge}>
         <MaterialIcons name="check" size={28} color="#FFFFFF" />
       </LinearGradient>
     </Animated.View>
@@ -256,6 +266,16 @@ export function RecoveryBottomSheet({
   const handleQuickAmount = (val: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setAmount(String(val));
+  };
+
+  const handleFullBalance = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setAmount(String(Math.max(displayBalance, 0)));
+  };
+
+  const handlePhotoProof = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert('Photo Proof', 'Photo proof capture is coming soon. Stay tuned!');
   };
 
   const captureGPS = async () => {
@@ -392,11 +412,11 @@ export function RecoveryBottomSheet({
 
   const { balance: displayBalance, creditLimit: displayCreditLimit } = getShopDisplayBalance(shop, companyId);
   const numericAmount = parseInt(amount, 10) || 0;
-  const utilisationPct = displayCreditLimit > 0 ? Math.min((displayBalance / displayCreditLimit) * 100, 100) : 0;
   const mapUrl = gpsLat && gpsLng ? getOsmStaticUrl(gpsLat, gpsLng) : null;
   const hasGps = !!(gpsLat && gpsLng);
   const isValid = numericAmount >= MIN_RECOVERY && numericAmount <= MAX_RECOVERY && numericAmount <= displayBalance;
   const remainingBalance = displayBalance - numericAmount;
+  const isFullBalance = numericAmount > 0 && numericAmount === displayBalance;
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
@@ -423,114 +443,85 @@ export function RecoveryBottomSheet({
           {/* Handle */}
           <View style={styles.handle} />
 
-          {/* Modern gradient header */}
-          <LinearGradient
-            colors={['#4F46E5', '#4338CA', '#3730A3']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.headerGradient}
-          >
-            {/* Decorative elements */}
-            <View style={styles.headerBubble1} />
-            <View style={styles.headerBubble2} />
-            <View style={styles.headerBubble3} />
-
-            <View style={styles.header}>
-              <View style={styles.headerLeft}>
-                <View style={styles.shopAvatarWrap}>
-                  <Text style={styles.shopAvatarText}>{shop.name.charAt(0).toUpperCase()}</Text>
-                </View>
-                <View>
-                  <Text style={styles.title}>Collect Recovery</Text>
-                  <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
-                </View>
+          {/* Header bar: title + close */}
+          <View style={styles.headerBar}>
+            <View style={styles.headerBarLeft}>
+              <View style={styles.headerBarIcon}>
+                <MaterialIcons name="payments" size={18} color="#FFFFFF" />
               </View>
-              <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={12}>
-                <MaterialIcons name="close" size={20} color="rgba(255,255,255,0.9)" />
-              </Pressable>
-            </View>
-
-            {/* Balance cards */}
-            <View style={styles.balanceCardRow}>
-              <View style={styles.balanceChip}>
-                <View style={styles.balanceChipDot} />
-                <View>
-                  <Text style={styles.balanceChipLabel}>Outstanding</Text>
-                  <Text style={[styles.balanceChipValue, { color: '#FCA5A5' }]}>
-                    {formatPKR(displayBalance)}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.balanceDivider} />
-              <View style={styles.balanceChip}>
-                <View style={[styles.balanceChipDot, { backgroundColor: '#93C5FD' }]} />
-                <View>
-                  <Text style={styles.balanceChipLabel}>Credit Limit</Text>
-                  <Text style={[styles.balanceChipValue, { color: '#93C5FD' }]}>
-                    {formatPKR(displayCreditLimit)}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.balanceDivider} />
-              <View style={styles.balanceChip}>
-                <View style={[styles.balanceChipDot, { backgroundColor: utilisationPct > 80 ? '#FDE68A' : '#6EE7B7' }]} />
-                <View>
-                  <Text style={styles.balanceChipLabel}>Usage</Text>
-                  <Text style={[styles.balanceChipValue, {
-                    color: utilisationPct > 100 ? '#FCA5A5' : utilisationPct > 80 ? '#FDE68A' : '#6EE7B7'
-                  }]}>
-                    {utilisationPct.toFixed(0)}%
-                  </Text>
-                </View>
+              <View>
+                <Text style={styles.headerTitle}>New Recovery</Text>
+                <Text style={styles.headerSub}>Enter collection details</Text>
               </View>
             </View>
+            <Pressable onPress={handleClose} style={styles.closeBtn} hitSlop={12}>
+              <MaterialIcons name="close" size={22} color={Colors.textSecondary} />
+            </Pressable>
+          </View>
 
-            {/* Progress bar */}
-            <View style={styles.miniProgress}>
-              <View style={[styles.miniProgressFill, {
-                width: `${Math.min(utilisationPct, 100)}%`,
-                backgroundColor: utilisationPct > 100 ? '#FCA5A5' : utilisationPct > 80 ? '#FDE68A' : '#6EE7B7'
-              }]} />
+          {/* Selected shop card (small) */}
+          <View style={styles.shopMiniCard}>
+            <View style={styles.shopMiniAvatar}>
+              <Text style={styles.shopMiniAvatarText}>{shop.name.charAt(0).toUpperCase()}</Text>
             </View>
-          </LinearGradient>
+            <View style={styles.shopMiniInfo}>
+              <Text style={styles.shopMiniName} numberOfLines={1}>{shop.name}</Text>
+              <Text style={styles.shopMiniOwner} numberOfLines={1}>{shop.ownerName || shop.area}</Text>
+            </View>
+            <View style={styles.shopMiniBalanceCol}>
+              <Text style={styles.shopMiniBalanceLabel}>Balance</Text>
+              <Text style={[
+                styles.shopMiniBalance,
+                { color: displayBalance > 50000 ? Colors.danger : displayBalance >= 10000 ? Colors.secondary : Colors.success },
+              ]}>{formatPKR(displayBalance)}</Text>
+            </View>
+          </View>
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={styles.scrollView}>
             {/* Amount section - Modern calculator style */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <View style={styles.sectionIcon}>
-                  <MaterialIcons name="payments" size={16} color={Colors.primaryDark} />
-                </View>
                 <Text style={styles.sectionTitle}>Amount (PKR) *</Text>
               </View>
 
-              <Animated.View style={[
-                styles.amountInputWrap,
-                focusedField === 'amount' && styles.amountInputFocused,
-                { transform: [{ scale: amountScaleAnim }] },
-              ]}>
-                <View style={styles.amountCurrencyTag}>
-                  <Text style={styles.amountCurrencyText}>Rs.</Text>
-                </View>
-                <TextInput
-                  style={styles.amountInput}
-                  value={amount}
-                  onChangeText={setAmount}
-                  keyboardType="numeric"
-                  placeholder="0"
-                  placeholderTextColor={Colors.textMuted}
-                  maxLength={7}
-                  onFocus={() => setFocusedField('amount')}
-                  onBlur={() => setFocusedField(null)}
-                  autoFocus
-                />
-                {amount ? (
-                  <Pressable onPress={() => { setAmount(''); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} style={styles.amountClear} hitSlop={8}>
-                    <MaterialIcons name="backspace" size={20} color={Colors.textMuted} />
-                  </Pressable>
-                ) : (
-                  <MaterialIcons name="keyboard" size={20} color={Colors.textMuted} />
-                )}
+              {/* Big amount display with blue gradient */}
+              <Animated.View style={[{ transform: [{ scale: amountScaleAnim }] }]}>
+                <LinearGradient
+                  colors={['#1E40AF', '#2563EB', '#3B82F6']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.amountDisplay}
+                >
+                  <View style={styles.amountDisplayBubble1} />
+                  <View style={styles.amountDisplayBubble2} />
+                  <View style={styles.amountCurrencyTag}>
+                    <Text style={styles.amountCurrencyText}>Rs.</Text>
+                  </View>
+                  <TextInput
+                    style={styles.amountInput}
+                    value={amount}
+                    onChangeText={setAmount}
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor="rgba(255,255,255,0.45)"
+                    maxLength={7}
+                    onFocus={() => setFocusedField('amount')}
+                    onBlur={() => setFocusedField(null)}
+                    autoFocus
+                    selectTextOnFocus
+                  />
+                  {amount ? (
+                    <Pressable
+                      onPress={() => { setAmount(''); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                      style={styles.amountClear}
+                      hitSlop={8}
+                    >
+                      <MaterialIcons name="backspace" size={20} color="rgba(255,255,255,0.85)" />
+                    </Pressable>
+                  ) : (
+                    <MaterialIcons name="keyboard" size={20} color="rgba(255,255,255,0.5)" />
+                  )}
+                </LinearGradient>
               </Animated.View>
 
               {/* Validation hint */}
@@ -546,9 +537,9 @@ export function RecoveryBottomSheet({
                 </View>
               ) : null}
 
-              {/* Quick amounts - Pill style */}
+              {/* Quick amounts - Rs. 1000, 2000, 5000, 10000, Full Balance */}
               <View style={styles.quickGrid}>
-                {QUICK_AMOUNTS.map((val) => {
+                {QUICK_AMOUNTS.filter((v) => v >= 1000).map((val) => {
                   const isActive = amount === String(val);
                   return (
                     <Pressable
@@ -561,11 +552,23 @@ export function RecoveryBottomSheet({
                       onPress={() => handleQuickAmount(val)}
                     >
                       <Text style={[styles.quickBtnText, isActive && styles.quickBtnTextActive]}>
-                        {isActive ? '✓ ' : ''}{val >= 1000 ? `${val / 1000}K` : val}
+                        {isActive ? '✓ ' : ''}Rs. {val >= 1000 ? `${val / 1000}K` : val}
                       </Text>
                     </Pressable>
                   );
                 })}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.quickBtn,
+                    isFullBalance && styles.quickBtnActive,
+                    pressed && styles.quickBtnPressed,
+                  ]}
+                  onPress={handleFullBalance}
+                >
+                  <Text style={[styles.quickBtnText, isFullBalance && styles.quickBtnTextActive]}>
+                    {isFullBalance ? '✓ ' : ''}Full
+                  </Text>
+                </Pressable>
               </View>
             </View>
 
@@ -573,7 +576,7 @@ export function RecoveryBottomSheet({
             {numericAmount > 0 && numericAmount <= displayBalance ? (
               <View style={styles.balancePreviewCard}>
                 <LinearGradient
-                  colors={['#EEF2FF', '#EEF2FF']}
+                  colors={['#DBEAFE', '#BFDBFE']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.balancePreviewGradient}
@@ -613,10 +616,7 @@ export function RecoveryBottomSheet({
             {/* Note section */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <View style={styles.sectionIcon}>
-                  <MaterialIcons name="edit-note" size={16} color={Colors.textSecondary} />
-                </View>
-                <Text style={styles.sectionTitle}>Note</Text>
+                <Text style={styles.sectionTitle}>Description</Text>
                 <View style={styles.optionalBadge}>
                   <Text style={styles.optionalText}>Optional</Text>
                 </View>
@@ -649,15 +649,15 @@ export function RecoveryBottomSheet({
               </View>
             </View>
 
-            {/* GPS Store Visit Toggle - NEW */}
+            {/* GPS Store Visit Toggle */}
             <View style={styles.section}>
               <View style={[styles.gpsVisitCard, markGpsVisit && styles.gpsVisitCardActive]}>
                 <View style={styles.gpsVisitLeft}>
                   <View style={styles.gpsVisitIconWrap}>
                     <MaterialIcons
-                      name={markGpsVisit ? 'storefront' : 'storefront'}
+                      name="storefront"
                       size={22}
-                      color={markGpsVisit ? '#4F46E5' : Colors.textMuted}
+                      color={markGpsVisit ? '#2563EB' : Colors.textMuted}
                     />
                   </View>
                   <View style={styles.gpsVisitTextWrap}>
@@ -678,23 +678,23 @@ export function RecoveryBottomSheet({
                 />
               </View>
 
-              {/* Show GPS status when toggle is on */}
+              {/* GPS Location captured indicator — green pill with pulse */}
               {markGpsVisit && hasGps && (
-                <View style={styles.gpsCapturedMini}>
-                  <GpsPulse active={true} />
-                  <View style={styles.gpsCapturedMiniText}>
-                    <MaterialIcons name="check-circle" size={14} color={Colors.primaryDark} />
-                    <Text style={styles.gpsCapturedMiniLabel}>
-                      GPS Captured · {gpsAddress || `${gpsLat!.toFixed(4)}, ${gpsLng!.toFixed(4)}`}
+                <View style={styles.gpsCapturedPill}>
+                  <GpsPulse active={true} color={Colors.success} />
+                  <View style={styles.gpsCapturedPillText}>
+                    <MaterialIcons name="check-circle" size={14} color={Colors.success} />
+                    <Text style={styles.gpsCapturedPillLabel}>
+                      Location captured · {gpsAddress || `${gpsLat!.toFixed(4)}, ${gpsLng!.toFixed(4)}`}
                     </Text>
                   </View>
                 </View>
               )}
 
               {markGpsVisit && capturingGps && (
-                <View style={styles.gpsCapturingMini}>
+                <View style={styles.gpsCapturingPill}>
                   <ActivityIndicator size="small" color={Colors.primary} />
-                  <Text style={styles.gpsCapturingMiniLabel}>Capturing GPS location...</Text>
+                  <Text style={styles.gpsCapturingPillLabel}>Capturing GPS location...</Text>
                 </View>
               )}
             </View>
@@ -702,17 +702,14 @@ export function RecoveryBottomSheet({
             {/* GPS section - Modern card style */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIcon, { backgroundColor: '#EEF2FF' }]}>
-                  <MaterialIcons name="my-location" size={16} color="#4F46E5" />
-                </View>
                 <Text style={styles.sectionTitle}>GPS Location</Text>
                 <View style={styles.optionalBadge}>
                   <Text style={styles.optionalText}>Optional</Text>
                 </View>
                 {hasGps ? (
                   <View style={styles.gpsStatusBadge}>
-                    <GpsPulse active={hasGps} />
-                    <Text style={styles.gpsStatusText}>Captured</Text>
+                    <GpsPulse active={hasGps} color={Colors.success} />
+                    <Text style={[styles.gpsStatusText, { color: Colors.success }]}>Captured</Text>
                   </View>
                 ) : null}
               </View>
@@ -798,9 +795,9 @@ export function RecoveryBottomSheet({
                   <View style={styles.captureBtnInner}>
                     <View style={styles.captureBtnIconWrap}>
                       {capturingGps ? (
-                        <ActivityIndicator size="small" color="#4F46E5" />
+                        <ActivityIndicator size="small" color="#2563EB" />
                       ) : (
-                        <MaterialIcons name="add-location-alt" size={22} color="#4F46E5" />
+                        <MaterialIcons name="add-location-alt" size={22} color="#2563EB" />
                       )}
                     </View>
                     <View style={styles.captureBtnTextWrap}>
@@ -815,6 +812,23 @@ export function RecoveryBottomSheet({
                   </View>
                 </Pressable>
               )}
+            </View>
+
+            {/* Photo proof button */}
+            <View style={styles.section}>
+              <Pressable
+                style={({ pressed }) => [styles.photoProofBtn, pressed && styles.photoProofBtnPressed]}
+                onPress={handlePhotoProof}
+              >
+                <View style={styles.photoProofIconWrap}>
+                  <MaterialIcons name="photo-camera" size={20} color="#2563EB" />
+                </View>
+                <View style={styles.photoProofTextWrap}>
+                  <Text style={styles.photoProofTitle}>Add Photo Proof</Text>
+                  <Text style={styles.photoProofSub}>Optional · Capture receipt or cash photo</Text>
+                </View>
+                <MaterialIcons name="add-a-photo" size={20} color={Colors.textMuted} />
+              </Pressable>
             </View>
 
             <View style={styles.bottomPad} />
@@ -837,7 +851,7 @@ export function RecoveryBottomSheet({
 
             {showSuccess ? (
               <View style={styles.successFooter}>
-                <LinearGradient colors={['#4F46E5', '#4338CA']} style={styles.successFooterInner}>
+                <LinearGradient colors={['#2563EB', '#1D4ED8']} style={styles.successFooterInner}>
                   <MaterialIcons name="check-circle" size={24} color="#FFFFFF" />
                   <Text style={styles.successFooterText}>Recovery Submitted Successfully!</Text>
                 </LinearGradient>
@@ -867,6 +881,12 @@ export function RecoveryBottomSheet({
                 )}
               </Pressable>
             )}
+
+            {/* Auto-approved note */}
+            <View style={styles.autoApproveNote}>
+              <MaterialIcons name="verified" size={12} color={Colors.success} />
+              <Text style={styles.autoApproveText}>Recovery will be auto-approved by admin</Text>
+            </View>
           </View>
         </Animated.View>
         </KeyboardAvoidingView>
@@ -893,149 +913,116 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   sheet: {
-    backgroundColor: Colors.background,
-    borderTopLeftRadius: Radius.xxl,
-    borderTopRightRadius: Radius.xxl,
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: '93%',
     ...Shadow.lg,
   },
   handle: {
     width: 44,
     height: 5,
-    backgroundColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: Colors.border,
     borderRadius: Radius.full,
     alignSelf: 'center',
     marginTop: Spacing.sm,
     marginBottom: Spacing.xs,
   },
-  // Header
-  headerGradient: {
-    borderTopLeftRadius: Radius.xxl,
-    borderTopRightRadius: Radius.xxl,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.lg,
-    overflow: 'hidden',
-  },
-  headerBubble1: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    top: -40,
-    right: -20,
-  },
-  headerBubble2: {
-    position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    bottom: -20,
-    left: -10,
-  },
-  headerBubble3: {
-    position: 'absolute',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    top: 20,
-    left: '40%',
-  },
-  header: {
+  // Header bar
+  headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.xs,
+    paddingBottom: Spacing.sm,
   },
-  headerLeft: {
+  headerBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
     flex: 1,
   },
-  shopAvatarWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.4)',
+  headerBarIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  shopAvatarText: {
-    fontSize: FontSize.xl,
+  headerTitle: {
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: '#FFFFFF',
+    color: Colors.text,
   },
-  title: {
+  headerSub: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    marginTop: 1,
+  },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Selected shop mini card
+  shopMiniCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  shopMiniAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shopMiniAvatarText: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
     color: '#FFFFFF',
   },
-  shopName: {
-    fontSize: FontSize.sm,
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 1,
-    maxWidth: 200,
-  },
-  closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Balance cards
-  balanceCardRow: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.15)',
-    borderRadius: Radius.md,
-    padding: Spacing.sm,
-    marginBottom: Spacing.sm,
-  },
-  balanceChip: {
+  shopMiniInfo: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
   },
-  balanceChipDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FCA5A5',
-  },
-  balanceDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  balanceChipLabel: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.6)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    fontWeight: FontWeight.medium,
-  },
-  balanceChipValue: {
-    fontSize: FontSize.sm,
+  shopMiniName: {
+    fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
-    color: '#FFFFFF',
+    color: Colors.text,
   },
-  miniProgress: {
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: Radius.full,
-    overflow: 'hidden',
+  shopMiniOwner: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    marginTop: 1,
   },
-  miniProgressFill: {
-    height: 4,
-    borderRadius: Radius.full,
+  shopMiniBalanceCol: {
+    alignItems: 'flex-end',
+  },
+  shopMiniBalanceLabel: {
+    fontSize: 9,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  shopMiniBalance: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.bold,
+    marginTop: 1,
   },
   // ScrollView
   scrollView: {
@@ -1049,14 +1036,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     marginBottom: Spacing.sm,
-  },
-  sectionIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: Colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   sectionTitle: {
     fontSize: FontSize.sm,
@@ -1079,128 +1058,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+    backgroundColor: Colors.successLight,
     borderRadius: Radius.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   gpsStatusText: {
     fontSize: 10,
-    color: Colors.primaryDark,
     fontWeight: FontWeight.bold,
   },
-  // GPS Store Visit Toggle
-  gpsVisitCard: {
+  // Amount display - BIG calculator style with blue gradient
+  amountDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    ...Shadow.sm,
-  },
-  gpsVisitCardActive: {
-    borderColor: Colors.primary,
-  },
-  gpsVisitLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    flex: 1,
-  },
-  gpsVisitIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gpsVisitTextWrap: {
-    flex: 1,
-  },
-  gpsVisitTitle: {
-    fontSize: FontSize.base,
-    fontWeight: FontWeight.bold,
-    color: Colors.text,
-  },
-  gpsVisitSub: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    marginTop: 1,
-  },
-  gpsCapturedMini: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: Colors.primaryLight,
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 8,
-    marginTop: Spacing.sm,
-  },
-  gpsCapturedMiniText: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flex: 1,
-  },
-  gpsCapturedMiniLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.primaryDark,
-    fontWeight: FontWeight.medium,
-    flex: 1,
-  },
-  gpsCapturingMini: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    backgroundColor: '#FEF3C7',
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 8,
-    marginTop: Spacing.sm,
-  },
-  gpsCapturingMiniLabel: {
-    fontSize: FontSize.xs,
-    color: '#92400E',
-    fontWeight: FontWeight.medium,
-  },
-  // Amount input
-  amountInputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 2,
-    borderColor: Colors.border,
+    borderRadius: Radius.lg,
     overflow: 'hidden',
-    ...Shadow.sm,
+    position: 'relative',
+    ...Shadow.md,
   },
-  amountInputFocused: {
-    borderColor: Colors.primary,
-    backgroundColor: '#F0F7FF',
+  amountDisplayBubble1: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    top: -40,
+    right: -20,
+  },
+  amountDisplayBubble2: {
+    position: 'absolute',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    bottom: -25,
+    left: -10,
   },
   amountCurrencyTag: {
-    backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.lg,
     justifyContent: 'center',
   },
   amountCurrencyText: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textInverse,
+    color: '#FFFFFF',
   },
   amountInput: {
     flex: 1,
-    fontSize: FontSize.xxxl,
+    fontSize: 34,
     fontWeight: FontWeight.bold,
-    color: Colors.text,
-    paddingVertical: 14,
-    paddingHorizontal: Spacing.md,
+    color: '#FFFFFF',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    letterSpacing: -0.5,
   },
   amountClear: {
     paddingHorizontal: Spacing.md,
@@ -1216,7 +1127,7 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     fontWeight: FontWeight.medium,
   },
-  // Quick amounts
+  // Quick amounts - blue outline default, blue filled when active
   quickGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1227,25 +1138,24 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: '30%',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: Radius.sm,
+    paddingVertical: 11,
+    borderRadius: Radius.full,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    ...Shadow.sm,
+    borderColor: '#BFDBFE',
   },
   quickBtnActive: {
     borderColor: Colors.primary,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: Colors.primary,
   },
-  quickBtnPressed: { opacity: 0.7 },
+  quickBtnPressed: { opacity: 0.8, transform: [{ scale: 0.97 }] },
   quickBtnText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semibold,
-    color: Colors.textSecondary,
+    color: Colors.primary,
   },
   quickBtnTextActive: {
-    color: Colors.primaryDark,
+    color: '#FFFFFF',
   },
   // Balance Preview Card
   balancePreviewCard: {
@@ -1316,10 +1226,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.border,
     borderRadius: Radius.md,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.background,
     paddingHorizontal: Spacing.md,
     gap: Spacing.xs,
-    ...Shadow.sm,
   },
   noteWrapFocused: {
     borderColor: Colors.primary,
@@ -1336,7 +1245,90 @@ const styles = StyleSheet.create({
   noteClear: {
     marginTop: Spacing.sm,
   },
-  // GPS captured
+  // GPS Store Visit Toggle
+  gpsVisitCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    ...Shadow.sm,
+  },
+  gpsVisitCardActive: {
+    borderColor: Colors.primary,
+    backgroundColor: '#F0F7FF',
+  },
+  gpsVisitLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    flex: 1,
+  },
+  gpsVisitIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gpsVisitTextWrap: {
+    flex: 1,
+  },
+  gpsVisitTitle: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+  },
+  gpsVisitSub: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    marginTop: 1,
+  },
+  // Green GPS captured pill with pulse
+  gpsCapturedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.successLight,
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 8,
+    marginTop: Spacing.sm,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  gpsCapturedPillText: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  gpsCapturedPillLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.success,
+    fontWeight: FontWeight.semibold,
+    flex: 1,
+  },
+  gpsCapturingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: '#FEF3C7',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 8,
+    marginTop: Spacing.sm,
+  },
+  gpsCapturingPillLabel: {
+    fontSize: FontSize.xs,
+    color: '#92400E',
+    fontWeight: FontWeight.medium,
+  },
+  // GPS captured card
   gpsCard: {
     borderRadius: Radius.lg,
     overflow: 'hidden',
@@ -1473,7 +1465,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1486,6 +1478,40 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   captureBtnSub: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    marginTop: 1,
+  },
+  // Photo proof button
+  photoProofBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: '#BFDBFE',
+    borderStyle: 'dashed',
+  },
+  photoProofBtnPressed: { opacity: 0.8 },
+  photoProofIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoProofTextWrap: {
+    flex: 1,
+  },
+  photoProofTitle: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.semibold,
+    color: Colors.text,
+  },
+  photoProofSub: {
     fontSize: FontSize.xs,
     color: Colors.textSecondary,
     marginTop: 1,
@@ -1509,7 +1535,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRadius: Radius.md,
     padding: Spacing.md,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#DBEAFE',
   },
   amountPreviewLabel: {
     fontSize: FontSize.sm,
@@ -1532,7 +1558,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.sm,
     backgroundColor: Colors.primary,
-    borderRadius: Radius.md,
+    borderRadius: 30,
     paddingVertical: 16,
     ...Shadow.md,
   },
@@ -1556,7 +1582,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   successFooter: {
-    borderRadius: Radius.md,
+    borderRadius: 30,
     overflow: 'hidden',
   },
   successFooterInner: {
@@ -1570,5 +1596,18 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
     color: '#FFFFFF',
+  },
+  // Auto-approved note
+  autoApproveNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    marginTop: 2,
+  },
+  autoApproveText: {
+    fontSize: FontSize.xs,
+    color: Colors.success,
+    fontWeight: FontWeight.medium,
   },
 });

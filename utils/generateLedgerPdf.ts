@@ -14,11 +14,11 @@ function generateLedgerHtml(data: LedgerResponse, companyName?: string, distribu
     .map((t) => {
       const isCredit = t.type === 'credit';
       const isClaim = t.type === 'claim';
-      const bgColor = isCredit ? '#FEF3C7' : isClaim ? '#FEE2E2' : '#EEF2FF';
-      const typeColor = isCredit ? '#92400E' : isClaim ? '#EF4444' : '#4338CA';
+      const bgColor = isCredit ? '#FEF3C7' : isClaim ? '#FEE2E2' : '#DBEAFE';
+      const typeColor = isCredit ? '#92400E' : isClaim ? '#EF4444' : '#1D4ED8';
       const typeLabel = isCredit ? 'CREDIT' : isClaim ? 'CLAIM' : 'RECOVERY';
       const amountPrefix = isCredit ? '+' : '-';
-      const amountColor = isCredit ? '#F59E0B' : isClaim ? '#EF4444' : '#4F46E5';
+      const amountColor = isCredit ? '#F59E0B' : isClaim ? '#EF4444' : '#2563EB';
       const rowBg = isClaim ? 'background:#FEF2F2;' : '';
       const statusBadge =
         t.status === 'pending'
@@ -43,7 +43,7 @@ function generateLedgerHtml(data: LedgerResponse, companyName?: string, distribu
     })
     .join('');
 
-  const balanceColor = summary.currentBalance > 0 ? '#EF4444' : '#4F46E5';
+  const balanceColor = summary.currentBalance > 0 ? '#EF4444' : '#2563EB';
   const generatedDate = new Date().toLocaleDateString('en-PK', {
     day: '2-digit',
     month: 'long',
@@ -64,7 +64,7 @@ function generateLedgerHtml(data: LedgerResponse, companyName?: string, distribu
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111827; background: #fff; }
         .page { padding: 24px; max-width: 800px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #4F46E5, #3730A3); color: white; padding: 24px; border-radius: 12px; margin-bottom: 20px; }
+        .header { background: linear-gradient(135deg, #2563EB, #1E40AF); color: white; padding: 24px; border-radius: 12px; margin-bottom: 20px; }
         .header h1 { font-size: 22px; margin-bottom: 4px; }
         .header p { opacity: 0.8; font-size: 13px; }
         .shop-info { background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
@@ -76,7 +76,7 @@ function generateLedgerHtml(data: LedgerResponse, companyName?: string, distribu
         .summary-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #9CA3AF; margin-bottom: 4px; font-weight: 600; }
         .summary-card .value { font-size: 16px; font-weight: 700; }
         .section-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #111827; display: flex; align-items: center; gap: 8px; }
-        .section-title .count { background: #4F46E5; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; }
+        .section-title .count { background: #2563EB; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
         th { background: #F3F4F6; padding: 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #6B7280; font-weight: 600; text-align: left; }
         th:last-child, th:nth-child(4), th:nth-child(5), th:nth-child(6) { text-align: right; }
@@ -99,7 +99,7 @@ function generateLedgerHtml(data: LedgerResponse, companyName?: string, distribu
           <h2>${shop.name}</h2>
           <div class="meta">
             <span>👤 ${shop.ownerName}</span>
-            <span>📍 ${shop.area}${shop.address ? ', ' + shop.address : ''}</span>
+            <span>📍 ${shop.address || shop.area || ''}</span>
             ${shop.phone ? `<span>📞 ${shop.phone}</span>` : ''}
           </div>
         </div>
@@ -109,11 +109,11 @@ function generateLedgerHtml(data: LedgerResponse, companyName?: string, distribu
             <div class="label">Total Credit</div>
             <div class="value" style="color:#F59E0B;">${formatPKR(summary.totalCredit)}</div>
           </div>
-          <div class="summary-card" style="background:#EEF2FF;">
+          <div class="summary-card" style="background:#DBEAFE;">
             <div class="label">Total Recovery</div>
-            <div class="value" style="color:#4F46E5;">${formatPKR(summary.totalRecovery)}</div>
+            <div class="value" style="color:#2563EB;">${formatPKR(summary.totalRecovery)}</div>
           </div>
-          <div class="summary-card" style="background:${summary.currentBalance > 0 ? '#FEE2E2' : '#EEF2FF'};">
+          <div class="summary-card" style="background:${summary.currentBalance > 0 ? '#FEE2E2' : '#DBEAFE'};">
             <div class="label">Balance</div>
             <div class="value" style="color:${balanceColor};">${formatPKR(summary.currentBalance)}</div>
           </div>
@@ -182,7 +182,7 @@ export async function downloadLedgerPdf(data: LedgerResponse, companyName?: stri
     // Step 3: Fallback - Copy to Downloads directory on Android
     if (Platform.OS === 'android') {
       try {
-        const downloadsDir = FileSystem.cacheDirectory;
+        const downloadsDir = (FileSystem as any).cacheDirectory || (FileSystem as any).documentDirectory || '';
         const fileName = `Ledger_${data.shop.name.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.pdf`;
         const destPath = `${downloadsDir}${fileName}`;
 

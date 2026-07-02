@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1F2937',
   },
   syncingBanner: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: '#2563EB',
   },
   successBanner: {
     backgroundColor: Colors.primary,

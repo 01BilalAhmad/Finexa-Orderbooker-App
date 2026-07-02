@@ -63,7 +63,7 @@ export function BismillahSplash({ onFinish }: BismillahSplashProps) {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#4338CA',
+    backgroundColor: '#1D4ED8',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999,
