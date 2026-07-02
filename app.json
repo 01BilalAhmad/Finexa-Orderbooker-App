@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Finexa Smart Credit Routes",
-    "slug": "finexa-smart-credit-routes",
+    "slug": "finexa-orderbooker",
     "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
