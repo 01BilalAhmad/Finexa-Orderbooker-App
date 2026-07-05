@@ -815,11 +815,7 @@ export function RecoveryBottomSheet({
                 </Pressable>
               </View>
 
-              <View style={styles.bottomPad} />
-            </ScrollView>
-
-            {/* ============ SUBMIT FOOTER ============ */}
-            <View style={styles.footer}>
+              {/* ============ RECOVERY AMOUNT PREVIEW (moved inside ScrollView) ============ */}
               {numericAmount > 0 && isValid ? (
                 <View style={styles.amountPreview}>
                   <View>
@@ -833,6 +829,11 @@ export function RecoveryBottomSheet({
                 </View>
               ) : null}
 
+              <View style={styles.bottomPad} />
+            </ScrollView>
+
+            {/* ============ SUBMIT FOOTER ============ */}
+            <View style={styles.footer}>
               {showSuccess ? (
                 <View style={styles.successFooter}>
                   <LinearGradient colors={['#2563EB', '#1D4ED8']} style={styles.successFooterInner}>
