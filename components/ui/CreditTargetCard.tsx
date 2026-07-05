@@ -33,15 +33,18 @@ const statusConfig: Record<string, { color: string; bg: string; label: string; i
 export function CreditTargetCard({ orderbookerId }: { orderbookerId: string }) {
   const [data, setData] = useState<CreditTargetData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
     const fetchTarget = async () => {
       try {
+        setError(null);
         const result = await ApiService.getCreditTarget(orderbookerId);
         if (mounted) setData(result);
       } catch (err) {
         console.warn('[CreditTargetCard] Failed to fetch:', err);
+        if (mounted) setError('Could not load target');
       } finally {
         if (mounted) setLoading(false);
       }
@@ -53,13 +56,41 @@ export function CreditTargetCard({ orderbookerId }: { orderbookerId: string }) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="small" color={Colors.primary} />
+        <View style={styles.loadingRow}>
+          <ActivityIndicator size="small" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading credit target...</Text>
+        </View>
       </View>
     );
   }
 
+  // If API failed, show error state (so user knows something is wrong)
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.errorRow}>
+          <MaterialIcons name="error-outline" size={18} color="#EF4444" />
+          <Text style={styles.errorText}>Could not load credit target</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // If no target set, show empty state (so OB knows admin hasn't set it yet)
   if (!data || !data.target || data.target.targetClosingCredit === null) {
-    return null; // No target set — don't show card
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyRow}>
+          <View style={[styles.iconWrap, { backgroundColor: '#F3F4F6' }]}>
+            <MaterialIcons name="flag" size={18} color="#6B7280" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Credit Target</Text>
+            <Text style={styles.subtitle}>No target set for this month yet</Text>
+          </View>
+        </View>
+      </View>
+    );
   }
 
   const { stats } = data;
@@ -130,6 +161,33 @@ const styles = StyleSheet.create({
     ...Shadow.sm,
     borderWidth: 1,
     borderColor: Colors.borderLight,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+  },
+  loadingText: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+  },
+  errorText: {
+    fontSize: FontSize.sm,
+    color: '#EF4444',
+    fontWeight: FontWeight.medium,
+  },
+  emptyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   header: {
     flexDirection: 'row',
