@@ -527,7 +527,6 @@ export function RecoveryBottomSheet({
                       onFocus={() => setFocusedField('amount')}
                       onBlur={() => setFocusedField(null)}
                       autoFocus
-                      selectTextOnFocus
                     />
                     {amount ? (
                       <Pressable

@@ -194,6 +194,8 @@ export default function TodayRouteScreen() {
 
   // Receipt regeneration state — persists receipt data so it can be reopened anytime
   const [lastReceiptData, setLastReceiptData] = useState<{
+    transactionId?: string;
+    shopId?: string;
     shopName: string;
     shopAddress?: string;
     shopOwnerName?: string;
@@ -571,6 +573,8 @@ export default function TodayRouteScreen() {
 
           // Save receipt data for regeneration — persists so receipt can be reopened anytime
           setLastReceiptData({
+            transactionId: result.id,
+            shopId,
             shopName,
             shopAddress: recoveryShop.address || recoveryShop.area || undefined,
             shopOwnerName: recoveryShop.ownerName || undefined,
@@ -690,6 +694,8 @@ export default function TodayRouteScreen() {
 
           // Save receipt data for regeneration — persists so receipt can be reopened anytime
           setLastReceiptData({
+            transactionId: undefined, // offline, no server ID yet
+            shopId,
             shopName,
             shopAddress: recoveryShop.address || recoveryShop.area || undefined,
             shopOwnerName: recoveryShop.ownerName || undefined,
@@ -1649,13 +1655,49 @@ export default function TodayRouteScreen() {
           setDetailShop(null);
         }}
         hasRecoveryToday={detailShop ? isRecoverySubmitted(detailShop.id, selectedCompanyId || user?.companyId) : false}
-        onResendReceipt={() => {
+        onResendReceipt={async () => {
           // Show the receipt modal again for regeneration
-          if (lastReceiptData) {
-            setShowReceiptModal(true);
-          } else {
+          if (!lastReceiptData) {
             Alert.alert('No Receipt', 'No receipt data available for this shop. Receipts are only available for the most recent recovery.');
+            return;
           }
+
+          // If we have a transaction ID, try to fetch the latest transaction data from server
+          // This ensures the receipt shows updated amounts if admin edited the recovery
+          if (lastReceiptData.transactionId && lastReceiptData.shopId) {
+            try {
+              // Fetch latest transactions for this shop
+              const result = await ApiService.getTransactions({
+                shopId: lastReceiptData.shopId,
+                type: 'recovery',
+                limit: 50,
+              });
+              // Find the transaction by ID
+              const txn = result.transactions.find((t) => t.id === lastReceiptData.transactionId);
+              if (txn) {
+                // Found the transaction — check if amount was edited
+                const updatedAmount = Number(txn.amount);
+                if (updatedAmount !== lastReceiptData.recoveryAmount) {
+                  // Amount was edited by admin — update receipt data
+                  const newRemaining = lastReceiptData.openingBalance - updatedAmount;
+                  setLastReceiptData({
+                    ...lastReceiptData,
+                    recoveryAmount: updatedAmount,
+                    remainingBalance: newRemaining,
+                  });
+                  Alert.alert(
+                    'Receipt Updated',
+                    `Recovery amount was updated to ${formatPKR(updatedAmount)} by admin. Receipt will now show the updated amount.`
+                  );
+                }
+              }
+            } catch (e) {
+              // If fetch fails (offline), use cached data
+              console.log('[Resend Receipt] Could not fetch latest txn, using cached data:', e);
+            }
+          }
+
+          setShowReceiptModal(true);
         }}
         onEditPendingRecovery={(txn) => {
           // Open edit recovery modal
