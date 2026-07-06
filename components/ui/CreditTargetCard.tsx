@@ -34,6 +34,10 @@ export function CreditTargetCard({ orderbookerId }: { orderbookerId: string }) {
   const [data, setData] = useState<CreditTargetData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+<<<<<<< HEAD
+=======
+  const [retryKey, setRetryKey] = useState(0);
+>>>>>>> 0315fa5 (Fix Credit Target card stuck in loading — proper state management)
 
   useEffect(() => {
     let mounted = true;
@@ -43,11 +47,22 @@ export function CreditTargetCard({ orderbookerId }: { orderbookerId: string }) {
       try {
         setError(null);
         const result = await ApiService.getCreditTarget(orderbookerId);
+<<<<<<< HEAD
         if (mounted) setData(result);
       } catch (err: any) {
         console.warn('[CreditTargetCard] Failed to fetch:', err);
 
         // Check if it's an auth error — retry once after 1s (token might refresh)
+=======
+        if (mounted) {
+          setData(result);
+          setLoading(false);
+        }
+      } catch (err: any) {
+        console.warn('[CreditTargetCard] Failed to fetch (attempt ' + (retryCount + 1) + '):', err?.message);
+
+        // Auto-retry on auth error once after 1.5s (token might refresh)
+>>>>>>> 0315fa5 (Fix Credit Target card stuck in loading — proper state management)
         const errMsg = (err?.message || '').toLowerCase();
         const isAuthError = errMsg.includes('authentication') || errMsg.includes('token') || errMsg.includes('401');
 
@@ -55,6 +70,7 @@ export function CreditTargetCard({ orderbookerId }: { orderbookerId: string }) {
           retryCount++;
           setTimeout(() => {
             if (mounted) fetchTarget();
+<<<<<<< HEAD
           }, 1000);
           return;
         }
@@ -62,11 +78,28 @@ export function CreditTargetCard({ orderbookerId }: { orderbookerId: string }) {
         if (mounted) setError('Could not load target');
       } finally {
         if (mounted && (retryCount >= 1 || !error)) setLoading(false);
+=======
+          }, 1500);
+          return; // Don't set error yet — retrying
+        }
+
+        // Final failure
+        if (mounted) {
+          setError('Could not load credit target');
+          setLoading(false);
+        }
+>>>>>>> 0315fa5 (Fix Credit Target card stuck in loading — proper state management)
       }
     };
     fetchTarget();
     return () => { mounted = false; };
-  }, [orderbookerId]);
+  }, [orderbookerId, retryKey]);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    setRetryKey(k => k + 1); // triggers useEffect re-fetch
+  };
 
   if (loading) {
     return (
@@ -85,6 +118,7 @@ export function CreditTargetCard({ orderbookerId }: { orderbookerId: string }) {
         <View style={styles.errorRow}>
           <MaterialIcons name="error-outline" size={18} color="#EF4444" />
           <Text style={styles.errorText}>{error}</Text>
+<<<<<<< HEAD
           <Pressable
             onPress={() => {
               setError(null);
@@ -95,6 +129,10 @@ export function CreditTargetCard({ orderbookerId }: { orderbookerId: string }) {
             style={styles.retryBtn}
           >
             <MaterialIcons name="refresh" size={16} color={Colors.primary} />
+=======
+          <Pressable onPress={handleRetry} style={styles.retryBtn} hitSlop={8}>
+            <MaterialIcons name="refresh" size={18} color={Colors.primary} />
+>>>>>>> 0315fa5 (Fix Credit Target card stuck in loading — proper state management)
           </Pressable>
         </View>
       </View>
