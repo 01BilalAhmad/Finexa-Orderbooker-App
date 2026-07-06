@@ -37,16 +37,31 @@ export function CreditTargetCard({ orderbookerId }: { orderbookerId: string }) {
 
   useEffect(() => {
     let mounted = true;
+    let retryCount = 0;
+
     const fetchTarget = async () => {
       try {
         setError(null);
         const result = await ApiService.getCreditTarget(orderbookerId);
         if (mounted) setData(result);
-      } catch (err) {
+      } catch (err: any) {
         console.warn('[CreditTargetCard] Failed to fetch:', err);
+
+        // Check if it's an auth error — retry once after 1s (token might refresh)
+        const errMsg = (err?.message || '').toLowerCase();
+        const isAuthError = errMsg.includes('authentication') || errMsg.includes('token') || errMsg.includes('401');
+
+        if (isAuthError && retryCount < 1) {
+          retryCount++;
+          setTimeout(() => {
+            if (mounted) fetchTarget();
+          }, 1000);
+          return;
+        }
+
         if (mounted) setError('Could not load target');
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted && (retryCount >= 1 || !error)) setLoading(false);
       }
     };
     fetchTarget();
@@ -64,13 +79,23 @@ export function CreditTargetCard({ orderbookerId }: { orderbookerId: string }) {
     );
   }
 
-  // If API failed, show error state (so user knows something is wrong)
   if (error) {
     return (
       <View style={styles.container}>
         <View style={styles.errorRow}>
           <MaterialIcons name="error-outline" size={18} color="#EF4444" />
-          <Text style={styles.errorText}>Could not load credit target</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable
+            onPress={() => {
+              setError(null);
+              setLoading(true);
+              // Trigger refetch by changing state
+              setData(null);
+            }}
+            style={styles.retryBtn}
+          >
+            <MaterialIcons name="refresh" size={16} color={Colors.primary} />
+          </Pressable>
         </View>
       </View>
     );
@@ -183,6 +208,11 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     color: '#EF4444',
     fontWeight: FontWeight.medium,
+    flex: 1,
+  },
+  retryBtn: {
+    padding: Spacing.xs,
+    borderRadius: Radius.sm,
   },
   emptyRow: {
     flexDirection: 'row',
