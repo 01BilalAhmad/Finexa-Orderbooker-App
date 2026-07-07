@@ -253,8 +253,6 @@ export default function ProfileScreen() {
 
   // Local UI preferences (mockup-style toggles)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [offlineMode, setOfflineMode] = useState(false);
-  const [language, setLanguage] = useState<'EN' | 'UR'>('EN');
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>('2 min ago');
 
   useEffect(() => {
@@ -816,70 +814,7 @@ export default function ProfileScreen() {
             }
           />
 
-          {/* Row 4: Offline Mode toggle */}
-          <SettingsRow
-            icon="wifi-off"
-            iconColor="#64748B"
-            iconBg="#F1F5F9"
-            title="Offline Mode"
-            subtitle={offlineMode ? 'Working offline' : 'Online'}
-            rightElement={
-              <Switch
-                value={offlineMode}
-                onValueChange={setOfflineMode}
-                trackColor={{ false: '#CBD5E1', true: '#2563EB' }}
-                thumbColor="#FFFFFF"
-              />
-            }
-          />
-
-          {/* Row 5: Language toggle (EN | اردو) */}
-          <SettingsRow
-            icon="language"
-            iconColor="#2563EB"
-            iconBg="#DBEAFE"
-            title="Language"
-            subtitle={language === 'EN' ? 'English' : 'اردو'}
-            rightElement={
-              <View style={styles.langPill}>
-                <Pressable
-                  onPress={() => setLanguage('EN')}
-                  style={[
-                    styles.langPillSide,
-                    language === 'EN' && styles.langPillSideActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.langPillText,
-                      language === 'EN' && styles.langPillTextActive,
-                    ]}
-                  >
-                    EN
-                  </Text>
-                </Pressable>
-                <View style={styles.langPillDivider} />
-                <Pressable
-                  onPress={() => setLanguage('UR')}
-                  style={[
-                    styles.langPillSide,
-                    language === 'UR' && styles.langPillSideActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.langPillText,
-                      language === 'UR' && styles.langPillTextActive,
-                    ]}
-                  >
-                    اردو
-                  </Text>
-                </Pressable>
-              </View>
-            }
-          />
-
-          {/* Row 6: Help & Support */}
+          {/* Row 4: Help & Support */}
           <SettingsRow
             icon="help-outline"
             iconColor="#2563EB"

@@ -921,12 +921,19 @@ export default function TodayRouteScreen() {
     setRecoveryShop(shop);
   }, [isRecoverySubmitted, selectedCompanyId, user?.companyId]);
 
-  // ── Filtered shops (search) ──────────────────────────────────────────────
+  // ── Filtered shops (search + hide zero-balance) ─────────────────────────
   const filteredShops = useMemo(() => {
-    if (!searchQuery.trim()) return todayShops;
+    // First, filter out shops with zero balance (unless searching)
+    const effectiveCompanyId = selectedCompanyId || user?.companyId;
+    const nonZeroShops = todayShops.filter((s) => {
+      const bal = getShopDisplayBalance(s, effectiveCompanyId).balance;
+      return bal > 0;
+    });
+
+    if (!searchQuery.trim()) return nonZeroShops;
     try {
       const q = searchQuery.toLowerCase();
-      return todayShops.filter(
+      return nonZeroShops.filter(
         (s) =>
           (s.name || '').toLowerCase().includes(q) ||
           (s.area || '').toLowerCase().includes(q) ||
@@ -934,9 +941,9 @@ export default function TodayRouteScreen() {
           (s.phone || '').includes(q)
       );
     } catch {
-      return todayShops;
+      return nonZeroShops;
     }
-  }, [todayShops, searchQuery]);
+  }, [todayShops, searchQuery, selectedCompanyId, user?.companyId]);
 
   // ── Group shops by day for all-routes mode ───────────────────────────────
   const groupedSections = useMemo(() => {

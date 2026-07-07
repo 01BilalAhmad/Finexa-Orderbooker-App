@@ -1,15 +1,16 @@
 // utils/overdueCalculator.ts
 // Calculates overdue shops locally from shop data + last recovery dates.
 // A shop is "overdue" if:
-//   1. Balance > 0
-//   2. Last approved recovery was 7+ days ago (or never recovered)
-// No CMS API needed — pure client-side calculation.
+//   1. Balance > 0 (has outstanding amount)
+//   2. Last approved recovery was 14+ days ago (or never recovered)
+// This means: if a shop got credit today but no recovery in 14+ days, it's overdue.
+// If recovery happened within 14 days, it's NOT overdue (even with balance > 0).
 
 import { Shop } from '@/services/api';
 import { OverdueShop } from '@/services/storage';
 import { StorageService } from '@/services/storage';
 
-const OVERDUE_THRESHOLD_DAYS = 7;
+const OVERDUE_THRESHOLD_DAYS = 14;
 
 /**
  * Calculate overdue shops from locally saved shop data.
@@ -37,20 +38,24 @@ export async function calculateOverdueShops(shops: Shop[]): Promise<OverdueShop[
     const lastRecoveryDate = recoveryEntry?.lastRecoveryDate || null;
 
     let daysOverdue = 0;
+    let isOverdue = false;
 
     if (!lastRecoveryDate) {
-      // Never recovered — check shop creation date
-      // If shop was created 7+ days ago and has balance, it's overdue
-      // Use a high number to flag it as critical
+      // Never recovered — check if shop was created 14+ days ago
+      // If shop has balance and never recovered, it's overdue
+      // (we don't know exact creation date, but if balance > 0 and no recovery, likely overdue)
       daysOverdue = 999; // Never recovered = very overdue
+      isOverdue = true;
     } else {
       const recoveryTime = new Date(lastRecoveryDate).getTime();
       const diffMs = now - recoveryTime;
       daysOverdue = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+      // Only overdue if 14+ days since last recovery
+      isOverdue = daysOverdue >= OVERDUE_THRESHOLD_DAYS;
     }
 
-    // Only include if 7+ days overdue
-    if (daysOverdue >= OVERDUE_THRESHOLD_DAYS) {
+    // Only include if overdue (14+ days since last recovery) AND balance > 0
+    if (isOverdue) {
       overdueShops.push({
         shopId: shop.id,
         shopName: shop.name,
