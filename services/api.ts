@@ -398,4 +398,20 @@ export const ApiService = {
       };
     }>(`/api/users/${orderbookerId}/credit-target?month=${m}`);
   },
+
+  // ── Overdue Shops: fetch from server (authoritative, DB-based) ──
+  getOverdueShops: (orderbookerId: string) => {
+    return request<{
+      overdueShops: Array<{
+        shopId: string;
+        shopName: string;
+        shopArea: string | null;
+        balance: number;
+        lastRecoveryDate: string | null;
+        daysOverdue: number;
+      }>;
+      count: number;
+      threshold: number;
+    }>(`/api/orderbooker/overdue-shops?orderbookerId=${orderbookerId}`);
+  },
 };

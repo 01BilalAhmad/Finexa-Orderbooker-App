@@ -32,7 +32,6 @@ import { SuccessOverlay } from '@/components/ui/SuccessOverlay';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { PendingCreditAlert } from '@/components/ui/PendingCreditAlert';
 import { VisitStreakCounter } from '@/components/ui/VisitStreakCounter';
-import { CreditTargetCard } from '@/components/ui/CreditTargetCard';
 import { OverdueAlertBanner } from '@/components/ui/OverdueAlertBanner';
 import { PerformanceChart } from '@/components/ui/PerformanceChart';
 import { RecoveryAnalysisChart } from '@/components/ui/RecoveryAnalysisChart';
@@ -274,17 +273,27 @@ export default function TodayRouteScreen() {
       loadAllShops(user.id, selectedCompanyId || undefined);
       loadTodayStats();
       loadPendingNotifications();
-      // Calculate overdue shops locally
+      // Fetch overdue shops from server (authoritative — uses real DB data)
       (async () => {
         try {
-          const { calculateOverdueShops } = await import('@/utils/overdueCalculator');
-          const allShops = await StorageService.getShops();
-          await calculateOverdueShops(allShops);
-          const { getOverdueShopIds } = await import('@/utils/overdueCalculator');
-          const ids = await getOverdueShopIds();
+          const result = await ApiService.getOverdueShops(user.id);
+          const ids = new Set(result.overdueShops.map((s) => s.shopId));
           setOverdueShopIds(ids);
+          // Also save to local storage for offline use
+          const { StorageService } = await import('@/services/storage');
+          await StorageService.saveOverdueShops(result.overdueShops);
         } catch (e) {
-          console.warn('[Dashboard] Overdue calculation failed:', e);
+          // Fallback to local calculation if API fails
+          console.warn('[Dashboard] Server overdue fetch failed, using local:', e);
+          try {
+            const { calculateOverdueShops, getOverdueShopIds } = await import('@/utils/overdueCalculator');
+            const allShops = await StorageService.getShops();
+            await calculateOverdueShops(allShops);
+            const ids = await getOverdueShopIds();
+            setOverdueShopIds(ids);
+          } catch (e2) {
+            console.warn('[Dashboard] Local overdue calculation also failed:', e2);
+          }
         }
       })();
     }
@@ -921,19 +930,12 @@ export default function TodayRouteScreen() {
     setRecoveryShop(shop);
   }, [isRecoverySubmitted, selectedCompanyId, user?.companyId]);
 
-  // ── Filtered shops (search + hide zero-balance) ─────────────────────────
+  // ── Filtered shops (search) ──────────────────────────────────────────────
   const filteredShops = useMemo(() => {
-    // First, filter out shops with zero balance (unless searching)
-    const effectiveCompanyId = selectedCompanyId || user?.companyId;
-    const nonZeroShops = todayShops.filter((s) => {
-      const bal = getShopDisplayBalance(s, effectiveCompanyId).balance;
-      return bal > 0;
-    });
-
-    if (!searchQuery.trim()) return nonZeroShops;
+    if (!searchQuery.trim()) return todayShops;
     try {
       const q = searchQuery.toLowerCase();
-      return nonZeroShops.filter(
+      return todayShops.filter(
         (s) =>
           (s.name || '').toLowerCase().includes(q) ||
           (s.area || '').toLowerCase().includes(q) ||
@@ -941,9 +943,9 @@ export default function TodayRouteScreen() {
           (s.phone || '').includes(q)
       );
     } catch {
-      return nonZeroShops;
+      return todayShops;
     }
-  }, [todayShops, searchQuery, selectedCompanyId, user?.companyId]);
+  }, [todayShops, searchQuery]);
 
   // ── Group shops by day for all-routes mode ───────────────────────────────
   const groupedSections = useMemo(() => {
@@ -1107,11 +1109,6 @@ export default function TodayRouteScreen() {
                 {/* Visit Streak Counter */}
                 {user ? (
                   <VisitStreakCounter orderbookerId={user.id} visitedCount={visitedCount} />
-                ) : null}
-
-                {/* Credit Target Progress Card */}
-                {user ? (
-                  <CreditTargetCard orderbookerId={user.id} />
                 ) : null}
 
                 {/* Overdue Shops Alert Banner */}
