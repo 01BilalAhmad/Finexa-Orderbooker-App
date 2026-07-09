@@ -95,19 +95,8 @@ export const ShopCard = memo(function ShopCard({
   };
 
   // Pulsing dot for over-limit banner
+  // Pulse animation removed — was causing shop list blink
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    if (isOverLimit) {
-      const animation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.5, duration: 600, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-        ])
-      );
-      animation.start();
-      return () => animation.stop();
-    }
-  }, [isOverLimit]);
 
   const handleCall = () => {
     if (shop.phone) Linking.openURL(`tel:${shop.phone}`);

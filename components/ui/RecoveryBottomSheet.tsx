@@ -19,7 +19,6 @@ import {
 import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
 import { Shop } from '@/services/api';
@@ -268,18 +267,15 @@ export function RecoveryBottomSheet({
   };
 
   const handleQuickAmount = (val: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setAmount(String(val));
   };
 
   const handleFullBalance = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const { balance: displayBalance } = getShopDisplayBalance(shop as Shop, companyId);
     setAmount(String(Math.max(displayBalance, 0)));
   };
 
   const handlePhotoProof = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Alert.alert('Photo Proof', 'Photo proof capture is coming soon. Stay tuned!');
   };
 
@@ -339,7 +335,6 @@ export function RecoveryBottomSheet({
         // Offline: skip address, coordinates are enough
         setGpsAddress(undefined);
       }
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
       Alert.alert('GPS Error', 'Could not get location. Make sure GPS is enabled and try again.');
     } finally {
@@ -352,7 +347,6 @@ export function RecoveryBottomSheet({
     if (value && !hasGps) {
       captureGPS();
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const handleSubmit = async () => {
@@ -396,8 +390,6 @@ export function RecoveryBottomSheet({
         outOfRange = true;
       }
     }
-
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await onSubmit({
       amount: numAmount,
       description,
@@ -530,7 +522,7 @@ export function RecoveryBottomSheet({
                     />
                     {amount ? (
                       <Pressable
-                        onPress={() => { setAmount(''); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                        onPress={() => { setAmount(''); }}
                         style={styles.amountClear}
                         hitSlop={8}
                       >

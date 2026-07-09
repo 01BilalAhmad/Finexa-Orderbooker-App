@@ -17,7 +17,6 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { captureRef } from '@/utils/captureRef';
-import * as Haptics from 'expo-haptics';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
 import { PendingNotification, StorageService } from '@/services/storage';
 import { sendRecoverySms } from '@/utils/sendRecoverySms';
@@ -173,7 +172,6 @@ export function PendingMessagesSheet({
   };
 
   const handleSendSms = async (item: PendingNotification) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       const sent = await sendRecoverySms({
         shopPhone: item.shopPhone,
@@ -184,7 +182,6 @@ export function PendingMessagesSheet({
         distributorPhone: item.distributorPhone,
       });
       if (sent) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         onSendSms(item.id);
       } else {
         // SMS failed — DON'T remove from pending
@@ -207,7 +204,6 @@ export function PendingMessagesSheet({
   };
 
   const handleSendWhatsapp = async (item: PendingNotification) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSendingId(item.id);
 
     try {
@@ -256,7 +252,6 @@ export function PendingMessagesSheet({
   /** User confirmed they sent the WhatsApp message */
   const handleConfirmSent = useCallback(() => {
     if (confirmItem) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onSendWhatsapp(confirmItem.id);
     }
     setConfirmItem(null);

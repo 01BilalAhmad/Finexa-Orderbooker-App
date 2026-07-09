@@ -39,15 +39,9 @@ export const PerformanceChart = memo(function PerformanceChart({ userId }: Perfo
     loadData();
   }, [userId]);
 
+  // Pulse animation removed — was causing dashboard blink
   useEffect(() => {
-    if (!loading) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.15, duration: 800, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        ])
-      ).start();
-    }
+    // No animation — static display
   }, [loading]);
 
   async function loadData() {
