@@ -430,6 +430,18 @@ function RouteTrackingProviderInner({ children }: { children: React.ReactNode })
 
       setState({ ...initialState });
 
+      // AUTO-SYNC: Upload any pending GPS locations after route end
+      // This ensures waypoints are uploaded even if user forgot to press Sync Upload
+      if (!currentSessionId.startsWith('local_')) {
+        try {
+          const { performSyncUpload } = await import('@/services/syncUpload');
+          const syncResult = await performSyncUpload();
+          console.log('[RouteTracking] Auto-sync after route end:', syncResult);
+        } catch (syncErr: any) {
+          console.warn('[RouteTracking] Auto-sync after route end failed (non-fatal):', syncErr?.message);
+        }
+      }
+
       // NOTE: No Alert here — the caller (handleEndRoute in (tabs)/index.tsx)
       // already does sync upload + auto-redirect to /route-summary.
       // Showing an Alert here used to block the redirect and made the

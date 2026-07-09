@@ -305,10 +305,29 @@ export default function TodayRouteScreen() {
       if (nextState === 'active') {
         // Check for pending notifications when app comes to foreground
         loadPendingNotifications();
+        
+        // AUTO-SYNC: If route is active, try to upload pending GPS locations
+        // This runs silently in background — no UI interruption
+        if (user && isTracking) {
+          (async () => {
+            try {
+              const { getQueuedLocations } = await import('@/services/backgroundLocation');
+              const queued = await getQueuedLocations();
+              if (queued.length > 10) {
+                // Only sync if there are significant pending locations
+                const { performSyncUpload } = await import('@/services/syncUpload');
+                await performSyncUpload();
+                console.log('[AutoSync] Foreground sync uploaded', queued.length, 'locations');
+              }
+            } catch (e) {
+              // Silent fail — auto-sync is best-effort
+            }
+          })();
+        }
       }
     });
     return () => subscription.remove();
-  }, []);
+  }, [user, isTracking]);
 
   // ── Pending Reminder: Show alert on app open if there are pending receipts ──
   const pendingAlertShownRef = useRef(false);
