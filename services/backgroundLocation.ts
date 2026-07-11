@@ -14,7 +14,7 @@
 // - App killed: Offline locations saved in AsyncStorage, restored on next launch ✅
 // - Net OFF → Net ON: NO auto-sync — data stays local until manual upload ✅
 
-const LOCATION_INTERVAL_MS = 30000; // 30 seconds between GPS pings
+const LOCATION_INTERVAL_MS = 15000; // 15 seconds (was 30s — reduced for better waypoints)
 const LOCATION_DISTANCE_M = 10; // minimum 10 meters between updates
 const MAX_OFFLINE_LOCATIONS = 2000; // max stored locally (~16 hours at 30s intervals = full working day)
 
@@ -201,8 +201,15 @@ async function handleLocationUpdate(coords: {
       locationQueue = locationQueue.slice(-MAX_OFFLINE_LOCATIONS);
     }
 
-    // Always persist to AsyncStorage (survives app kill)
-    await persistOfflineLocations();
+    // Persist ONLY the new location (not entire queue — avoids duplicates in storage)
+    try {
+      const Storage = await getStorageService();
+      if (Storage) {
+        await Storage.addOfflineRouteLocations([locationData]);
+      }
+    } catch (e) {
+      console.error('[GPS] Failed to persist location:', e);
+    }
 
     console.log(`[GPS] Location saved locally (${locationQueue.length} total queued)`);
 
