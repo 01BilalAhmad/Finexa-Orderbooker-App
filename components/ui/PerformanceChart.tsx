@@ -40,9 +40,12 @@ export const PerformanceChart = memo(function PerformanceChart({ userId }: Perfo
   }, [userId]);
 
   // Pulse animation removed — was causing dashboard blink
+<<<<<<< HEAD
   useEffect(() => {
     // No animation — static display
   }, [loading]);
+=======
+>>>>>>> ec7921c (Fix ALL: vibrate, blink, waypoint drawing + GPS improvements)
 
   async function loadData() {
     setLoading(true);

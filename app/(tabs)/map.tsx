@@ -139,7 +139,7 @@ export default function MapScreen() {
   // Periodic refresh: every 10 seconds when tracking is active
   useEffect(() => {
     if (isTracking) {
-      refreshIntervalRef.current = setInterval(loadRoutePoints, 10000);
+      refreshIntervalRef.current = setInterval(loadRoutePoints, 5000);
     }
     return () => {
       if (refreshIntervalRef.current) {
@@ -511,24 +511,59 @@ export default function MapScreen() {
         map.removeLayer(routeLine);
         routeLine = null;
       }
+      // Remove old start/end markers
+      if (window._startMarker) { map.removeLayer(window._startMarker); window._startMarker = null; }
+      if (window._endMarker) { map.removeLayer(window._endMarker); window._endMarker = null; }
+
       if (route && route.length > 1) {
-        // Sort route points by time (if available) and deduplicate for cleaner polyline
+        // Sort by recordedAt time if available (oldest first)
+        var sorted = route.slice().sort(function(a, b) {
+          var ta = a.recordedAt ? new Date(a.recordedAt).getTime() : 0;
+          var tb = b.recordedAt ? new Date(b.recordedAt).getTime() : 0;
+          return ta - tb;
+        });
+        // Deduplicate for cleaner line
         var seen = {};
         var coords = [];
-        route.forEach(function(p) {
-          var key = p.lat.toFixed(6) + ',' + p.lng.toFixed(6);
+        sorted.forEach(function(p) {
+          var key = p.lat.toFixed(5) + ',' + p.lng.toFixed(5);
           if (!seen[key]) {
             seen[key] = true;
             coords.push([p.lat, p.lng]);
           }
         });
         if (coords.length > 1) {
+          // Draw thick blue polyline showing the OB's path
           routeLine = L.polyline(coords, {
             color: '#2563EB',
-            weight: 4,
-            opacity: 0.8,
+            weight: 5,
+            opacity: 0.85,
             smoothFactor: 1
           }).addTo(map);
+
+          // Start marker (green circle with "S")
+          window._startMarker = L.marker(coords[0], {
+            icon: L.divIcon({
+              className: '',
+              html: '<div style="width:28px;height:28px;border-radius:50%;background:#10B981;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);font-size:12px;font-weight:bold;color:white;">S</div>',
+              iconSize: [28, 28],
+              iconAnchor: [14, 14]
+            })
+          }).addTo(map);
+
+          // End/current marker (red circle with "E")
+          var lastCoord = coords[coords.length - 1];
+          window._endMarker = L.marker(lastCoord, {
+            icon: L.divIcon({
+              className: '',
+              html: '<div style="width:28px;height:28px;border-radius:50%;background:#EF4444;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4);font-size:12px;font-weight:bold;color:white;">E</div>',
+              iconSize: [28, 28],
+              iconAnchor: [14, 14]
+            })
+          }).addTo(map);
+
+          // Fit map to show entire route
+          map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
         }
       }
     }

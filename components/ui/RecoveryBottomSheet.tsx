@@ -66,15 +66,7 @@ function GpsPulse({ active, color = '#10B981' }: { active: boolean; color?: stri
   const colorRgbInner = hexToRgba(color, 0.4);
 
   React.useEffect(() => {
-    if (!active) return;
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scale, { toValue: 1.35, duration: 800, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1, duration: 800, useNativeDriver: true }),
-      ])
-    );
-    animation.start();
-    return () => animation.stop();
+    // GPS pulse animation removed — was causing blink
   }, [active]);
 
   return (
@@ -335,7 +327,11 @@ export function RecoveryBottomSheet({
         // Offline: skip address, coordinates are enough
         setGpsAddress(undefined);
       }
+<<<<<<< HEAD
     } catch {
+=======
+      } catch {
+>>>>>>> ec7921c (Fix ALL: vibrate, blink, waypoint drawing + GPS improvements)
       Alert.alert('GPS Error', 'Could not get location. Make sure GPS is enabled and try again.');
     } finally {
       setCapturingGps(false);
@@ -347,7 +343,11 @@ export function RecoveryBottomSheet({
     if (value && !hasGps) {
       captureGPS();
     }
+<<<<<<< HEAD
   };
+=======
+    };
+>>>>>>> ec7921c (Fix ALL: vibrate, blink, waypoint drawing + GPS improvements)
 
   const handleSubmit = async () => {
     const numAmount = parseInt(amount, 10);
@@ -390,6 +390,10 @@ export function RecoveryBottomSheet({
         outOfRange = true;
       }
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> ec7921c (Fix ALL: vibrate, blink, waypoint drawing + GPS improvements)
     await onSubmit({
       amount: numAmount,
       description,

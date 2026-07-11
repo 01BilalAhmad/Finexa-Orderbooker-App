@@ -27,13 +27,11 @@ export const OfflineBanner = memo(function OfflineBanner({
   // Spin animation for sync icon
   useEffect(() => {
     if (isSyncing) {
-      Animated.loop(
-        Animated.timing(spinAnim, {
+      Animated.timing(spinAnim, {
           toValue: 1,
           duration: 900,
           useNativeDriver: true,
-        })
-      ).start();
+        }).start();
     } else {
       spinAnim.stopAnimation();
       spinAnim.setValue(0);
