@@ -327,11 +327,7 @@ export function RecoveryBottomSheet({
         // Offline: skip address, coordinates are enough
         setGpsAddress(undefined);
       }
-<<<<<<< HEAD
     } catch {
-=======
-      } catch {
->>>>>>> ec7921c (Fix ALL: vibrate, blink, waypoint drawing + GPS improvements)
       Alert.alert('GPS Error', 'Could not get location. Make sure GPS is enabled and try again.');
     } finally {
       setCapturingGps(false);
@@ -343,11 +339,7 @@ export function RecoveryBottomSheet({
     if (value && !hasGps) {
       captureGPS();
     }
-<<<<<<< HEAD
   };
-=======
-    };
->>>>>>> ec7921c (Fix ALL: vibrate, blink, waypoint drawing + GPS improvements)
 
   const handleSubmit = async () => {
     const numAmount = parseInt(amount, 10);
@@ -390,10 +382,6 @@ export function RecoveryBottomSheet({
         outOfRange = true;
       }
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> ec7921c (Fix ALL: vibrate, blink, waypoint drawing + GPS improvements)
     await onSubmit({
       amount: numAmount,
       description,
