@@ -1,4 +1,6 @@
 // Download Data Screen — Manual data download, shown before route start
+// BLOCKS download if there's pending offline data (recoveries + GPS waypoints)
+// User MUST upload pending data before downloading new route
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator, Alert,
@@ -10,32 +12,88 @@ import { useAuth } from '@/hooks/useAuth';
 import { useShops } from '@/hooks/useShops';
 import { StorageService } from '@/services/storage';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { getTodayDateStr, getTodayLabel } from '@/utils/format';
+import { getTodayDateStr, getTodayLabel, formatPKR } from '@/utils/format';
 
 export default function DownloadScreen() {
   const { user } = useAuth();
   const { triggerFullSync } = useShops();
   const [isDownloading, setIsDownloading] = useState(false);
-  const [yesterdaySyncPending, setYesterdaySyncPending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pendingRecoveries, setPendingRecoveries] = useState(0);
+  const [pendingWaypoints, setPendingWaypoints] = useState(0);
+  const [pendingAmount, setPendingAmount] = useState(0);
+  const [hasPendingData, setHasPendingData] = useState(false);
 
   useEffect(() => {
-    checkYesterdaySync();
+    checkPendingData();
   }, []);
 
-  async function checkYesterdaySync() {
-    const done = await StorageService.isYesterdaySyncDone();
-    setYesterdaySyncPending(!done);
+  async function checkPendingData() {
+    try {
+      // Check for pending offline recoveries
+      const recoveries = await StorageService.getOfflineQueue();
+      const recoveryCount = recoveries?.length || 0;
+      const totalAmount = recoveries?.reduce((sum: number, r: any) => sum + (r.amount || 0), 0) || 0;
+      setPendingRecoveries(recoveryCount);
+      setPendingAmount(totalAmount);
+
+      // Check for pending GPS waypoints
+      const locations = await StorageService.getOfflineRouteLocations();
+      const waypointCount = locations?.length || 0;
+      setPendingWaypoints(waypointCount);
+
+      // Also check yesterday sync flag
+      const yesterdayDone = await StorageService.isYesterdaySyncDone();
+
+      // Has pending data if: recoveries > 0 OR waypoints > 0 OR yesterday not synced
+      const pending = recoveryCount > 0 || waypointCount > 0 || !yesterdayDone;
+      setHasPendingData(pending);
+    } catch (e) {
+      console.warn('[Download] Failed to check pending data:', e);
+    }
+  }
+
+  async function handleUpload() {
+    if (!user) return;
+    setIsUploading(true);
+    try {
+      const { performSyncUpload } = await import('@/services/syncUpload');
+      const result = await performSyncUpload();
+      console.log('[Download] Sync upload result:', result);
+
+      // Mark yesterday as synced
+      const today = getTodayDateStr();
+      await StorageService.saveLastSyncUploadDate(today);
+
+      // Re-check pending data
+      await checkPendingData();
+
+      if (hasPendingData) {
+        Alert.alert(
+          'Upload Complete!',
+          `Data upload ho gaya!\n\nRecoveries: ${result.transactionsSynced}\nWaypoints: ${result.locationsUploaded}\n\nAb naya data download kar sakte hain.`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (e: any) {
+      Alert.alert(
+        'Upload Failed',
+        'Data upload nahi ho saka. Internet check karein aur dobara try karein.\n\nError: ' + (e.message || 'Unknown'),
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsUploading(false);
+    }
   }
 
   async function handleDownload() {
     if (!user) return;
 
-    // Double check yesterday's sync
-    const yesterdayDone = await StorageService.isYesterdaySyncDone();
-    if (!yesterdayDone) {
+    // Double check — no pending data allowed
+    if (hasPendingData) {
       Alert.alert(
-        'Sync Pending!',
-        'Pehle kal ka data sync upload karein! Jab tak purana data upload nahi hoga, naya download nahi hoga.',
+        '⚠️ Pehle Upload Karein!',
+        'Aap ke paas pending data hai jo upload nahi hua. Pehle "Upload Pending Data" button dabayein, phir download kar sakte hain.',
         [{ text: 'OK' }]
       );
       return;
@@ -49,8 +107,6 @@ export default function DownloadScreen() {
         await StorageService.saveDataDownloadedDate(today);
         await StorageService.saveDataDownloadedForDate(today);
         Alert.alert('Download Complete', 'Aaj ka data download ho gaya! Ab route start karein.');
-        // Navigate directly to route-start — avoids race condition with root router
-        // where AsyncStorage data hasn't been read yet when router.replace('/') fires
         setTimeout(() => {
           router.replace('/route-start');
         }, 100);
@@ -80,25 +136,84 @@ export default function DownloadScreen() {
             Pehle aaj ka data download karein. Data download ke baad hi route start kar sakte hain aur shops dikhengi.
           </Text>
 
-          {yesterdaySyncPending && (
-            <View style={styles.warningBox}>
-              <MaterialIcons name="warning" size={20} color="#F59E0B" />
-              <Text style={styles.warningText}>
-                Kal ka data sync nahi hua! Pehle wo upload karein.
+          {/* PENDING DATA WARNING — shows upload button */}
+          {hasPendingData && (
+            <View style={styles.warningContainer}>
+              <View style={styles.warningHeader}>
+                <MaterialIcons name="warning" size={24} color="#F59E0B" />
+                <Text style={styles.warningTitle}>PICHLA DATA UPLOAD KARO</Text>
+              </View>
+
+              <View style={styles.pendingList}>
+                {pendingRecoveries > 0 && (
+                  <View style={styles.pendingRow}>
+                    <MaterialIcons name="payments" size={16} color="#FCD34D" />
+                    <Text style={styles.pendingText}>
+                      {pendingRecoveries} pending recoveries ({formatPKR(pendingAmount)})
+                    </Text>
+                  </View>
+                )}
+                {pendingWaypoints > 0 && (
+                  <View style={styles.pendingRow}>
+                    <MaterialIcons name="location-on" size={16} color="#FCD34D" />
+                    <Text style={styles.pendingText}>
+                      {pendingWaypoints} GPS waypoints
+                    </Text>
+                  </View>
+                )}
+                {pendingRecoveries === 0 && pendingWaypoints === 0 && (
+                  <View style={styles.pendingRow}>
+                    <MaterialIcons name="sync" size={16} color="#FCD34D" />
+                    <Text style={styles.pendingText}>
+                      Kal ka data sync nahi hua
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              <Text style={styles.warningDesc}>
+                Pehle ye data upload karo, phir naya route download hoga.
               </Text>
+
+              {/* UPLOAD BUTTON */}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.uploadBtn,
+                  isUploading && styles.btnDisabled,
+                  pressed && !isUploading && styles.btnPressed,
+                ]}
+                onPress={handleUpload}
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text style={styles.btnText}>Uploading...</Text>
+                  </>
+                ) : (
+                  <>
+                    <MaterialIcons name="cloud-upload" size={22} color="#FFFFFF" />
+                    <Text style={styles.btnText}>Abhi Upload Karein</Text>
+                  </>
+                )}
+              </Pressable>
             </View>
           )}
 
+          {/* DOWNLOAD BUTTON — disabled if pending data */}
           <Pressable
             style={({ pressed }) => [
               styles.downloadBtn,
-              (isDownloading || yesterdaySyncPending) && styles.downloadBtnDisabled,
-              pressed && !isDownloading && styles.downloadBtnPressed,
+              (isDownloading || hasPendingData) && styles.btnDisabled,
+              pressed && !isDownloading && !hasPendingData && styles.btnPressed,
             ]}
             onPress={handleDownload}
-            disabled={isDownloading || yesterdaySyncPending}
+            disabled={isDownloading || hasPendingData}
           >
-            <LinearGradient colors={['#2563EB', '#3B82F6']} style={styles.btnGradient}>
+            <LinearGradient
+              colors={hasPendingData ? ['#94A3B8', '#94A3B8'] : ['#2563EB', '#3B82F6']}
+              style={styles.btnGradient}
+            >
               {isDownloading ? (
                 <>
                   <ActivityIndicator size="small" color="#FFFFFF" />
@@ -107,14 +222,19 @@ export default function DownloadScreen() {
               ) : (
                 <>
                   <MaterialIcons name="download" size={24} color="#FFFFFF" />
-                  <Text style={styles.btnText}>Download Data</Text>
+                  <Text style={styles.btnText}>
+                    {hasPendingData ? 'Download Locked' : 'Download Data'}
+                  </Text>
                 </>
               )}
             </LinearGradient>
           </Pressable>
 
           <Text style={styles.footer}>
-            WiFi ya Mobile Data ON hona chahiye
+            {hasPendingData
+              ? '⚠️ Pehle pending data upload karein'
+              : 'WiFi ya Mobile Data ON hona chahiye'
+            }
           </Text>
         </View>
       </LinearGradient>
@@ -134,17 +254,51 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: '900', color: '#FFFFFF', textAlign: 'center', letterSpacing: 0.5 },
   date: { fontSize: FontSize.lg, color: 'rgba(255,255,255,0.8)', fontWeight: FontWeight.bold, marginTop: 2 },
   desc: { fontSize: FontSize.base, color: 'rgba(255,255,255,0.75)', textAlign: 'center', marginTop: Spacing.md, lineHeight: 22, marginBottom: Spacing.lg },
-  warningBox: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    backgroundColor: 'rgba(245,158,11,0.2)', borderRadius: 12,
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
-    marginBottom: Spacing.lg, borderWidth: 1, borderColor: 'rgba(245,158,11,0.4)',
+
+  // Warning container (pending data)
+  warningContainer: {
+    width: '100%',
+    backgroundColor: 'rgba(245,158,11,0.15)',
+    borderRadius: 16,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    borderWidth: 2,
+    borderColor: 'rgba(245,158,11,0.5)',
   },
-  warningText: { fontSize: FontSize.sm, color: '#FCD34D', flex: 1 },
+  warningHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  warningTitle: {
+    fontSize: FontSize.base, fontWeight: '900', color: '#FCD34D', letterSpacing: 0.5,
+  },
+  pendingList: {
+    marginBottom: Spacing.sm,
+  },
+  pendingRow: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
+    paddingVertical: 4,
+  },
+  pendingText: {
+    fontSize: FontSize.sm, color: '#FEF3C7', fontWeight: FontWeight.medium,
+  },
+  warningDesc: {
+    fontSize: FontSize.xs, color: 'rgba(252,211,77,0.8)', marginBottom: Spacing.md,
+    fontStyle: 'italic',
+  },
+
+  // Upload button
+  uploadBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
+    backgroundColor: '#F59E0B', borderRadius: 12, paddingVertical: 14,
+    ...Shadow.md,
+  },
+  btnText: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: '#FFFFFF' },
+
+  // Download button
   downloadBtn: { borderRadius: 16, overflow: 'hidden', width: '100%', ...Shadow.xl },
   btnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: 18 },
-  downloadBtnDisabled: { opacity: 0.5 },
-  downloadBtnPressed: { opacity: 0.85 },
-  btnText: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: '#FFFFFF' },
+  btnDisabled: { opacity: 0.6 },
+  btnPressed: { opacity: 0.85 },
   footer: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.5)', marginTop: Spacing.md },
 });
