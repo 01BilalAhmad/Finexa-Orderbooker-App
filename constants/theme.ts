@@ -1,40 +1,49 @@
-// Finexa Recovery App — Modern Indigo Theme
+// ═══════════════════════════════════════════════════════════════════════════
+//  FINEXA — Aurora Glass Global Theme
+//  All existing components using Colors.* automatically get the Aurora aesthetic:
+//  dark midnight background, glassmorphic surfaces, soft white text, neon accents
+// ═══════════════════════════════════════════════════════════════════════════
+
 export const Colors = {
-  primary: '#2563EB',
-  primaryLight: '#DBEAFE',
-  primaryDark: '#1E40AF',
-  secondary: '#F59E0B',
-  secondaryLight: '#FEF3C7',
-  danger: '#EF4444',
-  dangerLight: '#FEE2E2',
-  success: '#10B981',
-  successLight: '#D1FAE5',
-  warning: '#F59E0B',
-  warningLight: '#FFFBEB',
+  // ── Brand Accents (kept compatible with old code) ──
+  primary: '#6366F1',         // Aurora neon indigo
+  primaryLight: 'rgba(99, 102, 241, 0.18)',  // indigo glass tint
+  primaryDark: '#4F46E5',     // deeper indigo
+  secondary: '#A78BFA',       // Aurora neon purple
+  secondaryLight: 'rgba(167, 139, 250, 0.18)',
+  danger: '#F87171',
+  dangerLight: 'rgba(248, 113, 113, 0.15)',
+  success: '#34D399',
+  successLight: 'rgba(52, 211, 153, 0.15)',
+  warning: '#FBBF24',
+  warningLight: 'rgba(251, 191, 36, 0.15)',
 
-  background: '#F1F5F9',
-  surface: '#FFFFFF',
-  surfaceElevated: '#FFFFFF',
-  border: '#E2E8F0',
-  borderLight: '#F1F5F9',
+  // ── Aurora Background ──
+  background: '#0B0720',          // deep midnight (replaces light gray)
+  surface: 'rgba(255, 255, 255, 0.06)',     // glass base — semi-transparent
+  surfaceElevated: 'rgba(255, 255, 255, 0.12)',  // glass strong
+  border: 'rgba(255, 255, 255, 0.16)',      // glass hairline border
+  borderLight: 'rgba(255, 255, 255, 0.08)',
 
-  text: '#0F172A',
-  textSecondary: '#64748B',
-  textMuted: '#94A3B8',
-  textInverse: '#FFFFFF',
+  // ── Text (light on dark) ──
+  text: '#F5F3FF',                  // soft white
+  textSecondary: 'rgba(245, 243, 255, 0.78)',
+  textMuted: 'rgba(245, 243, 255, 0.50)',
+  textInverse: '#0B0720',
 
-  tabBar: '#FFFFFF',
-  tabBarBorder: '#E2E8F0',
-  tabActive: '#2563EB',
-  tabInactive: '#94A3B8',
+  // ── Tab Bar ──
+  tabBar: 'rgba(11, 7, 32, 0.85)',       // dark translucent
+  tabBarBorder: 'rgba(255, 255, 255, 0.10)',
+  tabActive: '#A78BFA',                  // neon purple
+  tabInactive: 'rgba(245, 243, 255, 0.45)',
 
-  // Extended palette
-  blue: '#3B82F6',
-  blueLight: '#DBEAFE',
-  purple: '#7C3AED',
-  purpleLight: '#F5F3FF',
-  orange: '#EA580C',
-  orangeLight: '#FFF7ED',
+  // ── Extended palette (kept for backward compat with screens using these) ──
+  blue: '#6366F1',          // maps to neon indigo
+  blueLight: 'rgba(99, 102, 241, 0.18)',
+  purple: '#A78BFA',        // maps to neon purple
+  purpleLight: 'rgba(167, 139, 250, 0.18)',
+  orange: '#FBBF24',
+  orangeLight: 'rgba(251, 191, 36, 0.15)',
 };
 
 export const Spacing = {
@@ -77,30 +86,30 @@ export const FontWeight = {
 
 export const Shadow = {
   sm: {
-    shadowColor: '#1E293B',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOpacity: 0.30,
+    shadowRadius: 4,
     elevation: 1,
   },
   md: {
-    shadowColor: '#1E293B',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.40,
     shadowRadius: 8,
     elevation: 3,
   },
   lg: {
-    shadowColor: '#1E293B',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.45,
     shadowRadius: 16,
     elevation: 8,
   },
   xl: {
-    shadowColor: '#1E293B',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.50,
     shadowRadius: 24,
     elevation: 12,
   },

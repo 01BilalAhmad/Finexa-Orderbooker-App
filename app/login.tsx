@@ -1,12 +1,12 @@
-// Powered by Finexa
-// Login Screen — Modern blue-gradient design with white card form,
-// inline error box, and icon-decorated inputs.
+// ═══════════════════════════════════════════════════════════════════════════
+//  Aurora Glass Login — Premium glassmorphic login on midnight aurora backdrop
+//  Replaces the old white-card-on-blue-gradient design
+// ═══════════════════════════════════════════════════════════════════════════
 import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   Pressable,
   KeyboardAvoidingView,
   Platform,
@@ -18,12 +18,22 @@ import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/hooks/useAuth';
 import { useShops } from '@/hooks/useShops';
 import { useLock } from '@/hooks/useLock';
 import { SecureStorageService } from '@/services/secureStorage';
-import { Colors, Spacing, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import {
+  AuroraBackground,
+  GlassCard,
+  NeonButton,
+  GlassInput,
+  AuroraColors,
+  AuroraFont,
+  AuroraSpacing,
+  AuroraRadius,
+  AuroraShadow,
+} from '@/components/aurora';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -59,18 +69,13 @@ export default function LoginScreen() {
       } finally {
         setSyncingData(false);
       }
-      // After successful login + sync, check if PIN is set
       const hasPin = await SecureStorageService.hasPin();
       if (!hasPin) {
-        // First-time login — trigger PIN setup
         setNeedsPinSetup(true);
         resetIdleTimer();
       } else {
         resetIdleTimer();
       }
-      // After successful login, navigate to root — the root router will
-      // evaluate the correct next step (download, route-start, or tabs)
-      // Use setTimeout to ensure React state has been processed before navigation
       setTimeout(() => {
         router.replace('/');
       }, 100);
@@ -86,20 +91,7 @@ export default function LoginScreen() {
   const busy = isLoading || syncingData;
 
   return (
-    <View style={styles.root}>
-      {/* Full-screen blue gradient background */}
-      <LinearGradient
-        colors={['#1E40AF', '#2563EB', '#3B82F6']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-
-      {/* Decorative floating bubbles */}
-      <View style={styles.bubbleA} pointerEvents="none" />
-      <View style={styles.bubbleB} pointerEvents="none" />
-      <View style={styles.bubbleC} pointerEvents="none" />
-
+    <AuroraBackground topTint={AuroraColors.bgVoid}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -108,16 +100,23 @@ export default function LoginScreen() {
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: insets.top, paddingBottom: insets.bottom + Spacing.lg },
+            { paddingTop: insets.top + AuroraSpacing.xl, paddingBottom: insets.bottom + AuroraSpacing.lg },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          {/* ── TOP SECTION (≈40%) — Branding ── */}
+          {/* ── Brand / Top Section ── */}
           <View style={styles.brandSection}>
-            <View style={styles.logoOuterCircle}>
-              <View style={styles.logoInnerCircle}>
+            {/* Logo with neon glow halo */}
+            <View style={styles.logoHalo}>
+              <LinearGradient
+                colors={['rgba(99, 102, 241, 0.35)', 'rgba(167, 139, 250, 0.20)', 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.logoOuter}>
                 <Image
                   source={require('@/assets/images/logo.png')}
                   style={styles.logoImage}
@@ -125,12 +124,13 @@ export default function LoginScreen() {
                 />
               </View>
             </View>
+
             <Text style={styles.brandTitle}>Finexa</Text>
             <Text style={styles.brandSubtitle}>Credit &amp; Recovery System</Text>
           </View>
 
-          {/* ── BOTTOM SECTION — White Login Card ── */}
-          <View style={styles.formCard}>
+          {/* ── Glass Login Card ── */}
+          <GlassCard variant="strong" padding="xl" radius="xl" glow="indigo" style={styles.formCard}>
             {/* Card header */}
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Welcome Back</Text>
@@ -138,139 +138,79 @@ export default function LoginScreen() {
             </View>
 
             {/* Username */}
-            <Text style={styles.fieldLabel}>Username</Text>
-            <View style={styles.inputField}>
-              <View style={styles.inputIconBox}>
-                <MaterialIcons name="person" size={20} color="#2563EB" />
-              </View>
-              <TextInput
-                style={styles.inputText}
-                value={username}
-                onChangeText={(v) => {
-                  setUsername(v);
-                  if (errorMessage) setErrorMessage(null);
-                }}
-                placeholder="Enter your username"
-                placeholderTextColor={Colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="next"
-              />
-            </View>
+            <GlassInput
+              label="Username"
+              value={username}
+              onChangeText={(v) => {
+                setUsername(v);
+                if (errorMessage) setErrorMessage(null);
+              }}
+              placeholder="Enter your username"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="next"
+              leftIcon={<MaterialIcons name="person" size={20} color={AuroraColors.neonViolet} />}
+              error={errorMessage ?? undefined}
+            />
 
             {/* Password */}
-            <Text style={styles.fieldLabel}>Password</Text>
-            <View style={styles.inputField}>
-              <View style={styles.inputIconBox}>
-                <MaterialIcons name="lock" size={20} color="#2563EB" />
-              </View>
-              <TextInput
-                style={styles.inputText}
-                value={password}
-                onChangeText={(v) => {
-                  setPassword(v);
-                  if (errorMessage) setErrorMessage(null);
-                }}
-                placeholder="Enter your password"
-                placeholderTextColor={Colors.textMuted}
-                secureTextEntry={!showPassword}
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-              />
-              <Pressable
-                onPress={() => setShowPassword((v) => !v)}
-                hitSlop={10}
-                style={styles.eyeToggle}
-              >
+            <View style={{ height: AuroraSpacing.md }} />
+            <GlassInput
+              label="Password"
+              value={password}
+              onChangeText={(v) => {
+                setPassword(v);
+                if (errorMessage) setErrorMessage(null);
+              }}
+              placeholder="Enter your password"
+              secureTextEntry={!showPassword}
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
+              leftIcon={<MaterialIcons name="lock" size={20} color={AuroraColors.neonViolet} />}
+              rightIcon={
                 <MaterialIcons
                   name={showPassword ? 'visibility-off' : 'visibility'}
                   size={20}
-                  color={Colors.textSecondary}
+                  color={AuroraColors.textSecondary}
                 />
-              </Pressable>
-            </View>
+              }
+              onRightIconPress={() => setShowPassword((v) => !v)}
+            />
 
             {/* Inline error message box */}
             {errorMessage ? (
               <View style={styles.errorBox}>
-                <MaterialIcons name="error-outline" size={16} color="#DC2626" />
+                <MaterialIcons name="error-outline" size={16} color={AuroraColors.danger} />
                 <Text style={styles.errorText}>{errorMessage}</Text>
               </View>
             ) : null}
 
-            {/* Sign In Button — blue gradient, 56px tall, 14px radius */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.signInBtn,
-                pressed && !busy && { opacity: 0.92 },
-              ]}
-              onPress={handleLogin}
-              disabled={busy}
-            >
-              <LinearGradient
-                colors={['#2563EB', '#3B82F6']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.signInBtnGradient}
-              >
-                {busy ? (
-                  <>
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                    <Text style={styles.signInBtnText}>
-                      {syncingData ? 'Syncing data...' : 'Signing in...'}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <MaterialIcons name="login" size={20} color="#FFFFFF" />
-                    <Text style={styles.signInBtnText}>Sign In</Text>
-                  </>
-                )}
-              </LinearGradient>
-            </Pressable>
-          </View>
+            {/* Sign In Button */}
+            <View style={styles.buttonWrap}>
+              <NeonButton
+                label={busy ? (syncingData ? 'Syncing data...' : 'Signing in...') : 'Sign In'}
+                onPress={handleLogin}
+                disabled={busy}
+                loading={busy}
+                variant="primary"
+                size="lg"
+                fullWidth
+                icon={
+                  !busy ? <MaterialIcons name="login" size={20} color="#FFFFFF" /> : undefined
+                }
+              />
+            </View>
+          </GlassCard>
 
           {/* Footer */}
           <Text style={styles.footerText}>Powered by Finexa</Text>
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </AuroraBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#1E40AF',
-  },
-  // Decorative bubbles
-  bubbleA: {
-    position: 'absolute',
-    top: -120,
-    right: -120,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  bubbleB: {
-    position: 'absolute',
-    bottom: -90,
-    left: -90,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  bubbleC: {
-    position: 'absolute',
-    top: '38%',
-    right: -50,
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
   keyboardAvoid: {
     flex: 1,
   },
@@ -279,7 +219,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: AuroraSpacing.lg,
     justifyContent: 'space-between',
   },
 
@@ -287,115 +227,68 @@ const styles = StyleSheet.create({
   brandSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing.xxl,
-    // ~40% of screen — give it room to breathe
-    minHeight: 280,
+    paddingVertical: AuroraSpacing.xxl,
+    minHeight: 240,
   },
-  logoOuterCircle: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    backgroundColor: '#FFFFFF',
+  logoHalo: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
-    ...Shadow.xl,
+    marginBottom: AuroraSpacing.md,
+    overflow: 'hidden',
+    ...AuroraShadow.neonStrong,
   },
-  logoInnerCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#DBEAFE',
+  logoOuter: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: AuroraColors.glassBorder,
   },
   logoImage: {
-    width: 52,
-    height: 52,
-    borderRadius: 10,
+    width: 64,
+    height: 64,
+    borderRadius: 12,
   },
   brandTitle: {
-    fontSize: 40,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    letterSpacing: 1.2,
+    fontSize: 44,
+    fontWeight: AuroraFont.weight.black,
+    color: AuroraColors.text,
+    letterSpacing: 1.4,
     marginBottom: 4,
+    textShadowColor: AuroraColors.neonGlow,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 24,
   },
   brandSubtitle: {
-    fontSize: FontSize.sm,
-    color: 'rgba(255,255,255,0.92)',
-    fontWeight: FontWeight.semibold,
-    letterSpacing: 0.8,
+    fontSize: AuroraFont.size.sm,
+    color: AuroraColors.textSecondary,
+    fontWeight: AuroraFont.weight.semibold,
+    letterSpacing: AuroraFont.tracking.wider,
   },
 
-  // ── White Form Card ──
+  // ── Form Card ──
   formCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.lg,
-    ...Shadow.xl,
+    marginVertical: AuroraSpacing.md,
   },
   cardHeader: {
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: AuroraSpacing.lg,
   },
   cardTitle: {
-    fontSize: FontSize.xxl,
-    fontWeight: FontWeight.bold,
-    color: Colors.text,
+    fontSize: AuroraFont.size.xxl,
+    fontWeight: AuroraFont.weight.bold,
+    color: AuroraColors.text,
     marginBottom: 4,
   },
   cardSubtitle: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-  },
-
-  // ── Field labels & inputs ──
-  fieldLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.bold,
-    color: Colors.textSecondary,
-    marginBottom: 6,
-    marginLeft: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  inputField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 54,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
-    marginBottom: Spacing.md,
-    paddingRight: 6,
-    paddingLeft: 6,
-  },
-  inputIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: '#DBEAFE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.xs,
-  },
-  inputText: {
-    flex: 1,
-    fontSize: FontSize.base,
-    color: Colors.text,
-    paddingVertical: 0,
-    height: '100%',
-  },
-  eyeToggle: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontSize: AuroraFont.size.sm,
+    color: AuroraColors.textSecondary,
   },
 
   // ── Error box ──
@@ -403,49 +296,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: 'rgba(248, 113, 113, 0.12)',
     borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: 12,
+    borderColor: 'rgba(248, 113, 113, 0.30)',
+    borderRadius: AuroraRadius.md,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: Spacing.md,
+    marginBottom: AuroraSpacing.md,
+    marginTop: AuroraSpacing.xs,
   },
   errorText: {
     flex: 1,
-    fontSize: FontSize.sm,
-    color: '#DC2626',
-    fontWeight: FontWeight.semibold,
+    fontSize: AuroraFont.size.sm,
+    color: AuroraColors.danger,
+    fontWeight: AuroraFont.weight.semibold,
   },
 
-  // ── Sign In button ──
-  signInBtn: {
-    height: 56,
-    borderRadius: 14,
-    overflow: 'hidden',
-    ...Shadow.md,
-  },
-  signInBtnGradient: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-  },
-  signInBtnText: {
-    fontSize: FontSize.base,
-    fontWeight: FontWeight.bold,
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
+  buttonWrap: {
+    marginTop: AuroraSpacing.sm,
   },
 
   // ── Footer ──
   footerText: {
     textAlign: 'center',
-    marginTop: Spacing.lg,
-    fontSize: FontSize.xs,
-    color: 'rgba(255,255,255,0.85)',
-    fontWeight: FontWeight.semibold,
-    letterSpacing: 0.6,
+    marginTop: AuroraSpacing.lg,
+    fontSize: AuroraFont.size.xs,
+    color: AuroraColors.textMuted,
+    fontWeight: AuroraFont.weight.semibold,
+    letterSpacing: AuroraFont.tracking.wider,
   },
 });

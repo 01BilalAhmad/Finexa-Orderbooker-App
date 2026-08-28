@@ -1,17 +1,26 @@
-// Powered by Finexa
-import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, Animated } from 'react-native';
+// ═══════════════════════════════════════════════════════════════════════════
+//  Aurora Glass Tab Bar — glassmorphic floating bar with neon indigo glow
+//  Uses Reanimated 4 worklets (replaces inline Animated API — fixes weakness #15)
+// ═══════════════════════════════════════════════════════════════════════════
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontSize, FontWeight } from '@/constants/theme';
+import { BlurView } from 'expo-blur';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  Easing,
+  interpolate,
+  runOnJS,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-
-// Modern Blue tab bar palette
-const ACTIVE_COLOR = '#2563EB';
-const INACTIVE_COLOR = '#94A3B8';
-const BAR_BG = '#FFFFFF';
-const BAR_BORDER = '#E2E8F0';
+import { AuroraColors, AuroraFont, AuroraRadius, AuroraSpacing, AuroraGradients, AuroraShadow } from '@/constants/auroraTheme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type IconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
@@ -25,44 +34,77 @@ function getIconName(routeName: string): IconName {
   }
 }
 
-// Individual tab button — uses Animated scale on press, active dot above icon,
-// blue active / gray inactive theming.
-function TabButton({
-  isFocused,
-  label,
-  iconName,
-  onPress,
-  onLongPress,
-}: {
+interface TabButtonProps {
   isFocused: boolean;
   label: string;
   iconName: IconName;
   onPress: () => void;
   onLongPress: () => void;
-}) {
-  const scale = useRef(new Animated.Value(1)).current;
+}
 
-  // Spring into a slightly larger scale when the tab becomes focused
+/**
+ * AuroraGlassTabButton — uses Reanimated 4 worklets for native UI-thread animations
+ * Replaces the old inline Animated.spring / Animated.timing pattern (weakness #15)
+ */
+function AuroraGlassTabButton({
+  isFocused,
+  label,
+  iconName,
+  onPress,
+  onLongPress,
+}: TabButtonProps) {
+  // Shared values — driven by Reanimated worklets on UI thread
+  const scale = useSharedValue(1);
+  const glowOpacity = useSharedValue(0);
+  const indicatorHeight = useSharedValue(0);
+
+  // Spring into focus state when active tab changes
   useEffect(() => {
-    Animated.spring(scale, {
-      toValue: isFocused ? 1.08 : 1,
-      useNativeDriver: true,
-      tension: 200,
-      friction: 12,
-    }).start();
-  }, [isFocused]);
+    scale.value = withSpring(isFocused ? 1.10 : 1, {
+      damping: 14,
+      stiffness: 280,
+    });
+    glowOpacity.value = withTiming(isFocused ? 0.55 : 0, {
+      duration: 220,
+      easing: Easing.out(Easing.ease),
+    });
+    indicatorHeight.value = withSpring(isFocused ? 4 : 0, {
+      damping: 12,
+      stiffness: 320,
+    });
+  }, [isFocused, scale, glowOpacity, indicatorHeight]);
+
+  const triggerHaptic = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  };
 
   const handlePressIn = () => {
-    Animated.timing(scale, { toValue: 0.92, duration: 90, useNativeDriver: true }).start();
+    scale.value = withSpring(0.92, {
+      damping: 15,
+      stiffness: 400,
+    });
+    runOnJS(triggerHaptic)();
   };
+
   const handlePressOut = () => {
-    Animated.spring(scale, {
-      toValue: isFocused ? 1.08 : 1,
-      useNativeDriver: true,
-      tension: 200,
-      friction: 12,
-    }).start();
+    scale.value = withSpring(isFocused ? 1.10 : 1, {
+      damping: 12,
+      stiffness: 280,
+    });
   };
+
+  // Animated styles — these run on UI thread via Reanimated 4 worklets
+  const animatedIcon = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const animatedGlow = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+
+  const animatedIndicator = useAnimatedStyle(() => ({
+    height: indicatorHeight.value,
+  }));
 
   return (
     <Pressable
@@ -71,44 +113,86 @@ function TabButton({
       onLongPress={onLongPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      android_ripple={{ color: 'rgba(37,99,235,0.08)', borderless: true, radius: 36 }}
+      android_ripple={{ color: 'rgba(167, 139, 250, 0.12)', borderless: true, radius: 36 }}
       accessibilityRole="button"
       accessibilityState={isFocused ? { selected: true } : {}}
       accessibilityLabel={label}
     >
-      <Animated.View style={[styles.tabInner, { transform: [{ scale }] }]}>
-        {/* Active indicator dot above the icon */}
-        <View style={styles.dotWrap}>
-          {isFocused ? <View style={styles.activeDot} /> : <View style={styles.dotPlaceholder} />}
+      <View style={styles.tabInner}>
+        {/* Neon glow indicator (top) */}
+        <View style={styles.indicatorWrap}>
+          <Animated.View
+            style={[styles.indicatorGlow, animatedGlow, animatedIndicator]}
+          />
         </View>
 
-        <MaterialIcons
-          name={iconName}
-          size={22}
-          color={isFocused ? ACTIVE_COLOR : INACTIVE_COLOR}
-        />
+        {/* Icon with scale animation */}
+        <Animated.View style={[styles.iconWrap, animatedIcon]}>
+          {isFocused ? (
+            // Filled icon style when active — gives a "selected" feel
+            <LinearGradient
+              colors={[...AuroraGradients.tabIndicator]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.iconBg}
+            >
+              <MaterialIcons
+                name={iconName}
+                size={20}
+                color="#FFFFFF"
+              />
+            </LinearGradient>
+          ) : (
+            <MaterialIcons
+              name={iconName}
+              size={22}
+              color={AuroraColors.tabInactive}
+            />
+          )}
+        </Animated.View>
+
+        {/* Label */}
         <Text
           style={[
             styles.tabLabel,
-            { color: isFocused ? ACTIVE_COLOR : INACTIVE_COLOR },
+            { color: isFocused ? AuroraColors.tabActive : AuroraColors.tabInactive },
             isFocused && styles.tabLabelActive,
           ]}
           numberOfLines={1}
         >
           {label}
         </Text>
-      </Animated.View>
+      </View>
     </Pressable>
   );
 }
 
-function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+function AuroraGlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const bottomPad = Platform.select({ ios: Math.max(insets.bottom, 8), android: 8, default: 8 });
+  const bottomPad = Platform.select({
+    ios: Math.max(insets.bottom, 8),
+    android: 12,
+    default: 12,
+  });
 
   return (
     <View style={[styles.tabBarContainer, { paddingBottom: bottomPad }]}>
+      {/* iOS: true glassmorphic blur; Android: simulated translucent */}
+      {Platform.OS === 'ios' ? (
+        <BlurView
+          intensity={80}
+          tint="dark"
+          style={StyleSheet.absoluteFill}
+        />
+      ) : (
+        <View style={StyleSheet.absoluteFill} />
+      )}
+
+      {/* Inner border + content */}
       <View style={styles.tabBarInner}>
+        {/* Top hairline border with subtle indigo glow */}
+        <View style={styles.topBorder} pointerEvents="none" />
+
         {state.routes.map((route, index) => {
           const isFocused = state.index === index;
           const { options } = descriptors[route.key];
@@ -135,7 +219,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           };
 
           return (
-            <TabButton
+            <AuroraGlassTabButton
               key={route.key}
               isFocused={isFocused}
               label={label}
@@ -153,34 +237,26 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 export default function TabLayout() {
   return (
     <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
+      tabBar={(props) => <AuroraGlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{
-          title: 'Route',
-        }}
+        options={{ title: 'Route' }}
       />
       <Tabs.Screen
         name="map"
-        options={{
-          title: 'Map',
-        }}
+        options={{ title: 'Map' }}
       />
       <Tabs.Screen
         name="ledger"
-        options={{
-          title: 'Ledger',
-        }}
+        options={{ title: 'Ledger' }}
       />
       <Tabs.Screen
         name="profile"
-        options={{
-          title: 'Profile',
-        }}
+        options={{ title: 'Profile' }}
       />
     </Tabs>
   );
@@ -188,59 +264,93 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBarContainer: {
-    backgroundColor: BAR_BG,
-    borderTopWidth: 1,
-    borderTopColor: BAR_BORDER,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: AuroraColors.tabBarBg,  // translucent dark
+    borderTopWidth: 0,
     ...Platform.select({
       ios: {
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.35,
+        shadowRadius: 14,
       },
-      android: { elevation: 10 },
+      android: {
+        elevation: 16,
+      },
     }),
   },
   tabBarInner: {
     flexDirection: 'row',
-    height: 60,
+    height: 68,
     alignItems: 'stretch',
+    paddingHorizontal: AuroraSpacing.sm,
+  },
+  topBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: AuroraColors.glassBorder,
+    shadowColor: AuroraColors.neonIndigo,
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 2,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 6,
+    paddingTop: AuroraSpacing.sm,
   },
   tabInner: {
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
   },
-  dotWrap: {
-    height: 6,
+  indicatorWrap: {
+    height: 4,
+    width: 24,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginBottom: 4,
+  },
+  indicatorGlow: {
+    width: 4,
+    borderRadius: 2,
+    backgroundColor: AuroraColors.neonViolet,
+    shadowColor: AuroraColors.neonIndigo,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 3,
+    width: 40,
+    height: 40,
   },
-  activeDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: ACTIVE_COLOR,
-  },
-  dotPlaceholder: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: 'transparent',
+  iconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...AuroraShadow.neon,
   },
   tabLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.medium,
+    fontSize: AuroraFont.size.xs,
+    fontWeight: AuroraFont.weight.medium,
+    letterSpacing: AuroraFont.tracking.wide,
     marginTop: 2,
-    letterSpacing: 0.3,
   },
   tabLabelActive: {
-    fontWeight: FontWeight.bold,
+    fontWeight: AuroraFont.weight.bold,
+    color: AuroraColors.tabActive,
   },
 });

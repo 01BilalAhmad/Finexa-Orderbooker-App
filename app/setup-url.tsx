@@ -1,13 +1,27 @@
-// URL Setup Screen — First time app launch, user enters their distributor URL
+// ═══════════════════════════════════════════════════════════════════════════
+//  Aurora Glass — Setup URL Screen (first-time server URL setup)
+//  Replaces blue gradient + white card with Aurora glassmorphic design
+// ═══════════════════════════════════════════════════════════════════════════
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert,
+  View, Text, StyleSheet, Alert,
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import {
+  AuroraBackground,
+  GlassCard,
+  NeonButton,
+  GlassInput,
+  AuroraColors,
+  AuroraFont,
+  AuroraSpacing,
+  AuroraRadius,
+  AuroraShadow,
+} from '@/components/aurora';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SetupUrlScreen() {
   const { setApiUrl } = useAuth();
@@ -20,135 +34,176 @@ export default function SetupUrlScreen() {
       return;
     }
 
-    // Basic URL validation
     let finalUrl = url.trim();
     if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
       finalUrl = 'https://' + finalUrl;
     }
-
-    // Remove trailing slash
     finalUrl = finalUrl.replace(/\/$/, '');
 
     setIsSaving(true);
     try {
-      // Test the URL by hitting /api/ping
       const res = await fetch(`${finalUrl}/api/ping`);
       if (!res.ok) throw new Error('Server not responding');
       const data = await res.json();
       if (!data.status) throw new Error('Invalid server response');
 
       await setApiUrl(finalUrl);
-      // Navigate directly to login — this avoids the race condition with root router
-      // where React state hasn't updated yet when router.replace('/') fires
-      // Small delay ensures AsyncStorage write is committed and React state is processed
       setTimeout(() => {
         router.replace('/login');
       }, 100);
     } catch (e: any) {
-      Alert.alert('Connection Failed', `Server se connect nahi ho raha:\n${e.message}\n\nURL check karein aur dobara try karein.`);
+      Alert.alert(
+        'Connection Failed',
+        `Server se connect nahi ho raha:\n${e.message}\n\nURL check karein aur dobara try karein.`,
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <LinearGradient colors={['#2563EB', '#3B82F6', '#60A5FA']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.root}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+    <AuroraBackground topTint={AuroraColors.bgVoid}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.logoArea}>
-            <View style={styles.iconCircle}>
-              <MaterialIcons name="link" size={48} color="#FFFFFF" />
+            {/* Icon with neon halo */}
+            <View style={styles.iconHalo}>
+              <LinearGradient
+                colors={['rgba(99, 102, 241, 0.35)', 'rgba(167, 139, 250, 0.20)', 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.iconCircle}>
+                <MaterialIcons name="link" size={42} color={AuroraColors.neonViolet} />
+              </View>
             </View>
-            <Text style={styles.title}>Finexa Smart Credit Routes</Text>
+            <Text style={styles.title}>Finexa Smart Credit</Text>
             <Text style={styles.subtitle}>Server URL Setup</Text>
           </View>
 
-          <View style={styles.card}>
+          <GlassCard variant="strong" padding="xl" radius="xl" glow="indigo" style={styles.card}>
             <Text style={styles.cardTitle}>Enter Server URL</Text>
             <Text style={styles.cardDesc}>
               Apne distributor ka server URL enter karein. Ye sirf ek baar setup karna hai.
             </Text>
 
-            <Text style={styles.label}>Server URL</Text>
-            <View style={styles.inputRow}>
-              <MaterialIcons name="cloud" size={20} color={Colors.textSecondary} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                value={url}
-                onChangeText={setUrl}
-                placeholder="e.g. https://your-company.vercel.app"
-                placeholderTextColor={Colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                returnKeyType="done"
-                onSubmitEditing={handleSave}
+            <View style={{ height: AuroraSpacing.md }} />
+
+            <GlassInput
+              label="Server URL"
+              value={url}
+              onChangeText={setUrl}
+              placeholder="e.g. https://your-company.vercel.app"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              returnKeyType="done"
+              onSubmitEditing={handleSave}
+              leftIcon={<MaterialIcons name="cloud" size={20} color={AuroraColors.neonViolet} />}
+            />
+
+            <View style={styles.buttonWrap}>
+              <NeonButton
+                label={isSaving ? 'Connecting...' : 'Connect & Save'}
+                onPress={handleSave}
+                disabled={isSaving || !url.trim()}
+                loading={isSaving}
+                variant="primary"
+                size="lg"
+                fullWidth
+                icon={
+                  !isSaving ? <MaterialIcons name="check-circle" size={20} color="#FFFFFF" /> : undefined
+                }
               />
             </View>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.saveBtn,
-                (!url.trim() || isSaving) && styles.saveBtnDisabled,
-                pressed && !isSaving && styles.saveBtnPressed,
-              ]}
-              onPress={handleSave}
-              disabled={isSaving || !url.trim()}
-            >
-              <LinearGradient colors={['#2563EB', '#3B82F6']} style={styles.saveBtnGradient}>
-                {isSaving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <MaterialIcons name="check-circle" size={20} color="#FFFFFF" />
-                    <Text style={styles.saveBtnText}>Connect & Save</Text>
-                  </>
-                )}
-              </LinearGradient>
-            </Pressable>
-          </View>
+          </GlassCard>
 
           <Text style={styles.footer}>
             App data clear karne par URL bhi remove ho jayega
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </AuroraBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
   flex: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: Spacing.md, justifyContent: 'center' },
-  logoArea: { alignItems: 'center', marginBottom: Spacing.xl },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: AuroraSpacing.md,
+    justifyContent: 'center',
+    paddingVertical: AuroraSpacing.xxl,
+  },
+  logoArea: {
+    alignItems: 'center',
+    marginBottom: AuroraSpacing.xl,
+  },
+  iconHalo: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: AuroraSpacing.md,
+    overflow: 'hidden',
+    ...AuroraShadow.neon,
+  },
   iconCircle: {
-    width: 90, height: 90, borderRadius: 45,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: AuroraColors.glassBorder,
   },
-  title: { fontSize: 28, fontWeight: '900', color: '#FFFFFF', letterSpacing: 1 },
-  subtitle: { fontSize: FontSize.lg, color: 'rgba(255,255,255,0.85)', fontWeight: FontWeight.bold, marginTop: -2 },
+  title: {
+    fontSize: 30,
+    fontWeight: AuroraFont.weight.black,
+    color: AuroraColors.text,
+    letterSpacing: 1.4,
+    textShadowColor: AuroraColors.neonGlow,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 16,
+  },
+  subtitle: {
+    fontSize: AuroraFont.size.lg,
+    color: AuroraColors.textSecondary,
+    fontWeight: AuroraFont.weight.bold,
+    marginTop: 2,
+  },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.95)', borderRadius: 24,
-    padding: Spacing.lg, ...Shadow.xl, marginBottom: Spacing.lg,
+    marginBottom: AuroraSpacing.lg,
   },
-  cardTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, color: Colors.text, marginBottom: 4 },
-  cardDesc: { fontSize: FontSize.sm, color: Colors.textSecondary, marginBottom: Spacing.lg, lineHeight: 20 },
-  label: { fontSize: FontSize.xs, fontWeight: FontWeight.semibold, color: Colors.textSecondary, marginBottom: Spacing.xs, textTransform: 'uppercase', letterSpacing: 0.5 },
-  inputRow: {
-    flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderColor: '#E2E8F0',
-    borderRadius: 14, paddingHorizontal: Spacing.md,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
-    backgroundColor: '#F8FAFC', marginBottom: Spacing.md,
+  cardTitle: {
+    fontSize: AuroraFont.size.xl,
+    fontWeight: AuroraFont.weight.bold,
+    color: AuroraColors.text,
+    marginBottom: 4,
   },
-  inputIcon: { marginRight: Spacing.sm },
-  input: { flex: 1, fontSize: FontSize.base, color: Colors.text },
-  saveBtn: { borderRadius: 14, marginTop: Spacing.sm, overflow: 'hidden', ...Shadow.md },
-  saveBtnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: 16 },
-  saveBtnDisabled: { opacity: 0.5 },
-  saveBtnPressed: { opacity: 0.85 },
-  saveBtnText: { fontSize: FontSize.base, fontWeight: FontWeight.bold, color: '#FFFFFF' },
-  footer: { textAlign: 'center', fontSize: FontSize.xs, color: 'rgba(255,255,255,0.5)', marginTop: Spacing.md },
+  cardDesc: {
+    fontSize: AuroraFont.size.sm,
+    color: AuroraColors.textSecondary,
+    lineHeight: 20,
+  },
+  buttonWrap: {
+    marginTop: AuroraSpacing.md,
+  },
+  footer: {
+    textAlign: 'center',
+    fontSize: AuroraFont.size.xs,
+    color: AuroraColors.textMuted,
+    marginTop: AuroraSpacing.md,
+    letterSpacing: AuroraFont.tracking.wide,
+  },
 });

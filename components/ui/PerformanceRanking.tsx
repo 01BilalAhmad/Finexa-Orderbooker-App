@@ -53,7 +53,7 @@ export function PerformanceRanking() {
         <View style={styles.headerIconWrap}>
           <MaterialIcons name="leaderboard" size={18} color={Colors.primary} />
         </View>
-        <Text style={styles.headerTitle}>Today's Ranking</Text>
+        <Text style={styles.headerTitle}>Today&apos;s Ranking</Text>
       </View>
 
       {bookers.map((booker, index) => {

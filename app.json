@@ -14,7 +14,7 @@
       "package": "com.finexa.smartcreditroutes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#1E40AF"
+        "backgroundColor": "#070314"
       },
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -24,7 +24,10 @@
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_MEDIA_IMAGES"
+        "android.permission.WRITE_MEDIA_IMAGES",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
       ]
     },
     "plugins": [
@@ -35,7 +38,7 @@
           "image": "./assets/images/splash.png",
           "imageWidth": 280,
           "resizeMode": "contain",
-          "backgroundColor": "#1D4ED8"
+          "backgroundColor": "#070314"
         }
       ],
       [
@@ -52,6 +55,12 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-speech-recognition",
+        {
+          "recordAudioPermission": "Allow Finexa to use microphone for voice notes (Speech-to-Text)."
+        }
+      ],
       "./plugins/withAndroidBuildFix.js",
       [
         "expo-build-properties",

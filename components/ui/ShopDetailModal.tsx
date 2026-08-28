@@ -19,6 +19,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BarChart } from 'react-native-chart-kit';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { AuroraColors } from '@/constants/auroraTheme';
+import { useSpeechToText } from '@/hooks/useSpeechToText';
 import { Shop, Transaction, ApiService } from '@/services/api';
 import { getShopDisplayBalance } from '@/components/ui/ShopCard';
 import { formatPKR, formatDateTime } from '@/utils/format';
@@ -60,6 +62,30 @@ export const ShopDetailModal = memo(function ShopDetailModal({
   const [shopNote, setShopNote] = useState<ShopNote | null>(null);
   const [noteInput, setNoteInput] = useState('');
   const [noteSaving, setNoteSaving] = useState(false);
+
+  // Speech-to-Text hook for hands-free note-taking
+  const speechToText = useSpeechToText();
+
+  // When a new transcript chunk arrives, append it to the existing note input
+  useEffect(() => {
+    if (speechToText.transcript) {
+      setNoteInput((prev) => {
+        const prefix = prev.trim() ? prev + ' ' : '';
+        return prefix + speechToText.transcript;
+      });
+      // Clear the hook's transcript buffer so we don't re-append it
+      speechToText.clearTranscript();
+    }
+  }, [speechToText.transcript]);
+
+  // Toggle listening state — if not listening, start; otherwise stop
+  const toggleSpeechToText = async () => {
+    if (speechToText.isListening) {
+      speechToText.stopListening();
+    } else {
+      await speechToText.startListening('en-US');
+    }
+  };
 
   // Phone edit state
   const [editingPhone, setEditingPhone] = useState(false);
@@ -655,7 +681,32 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                   multiline
                   numberOfLines={3}
                 />
+                {/* Speech-to-Text mic button */}
+                <Pressable
+                  onPress={toggleSpeechToText}
+                  hitSlop={8}
+                  style={[
+                    styles.micButton,
+                    speechToText.isListening && styles.micButtonActive,
+                  ]}
+                  accessibilityLabel={
+                    speechToText.isListening ? 'Stop voice input' : 'Start voice input'
+                  }
+                  accessibilityRole="button"
+                >
+                  <MaterialIcons
+                    name={speechToText.isListening ? 'stop' : 'mic'}
+                    size={20}
+                    color={speechToText.isListening ? '#FFFFFF' : AuroraColors.neonViolet}
+                  />
+                </Pressable>
               </View>
+              {speechToText.error ? (
+                <Text style={styles.speechErrorText}>{speechToText.error}</Text>
+              ) : null}
+              {speechToText.isListening ? (
+                <Text style={styles.speechListeningText}>● Listening... tap mic to stop</Text>
+              ) : null}
               <View style={styles.noteActions}>
                 {shopNote ? (
                   <Text style={styles.noteUpdatedAt}>
@@ -1488,12 +1539,48 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: Spacing.sm,
     marginBottom: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: Spacing.xs,
   },
   noteTextInput: {
+    flex: 1,
     fontSize: FontSize.sm,
     color: Colors.text,
     minHeight: 60,
     textAlignVertical: 'top',
+  },
+  micButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(99, 102, 241, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.40)',
+  },
+  micButtonActive: {
+    backgroundColor: AuroraColors.danger,
+    borderColor: AuroraColors.danger,
+    shadowColor: AuroraColors.danger,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  speechErrorText: {
+    fontSize: FontSize.xs,
+    color: AuroraColors.danger,
+    marginBottom: Spacing.xs,
+    fontWeight: FontWeight.semibold,
+  },
+  speechListeningText: {
+    fontSize: FontSize.xs,
+    color: AuroraColors.neonViolet,
+    marginBottom: Spacing.xs,
+    fontWeight: FontWeight.semibold,
+    letterSpacing: 0.5,
   },
   noteActions: {
     flexDirection: 'row',

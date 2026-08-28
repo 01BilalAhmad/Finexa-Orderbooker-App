@@ -21,6 +21,7 @@ import { useShops } from '@/hooks/useShops';
 import { ApiService, LedgerResponse, Shop, Transaction } from '@/services/api';
 import { getShopDisplayBalance } from '@/components/ui/ShopCard';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { AuroraColors, AuroraGradients } from '@/constants/auroraTheme';
 import { formatPKR, formatDateTime } from '@/utils/format';
 import { downloadLedgerPdf } from '@/utils/generateLedgerPdf';
 import { CompanySelector } from '@/components/ui/CompanySelector';
@@ -268,7 +269,7 @@ export default function LedgerScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* ── Gradient header ── */}
       <LinearGradient
-        colors={['#2563EB', '#3B82F6', '#60A5FA']}
+        colors={[...AuroraGradients.primary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}
@@ -573,7 +574,7 @@ export default function LedgerScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F8FAFC' },
+  root: { flex: 1, backgroundColor: AuroraColors.bgDeep },
   
   // ── Header ──
   header: {
