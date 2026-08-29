@@ -22,6 +22,8 @@ import { ApiService, Shop, Transaction } from '@/services/api';
 import { router } from 'expo-router';
 import { getShopDisplayBalance } from '@/components/ui/ShopCard';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { AuroraBackground } from '@/components/aurora';
+import { AuroraGradients, AuroraColors as AuroraColorsRaw } from '@/constants/auroraTheme';
 import { ROUTE_DAYS, DAY_LABELS } from '@/constants/config';
 import { getTodayDayName, getTodayLabel, getTodayDateStr, capitalize, formatPKR } from '@/utils/format';
 import { ShopCard } from '@/components/ui/ShopCard';
@@ -1044,7 +1046,7 @@ export default function TodayRouteScreen() {
     : user?.companyName;
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <AuroraBackground style={[styles.root, { paddingTop: insets.top }]}>
       <OfflineBanner
         isOnline={isOnline}
         queueCount={offlineQueueCount}
@@ -1084,7 +1086,7 @@ export default function TodayRouteScreen() {
             <View>
               {/* Hero Card - All Routes */}
               <LinearGradient
-                colors={['#2563EB', '#3B82F6', '#60A5FA']}
+                colors={[AuroraGradients.brandStart, AuroraGradients.brandMid, AuroraGradients.brandEnd]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroCard}
@@ -1390,7 +1392,7 @@ export default function TodayRouteScreen() {
             <View>
               {/* Hero Card - Normal */}
               <LinearGradient
-                colors={['#2563EB', '#3B82F6', '#60A5FA']}
+                colors={[AuroraGradients.brandStart, AuroraGradients.brandMid, AuroraGradients.brandEnd]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroCard}
@@ -1899,7 +1901,7 @@ export default function TodayRouteScreen() {
         visible={showTour}
         onComplete={handleTourComplete}
       />
-    </View>
+    </AuroraBackground>
   );
 }
 
@@ -1926,7 +1928,8 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: 'rgba(96,165,250,0.15)',
+    // Aurora violet orb glow on indigo→violet hero
+    backgroundColor: 'rgba(167,139,250,0.20)',
     top: -50,
     right: -40,
   },
@@ -1935,7 +1938,8 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(96,165,250,0.10)',
+    // Aurora indigo orb glow
+    backgroundColor: 'rgba(129,140,248,0.18)',
     bottom: -30,
     left: -20,
   },

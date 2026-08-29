@@ -7,8 +7,9 @@ import { Redirect, useFocusEffect } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouteTracking } from '@/contexts/RouteTrackingContext';
 import { StorageService } from '@/services/storage';
-import { Colors } from '@/constants/theme';
 import { getTodayDateStr } from '@/utils/format';
+import { AuroraBackground } from '@/components/aurora';
+import { AuroraColors, AuroraFont } from '@/constants/auroraTheme';
 
 type AppStep = 'loading' | 'need_url' | 'need_login' | 'need_download' | 'need_route_start' | 'ready';
 
@@ -106,9 +107,9 @@ export default function Index() {
 
   if (step === 'loading') {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
+      <AuroraBackground style={styles.center}>
+        <ActivityIndicator size="large" color={AuroraColors.indigo600} />
+      </AuroraBackground>
     );
   }
 
@@ -136,6 +137,5 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.background,
   },
 });

@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, Pressable, Linking, Animated } from 'react-nati
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { AuroraColors, AuroraShadow, AuroraGradients, AuroraRadius } from '@/constants/auroraTheme';
 import { Shop, CompanyBalance } from '@/services/api';
 import { formatPKR } from '@/utils/format';
 
@@ -102,10 +103,12 @@ export const ShopCard = memo(function ShopCard({
     if (shop.phone) Linking.openURL(`tel:${shop.phone}`);
   };
 
-  // Avatar gradient: solid blue when recovered/visited, lighter blue otherwise
+  // Avatar gradient: Aurora brand indigo when recovered/visited, soft indigo otherwise
   const avatarActive = hasRecovery || (isVisited && !hasRecovery);
-  const avatarColors: [string, string] = avatarActive ? ['#3B82F6', '#1E40AF'] : ['#DBEAFE', '#93C5FD'];
-  const avatarTextColor = avatarActive ? '#FFFFFF' : '#1E40AF';
+  const avatarColors: [string, string] = avatarActive
+    ? [AuroraColors.indigo600, AuroraColors.violet600]
+    : [AuroraColors.indigo100, AuroraColors.indigo200];
+  const avatarTextColor = avatarActive ? '#FFFFFF' : AuroraColors.indigo700;
 
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -270,21 +273,24 @@ export const ShopCard = memo(function ShopCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    // Aurora glassmorphic shop card
+    backgroundColor: AuroraColors.bgCard,
+    borderRadius: AuroraRadius.rXl, // 20
     padding: 14,
     marginBottom: Spacing.sm,
-    ...Shadow.md,
+    ...AuroraShadow.sm,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: AuroraColors.borderSubtle,
   },
   cardRecovered: {
-    borderColor: '#2563EB',
+    // Aurora brand-tinted border for recovered cards
+    borderColor: AuroraColors.indigo400,
     borderWidth: 1.5,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: AuroraColors.indigo50,
   },
   cardVisited: {
-    borderColor: '#BFDBFE',
+    // Aurora violet tint for visited-only cards
+    borderColor: AuroraColors.violet400,
     borderWidth: 1.5,
   },
   cardZero: {

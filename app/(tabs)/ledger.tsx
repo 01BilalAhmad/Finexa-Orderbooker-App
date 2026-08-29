@@ -21,6 +21,8 @@ import { useShops } from '@/hooks/useShops';
 import { ApiService, LedgerResponse, Shop, Transaction } from '@/services/api';
 import { getShopDisplayBalance } from '@/components/ui/ShopCard';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { AuroraBackground } from '@/components/aurora';
+import { AuroraGradients, AuroraColors } from '@/constants/auroraTheme';
 import { formatPKR, formatDateTime } from '@/utils/format';
 import { downloadLedgerPdf } from '@/utils/generateLedgerPdf';
 import { CompanySelector } from '@/components/ui/CompanySelector';
@@ -262,13 +264,13 @@ export default function LedgerScreen() {
   const reversedTxns = ledger ? [...ledger.transactions].reverse() : [];
 
   const balanceColor =
-    (ledger?.summary.currentBalance ?? 0) > 0 ? Colors.danger : '#2563EB';
+    (ledger?.summary.currentBalance ?? 0) > 0 ? Colors.danger : AuroraColors.indigo600;
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <AuroraBackground style={[styles.root, { paddingTop: insets.top }]}>
       {/* ── Gradient header ── */}
       <LinearGradient
-        colors={['#2563EB', '#3B82F6', '#60A5FA']}
+        colors={[AuroraGradients.brandStart, AuroraGradients.brandMid, AuroraGradients.brandEnd]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}
@@ -316,7 +318,7 @@ export default function LedgerScreen() {
         onPress={() => setShowShopPicker(true)}
       >
         <View style={styles.shopSelectorIcon}>
-          <MaterialIcons name="store" size={18} color="#2563EB" />
+          <MaterialIcons name="store" size={18} color={AuroraColors.indigo600} />
         </View>
         <Text
           style={[styles.shopSelectorText, !selectedShop && styles.shopSelectorPlaceholder]}
@@ -330,9 +332,9 @@ export default function LedgerScreen() {
       {/* ── Content ── */}
       {!selectedShop ? (
         <View style={styles.emptyContainer}>
-          <LinearGradient colors={['#DBEAFE', '#F8FAFC']} style={styles.emptyGrad}>
+          <LinearGradient colors={[AuroraColors.indigo100, AuroraColors.bgPage]} style={styles.emptyGrad}>
             <View style={styles.emptyIconWrap}>
-              <MaterialIcons name="menu-book" size={48} color="#2563EB" />
+              <MaterialIcons name="menu-book" size={48} color={AuroraColors.indigo600} />
             </View>
             <Text style={styles.emptyTitle}>Select a Shop</Text>
             <Text style={styles.emptySubtitle}>
@@ -342,7 +344,7 @@ export default function LedgerScreen() {
         </View>
       ) : isLoadingLedger ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2563EB" />
+          <ActivityIndicator size="large" color={AuroraColors.indigo600} />
           <Text style={styles.loadingText}>Loading ledger...</Text>
         </View>
       ) : ledger ? (
@@ -434,7 +436,7 @@ export default function LedgerScreen() {
                 disabled={isGeneratingPdf}
               >
                 <LinearGradient
-                  colors={['#2563EB', '#3B82F6']}
+                  colors={[AuroraGradients.brandStart, AuroraGradients.brandMid]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.pdfGradient}
@@ -463,7 +465,7 @@ export default function LedgerScreen() {
               {/* Transaction header */}
               <View style={styles.txnHeader}>
                 <View style={styles.txnHeaderIcon}>
-                  <MaterialIcons name="receipt-long" size={16} color="#2563EB" />
+                  <MaterialIcons name="receipt-long" size={16} color={AuroraColors.indigo600} />
                 </View>
                 <Text style={styles.txnHeaderTitle}>
                   Transactions
@@ -568,7 +570,7 @@ export default function LedgerScreen() {
           )}
         </View>
       </Modal>
-    </View>
+    </AuroraBackground>
   );
 }
 

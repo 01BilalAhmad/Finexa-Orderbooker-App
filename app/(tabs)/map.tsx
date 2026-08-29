@@ -22,6 +22,8 @@ import { useShops } from '@/hooks/useShops';
 import { Shop } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { Colors, Spacing, FontSize, FontWeight, Radius, Shadow } from '@/constants/theme';
+import { AuroraBackground, GlassCard } from '@/components/aurora';
+import { AuroraColors, AuroraShadow, AuroraFont } from '@/constants/auroraTheme';
 import { formatPKR } from '@/utils/format';
 import { getDistanceMeters } from '@/utils/distance';
 import { useRouteTracking } from '@/contexts/RouteTrackingContext';
@@ -656,21 +658,21 @@ export default function MapScreen() {
   // Loading state
   if (isLoadingLocation) {
     return (
-      <View style={styles.root}>
+      <AuroraBackground style={styles.root}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={AuroraColors.indigo600} />
           <Text style={styles.loadingText}>Loading Map...</Text>
         </View>
-      </View>
+      </AuroraBackground>
     );
   }
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <AuroraBackground style={[styles.root, { paddingTop: insets.top }]}>
       {/* Map Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <MaterialIcons name="map" size={22} color={Colors.primary} />
+          <MaterialIcons name="map" size={22} color={AuroraColors.indigo600} />
           <Text style={styles.headerTitle}>Route Map</Text>
         </View>
         <View style={styles.headerRight}>
@@ -681,7 +683,7 @@ export default function MapScreen() {
             <MaterialIcons
               name={showVisitedOnly ? 'visibility' : 'visibility-off'}
               size={18}
-              color={showVisitedOnly ? Colors.primary : Colors.textSecondary}
+              color={showVisitedOnly ? AuroraColors.indigo600 : Colors.textSecondary}
             />
           </Pressable>
         </View>
@@ -823,7 +825,7 @@ export default function MapScreen() {
           </Text>
         </View>
       )}
-    </View>
+    </AuroraBackground>
   );
 }
 
@@ -848,9 +850,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.surface,
+    // Aurora glassmorphic header — translucent white on slate-50 backdrop
+    backgroundColor: AuroraColors.bgCard,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    borderBottomColor: AuroraColors.borderSubtle,
+    ...AuroraShadow.sm,
   },
   headerLeft: {
     flexDirection: 'row',
