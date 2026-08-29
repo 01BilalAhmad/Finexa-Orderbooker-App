@@ -1,5 +1,5 @@
 // Powered by Finexa
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component, ReactNode } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,12 +7,12 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ShopsProvider } from '@/contexts/ShopsContext';
 import { LockProvider } from '@/contexts/LockContext';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { LockOverlay } from '@/components/LockOverlay';
 import { BismillahSplash } from '@/components/BismillahSplash';
 
 // CRASH-SAFE: Lazy load RouteTrackingProvider so that if it fails,
 // the rest of the app still works. We wrap it in an error boundary.
-import { Component, ReactNode } from 'react';
 
 class SafeRouteTrackingWrapper extends Component<
   { children: ReactNode },
@@ -53,6 +53,18 @@ class SafeRouteTrackingWrapper extends Component<
 // Prevent the native splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// Inner layer that uses the active theme to drive the StatusBar style.
+// Must be inside ThemeProvider so useTheme() works.
+function ThemedShell({ children }: { children: React.ReactNode }) {
+  const { statusBarStyle } = useTheme();
+  return (
+    <>
+      <StatusBar style={statusBarStyle} />
+      {children}
+    </>
+  );
+}
+
 export default function RootLayout() {
   const [showBismillah, setShowBismillah] = useState(true);
 
@@ -69,30 +81,34 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <ShopsProvider>
-          <SafeRouteTrackingWrapper>
-            <LockProvider>
-              <StatusBar style="dark" />
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="setup-url" />
-                <Stack.Screen name="login" />
-                <Stack.Screen name="download" />
-                <Stack.Screen name="route-start" />
-                <Stack.Screen name="route-summary" />
-                <Stack.Screen name="(tabs)" />
-              </Stack>
-              <LockOverlay />
-            </LockProvider>
-          </SafeRouteTrackingWrapper>
-        </ShopsProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ShopsProvider>
+            <SafeRouteTrackingWrapper>
+              <LockProvider>
+                <ThemedShell>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="index" />
+                    <Stack.Screen name="setup-url" />
+                    <Stack.Screen name="login" />
+                    <Stack.Screen name="download" />
+                    <Stack.Screen name="route-start" />
+                    <Stack.Screen name="route-summary" />
+                    <Stack.Screen name="overdue" />
+                    <Stack.Screen name="(tabs)" />
+                  </Stack>
+                  <LockOverlay />
+                </ThemedShell>
+              </LockProvider>
+            </SafeRouteTrackingWrapper>
+          </ShopsProvider>
+        </AuthProvider>
 
-      {/* Bismillah Splash Overlay - shows for 3 seconds on top of everything */}
-      {showBismillah ? (
-        <BismillahSplash onFinish={handleBismillahFinish} />
-      ) : null}
+        {/* Bismillah Splash Overlay - shows for 3 seconds on top of everything */}
+        {showBismillah ? (
+          <BismillahSplash onFinish={handleBismillahFinish} />
+        ) : null}
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

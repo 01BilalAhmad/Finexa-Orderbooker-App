@@ -23,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useShops } from '@/hooks/useShops';
 import { useLock } from '@/hooks/useLock';
 import { useRouteTracking } from '@/contexts/RouteTrackingContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ApiService } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { SecureStorageService } from '@/services/secureStorage';
@@ -241,6 +242,7 @@ export default function ProfileScreen() {
   const { allShops } = useShops();
   const { setNeedsPinSetup, lock } = useLock();
   const { isTracking, isStarting, isStopping, startRoute, endRoute, startTime, error: routeError } = useRouteTracking();
+  const { isDark, toggleTheme: toggleAppTheme } = useTheme();
 
   const [loggingOut, setLoggingOut] = useState(false);
   const [todayRecovery, setTodayRecovery] = useState(0);
@@ -774,6 +776,39 @@ export default function ProfileScreen() {
         {/* ─────────────────────────────────────────────────────────────── */}
         <SectionLabel icon="settings" label="Settings" />
         <View style={styles.card}>
+          {/* Row 0: App Theme toggle (light / dark) */}
+          <SettingsRow
+            icon="palette"
+            iconColor={isDark ? '#FBBF24' : AuroraColors.indigo600}
+            iconBg={isDark ? 'rgba(251,191,36,0.18)' : '#DBEAFE'}
+            title="App Theme"
+            subtitle={isDark ? 'Midnight Gold (Dark)' : 'Aurora Glass (Light)'}
+            rightElement={
+              <View style={themeToggleStyles.toggleWrap}>
+                <MaterialIcons
+                  name="light-mode"
+                  size={14}
+                  color={!isDark ? AuroraColors.indigo600 : AuroraColors.textMuted}
+                />
+                <Switch
+                  value={isDark}
+                  onValueChange={toggleAppTheme}
+                  trackColor={{
+                    false: '#CBD5E1',
+                    true: isDark ? '#FBBF24' : AuroraColors.indigo600,
+                  }}
+                  thumbColor="#FFFFFF"
+                  style={themeToggleStyles.switch}
+                />
+                <MaterialIcons
+                  name="dark-mode"
+                  size={14}
+                  color={isDark ? '#FBBF24' : AuroraColors.textMuted}
+                />
+              </View>
+            }
+          />
+
           {/* Row 1: Company Assignments */}
           <SettingsRow
             icon="business"
@@ -1408,5 +1443,17 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontWeight: FontWeight.semibold,
     letterSpacing: 0.3,
+  },
+});
+
+// ── Theme toggle styles (light/dark switch row) ──
+const themeToggleStyles = StyleSheet.create({
+  toggleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  switch: {
+    transform: [{ scale: 0.85 }],
   },
 });

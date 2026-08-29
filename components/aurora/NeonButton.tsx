@@ -1,15 +1,12 @@
 // =================================================================
-// AURORA GLASS — NEON BUTTON (primary CTA)
-// Brand gradient (indigo → violet → indigo) button with:
-//   • Reanimated 4 spring scale on press
-//   • Haptics feedback on press
-//   • Indigo glow shadow under the button
-//   • Shimmer overlay animation (skipped on Android for perf)
+// AURORA GLASS — NEON BUTTON (primary CTA, theme-aware)
+// LIGHT: brand gradient (indigo → violet → indigo), white text, indigo glow
+// DARK : brand gradient (gold-500 → gold-400 → gold-300), dark text, gold glow
 // Variants:
-//   • primary  — brand gradient, white text, glow shadow
+//   • primary  — brand gradient (indigo light / gold dark), glow shadow
 //   • danger   — rose gradient, white text, danger glow
-//   • ghost    — transparent bg, indigo text, no shadow
-//   • glass    — glassmorphic white, dark text, sm shadow
+//   • ghost    — transparent bg, brand-colored text, no shadow
+//   • glass    — glassmorphic bg, primary text, sm shadow
 // =================================================================
 import React, { useCallback } from 'react';
 import {
@@ -25,13 +22,11 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import {
-  AuroraColors,
   AuroraFont,
-  AuroraRadius,
-  AuroraShadow,
   AuroraShadowType,
   GlowTone,
 } from '@/constants/auroraTheme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 type ButtonVariant = 'primary' | 'danger' | 'ghost' | 'glass';
 
@@ -49,31 +44,6 @@ interface NeonButtonProps {
   fullWidth?: boolean;
 }
 
-const VARIANT_GRADIENT: Record<
-  ButtonVariant,
-  [string, string, string] | null
-> = {
-  primary: [
-    AuroraColors.indigo600,
-    AuroraColors.violet600,
-    AuroraColors.indigo500,
-  ],
-  danger: [AuroraColors.rose600, AuroraColors.rose500, AuroraColors.rose400],
-  ghost: null,
-  glass: null,
-};
-
-const VARIANT_SHADOW: Record<ButtonVariant, AuroraShadowType | null> = {
-  primary: AuroraShadow.btnPrimary,
-  danger: {
-    ...AuroraShadow.btnPrimary,
-    shadowColor: '#F43F5E',
-    shadowOpacity: 0.32,
-  },
-  ghost: null,
-  glass: AuroraShadow.sm,
-};
-
 export default function NeonButton({
   label,
   onPress,
@@ -86,11 +56,35 @@ export default function NeonButton({
   labelStyle,
   fullWidth = true,
 }: NeonButtonProps) {
+  const { colors, gradients, shadows, isDark } = useTheme();
+
   const handlePress = useCallback(() => {
     if (disabled || loading) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress?.();
   }, [disabled, loading, onPress]);
+
+  // Resolve gradient colors per variant + theme
+  const VARIANT_GRADIENT: Record<
+    ButtonVariant,
+    readonly [string, string, string] | null
+  > = {
+    primary: gradients.brand,
+    danger: gradients.danger,
+    ghost: null,
+    glass: null,
+  };
+
+  const VARIANT_SHADOW: Record<ButtonVariant, AuroraShadowType | null> = {
+    primary: shadows.btnPrimary,
+    danger: {
+      ...shadows.btnPrimary,
+      shadowColor: colors.rose500,
+      shadowOpacity: 0.32,
+    },
+    ghost: null,
+    glass: shadows.sm,
+  };
 
   const gradient = VARIANT_GRADIENT[variant];
   const shadow = VARIANT_SHADOW[variant];
@@ -99,25 +93,35 @@ export default function NeonButton({
     styles.base,
     fullWidth && styles.fullWidth,
     shadow,
-    variant === 'glass' && styles.glassFill,
+    variant === 'glass' && {
+      backgroundColor: colors.bgCard,
+      borderWidth: 1,
+      borderColor: colors.borderDefault,
+    },
     disabled && styles.disabled,
     style,
   ];
 
+  // Label color logic:
+  //  - ghost: brand accent (indigo in light, gold in dark)
+  //  - glass: textPrimary
+  //  - primary: white text on indigo (light), dark navy text on gold (dark)
+  //  - danger: white text always
   const labelColor =
     variant === 'ghost'
-      ? AuroraColors.indigo600
+      ? isDark
+        ? colors.gold400
+        : colors.indigo600
       : variant === 'glass'
-      ? AuroraColors.textPrimary
-      : AuroraColors.textInverse;
+        ? colors.textPrimary
+        : variant === 'primary' && isDark
+          ? colors.textInverse // dark navy on gold gradient
+          : colors.textInverse; // white on indigo / rose
 
   const content = (
     <>
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={labelColor as string}
-        />
+        <ActivityIndicator size="small" color={labelColor as string} />
       ) : (
         <>
           {icon && iconPosition === 'left' && icon}
@@ -138,10 +142,7 @@ export default function NeonButton({
       <Pressable
         onPress={handlePress}
         disabled={disabled || loading}
-        style={({ pressed }) => [
-          containerStyle,
-          pressed && styles.pressed,
-        ]}
+        style={({ pressed }) => [containerStyle, pressed && styles.pressed]}
         accessibilityRole="button"
         accessibilityState={{ disabled }}
       >
@@ -171,18 +172,13 @@ export default function NeonButton({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: AuroraRadius.rMd, // 12px
+    borderRadius: 12, // AuroraRadius.rMd
     minHeight: 48,
     justifyContent: 'center',
     overflow: 'hidden',
   },
   fullWidth: {
     width: '100%',
-  },
-  glassFill: {
-    backgroundColor: AuroraColors.bgCard,
-    borderWidth: 1,
-    borderColor: AuroraColors.borderDefault,
   },
   content: {
     flexDirection: 'row',

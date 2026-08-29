@@ -1,16 +1,16 @@
 // =================================================================
-// AURORA GLASS — APP BACKGROUND
-// Slate-50 base (#F8FAFC) with two soft radial gradient orbs:
-//   • top-left (violet #7C3AED @ 16% opacity)
-//   • bottom-right (indigo #4F46E5 @ 14% opacity)
+// AURORA GLASS — APP BACKGROUND (theme-aware)
+// LIGHT: slate-50 base (#F8FAFC) with violet + indigo radial orbs
+// DARK : midnight navy (#050817) with gold + violet radial orbs
 // On iOS the orbs use BlurView for true glassmorphism; on Android
-// they fall back to plain translucent circles (still readable on
-// the light base).
+// they fall back to plain translucent circles (still readable on the
+// underlying base color).
 // =================================================================
 import React from 'react';
-import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { AuroraColors, AuroraGradients } from '@/constants/auroraTheme';
+import { BlurView } from 'expo-blur';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface AuroraBackgroundProps {
   children?: React.ReactNode;
@@ -24,34 +24,66 @@ export default function AuroraBackground({
   style,
   withOrbs = true,
 }: AuroraBackgroundProps) {
+  const { colors, gradients, isDark } = useTheme();
+
   return (
-    <View style={[styles.root, style]}>
+    <View style={[styles.root, { backgroundColor: colors.bgPage }, style]}>
       {withOrbs && (
         <>
-          {/* Top-left violet orb */}
+          {/* Top-left orb (violet in light, gold in dark) */}
           <View
             style={[styles.orbBase, styles.orbTopLeft]}
             pointerEvents="none"
           >
-            <LinearGradient
-              colors={[AuroraGradients.orbTopLeft, 'transparent']}
-              style={StyleSheet.absoluteFill}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
+            {Platform.OS === 'ios' ? (
+              <BlurView
+                intensity={isDark ? 40 : 60}
+                tint={isDark ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              >
+                <LinearGradient
+                  colors={[gradients.orbTopLeft, 'transparent']}
+                  style={StyleSheet.absoluteFill}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                />
+              </BlurView>
+            ) : (
+              <LinearGradient
+                colors={[gradients.orbTopLeft, 'transparent']}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              />
+            )}
           </View>
 
-          {/* Bottom-right indigo orb */}
+          {/* Bottom-right orb (indigo in light, violet in dark) */}
           <View
             style={[styles.orbBase, styles.orbBottomRight]}
             pointerEvents="none"
           >
-            <LinearGradient
-              colors={[AuroraGradients.orbBottomRight, 'transparent']}
-              style={StyleSheet.absoluteFill}
-              start={{ x: 1, y: 1 }}
-              end={{ x: 0, y: 0 }}
-            />
+            {Platform.OS === 'ios' ? (
+              <BlurView
+                intensity={isDark ? 40 : 60}
+                tint={isDark ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              >
+                <LinearGradient
+                  colors={[gradients.orbBottomRight, 'transparent']}
+                  style={StyleSheet.absoluteFill}
+                  start={{ x: 1, y: 1 }}
+                  end={{ x: 0, y: 0 }}
+                />
+              </BlurView>
+            ) : (
+              <LinearGradient
+                colors={[gradients.orbBottomRight, 'transparent']}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 1, y: 1 }}
+                end={{ x: 0, y: 0 }}
+              />
+            )}
           </View>
         </>
       )}
@@ -65,12 +97,9 @@ export default function AuroraBackground({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: AuroraColors.bgPage,
     position: 'relative',
     overflow: 'hidden',
   },
-  // Orbs are big translucent circles positioned at the corners.
-  // Using borderRadius:9999 makes them perfect circles.
   orbBase: {
     position: 'absolute',
     width: 400,
