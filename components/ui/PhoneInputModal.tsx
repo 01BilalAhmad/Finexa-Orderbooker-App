@@ -224,7 +224,7 @@ export function PhoneInputModal({ visible, shop, onPhoneSaved, onSkip }: PhoneIn
             ) : null}
 
             <Text style={styles.hintText}>
-              Enter shopkeeper&apos;s WhatsApp or phone number. Owner name and phone will be saved to the database.
+              Enter shopkeeper's WhatsApp or phone number. Owner name and phone will be saved to the database.
             </Text>
           </View>
 

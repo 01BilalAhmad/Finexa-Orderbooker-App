@@ -33,7 +33,6 @@ import { RouteTrackingService } from '@/services/routeTracking';
 import { ApiService } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { AuroraColors, AuroraGradients } from '@/constants/auroraTheme';
 import { formatPKR, getTodayLabel } from '@/utils/format';
 import { generateRouteSummaryPdf } from '@/utils/generateRouteSummaryPdf';
 
@@ -437,7 +436,7 @@ export default function RouteSummaryScreen() {
     <SafeAreaView style={styles.root}>
       {/* Header (gradient) */}
       <LinearGradient
-        colors={[...AuroraGradients.primary]}
+        colors={['#2563EB', '#1D4ED8', '#1E40AF']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.header, { paddingTop: insets.top + Spacing.md }]}
@@ -572,7 +571,7 @@ export default function RouteSummaryScreen() {
 
 // ── Styles ─────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: AuroraColors.bgDeep },
+  root: { flex: 1, backgroundColor: Colors.background },
 
   centerWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.xl, gap: Spacing.md },
   loadingText: { fontSize: FontSize.base, color: Colors.textSecondary },

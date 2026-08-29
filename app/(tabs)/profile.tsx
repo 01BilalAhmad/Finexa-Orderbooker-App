@@ -27,7 +27,6 @@ import { ApiService } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { SecureStorageService } from '@/services/secureStorage';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { AuroraColors, AuroraGradients } from '@/constants/auroraTheme';
 import { formatPKR, getTodayDateStr } from '@/utils/format';
 import { RecoveryAnalysisChart } from '@/components/ui/RecoveryAnalysisChart';
 import { RecoveryComparison } from '@/components/ui/RecoveryComparison';
@@ -481,7 +480,7 @@ export default function ProfileScreen() {
         {/* HERO HEADER — blue gradient with bubbles, avatar, name, badges  */}
         {/* ─────────────────────────────────────────────────────────────── */}
         <LinearGradient
-          colors={[...AuroraGradients.primary]}
+          colors={['#1E40AF', '#2563EB', '#3B82F6']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.hero}
@@ -905,7 +904,7 @@ export default function ProfileScreen() {
 // Styles
 // ────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: AuroraColors.bgDeep },
+  root: { flex: 1, backgroundColor: '#F1F5F9' },
   scroll: { paddingBottom: 100 },
 
   // ── Hero ──

@@ -119,7 +119,7 @@ export const OfflineBanner = memo(function OfflineBanner({
           <Text style={styles.bannerTitle}>
             {queueCount} {queueCount === 1 ? 'recovery' : 'recoveries'} pending sync
           </Text>
-          <Text style={styles.bannerSub}>Use &quot;End Route&quot; button or Profile → Sync Upload</Text>
+          <Text style={styles.bannerSub}>Use "End Route" button or Profile → Sync Upload</Text>
         </View>
         {onSync ? (
           <Pressable

@@ -1,7 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  Aurora Glass — Route Start Screen
-//  Premium glassmorphic design with neon indigo gradient backdrop
-// ═══════════════════════════════════════════════════════════════════════════
+// Route Start Screen — Show after data download, before showing shops
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator, Alert,
@@ -12,18 +9,7 @@ import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouteTracking } from '@/contexts/RouteTrackingContext';
 import { StorageService } from '@/services/storage';
-import { Spacing, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import {
-  AuroraBackground,
-  GlassCard,
-  NeonButton,
-  AuroraColors,
-  AuroraGradients,
-  AuroraRadius,
-  AuroraSpacing,
-  AuroraFont,
-  AuroraShadow,
-} from '@/components/aurora';
+import { Colors, Spacing, FontSize, FontWeight, Shadow } from '@/constants/theme';
 import { getTodayLabel } from '@/utils/format';
 
 export default function RouteStartScreen() {
@@ -32,6 +18,7 @@ export default function RouteStartScreen() {
   const [isStartingLocal, setIsStartingLocal] = useState(false);
   const [resumableSessionId, setResumableSessionId] = useState<string | null>(null);
 
+  // On mount, check if there's a resumable (ended today) session
   useEffect(() => {
     (async () => {
       try {
@@ -55,9 +42,12 @@ export default function RouteStartScreen() {
             setIsStartingLocal(true);
             try {
               await startRoute();
+              // Navigate directly to tabs — avoids race condition with root router
+              // where route tracking state hasn't updated yet when router.replace('/') fires
               setTimeout(() => {
                 router.replace('/(tabs)');
               }, 100);
+
             } catch (e: any) {
               console.error('[RouteStart] startRoute failed:', e);
               Alert.alert('Error', e.message || 'Route start nahi ho saka. Dobarra try karein.');
@@ -77,212 +67,120 @@ export default function RouteStartScreen() {
   const isLoading = isStarting || isStartingLocal;
 
   return (
-    <AuroraBackground topTint={AuroraColors.bgVoid}>
-      <View style={styles.content}>
-        {/* Icon with neon halo */}
-        <View style={styles.iconHalo}>
-          <LinearGradient
-            colors={['rgba(52, 211, 153, 0.30)', 'rgba(99, 102, 241, 0.20)', 'transparent']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
+    <View style={styles.root}>
+      <LinearGradient colors={['#10B981', '#059669', '#047857']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.gradient}>
+        <View style={styles.content}>
+          {/* Icon */}
           <View style={styles.iconCircle}>
-            <MaterialIcons name="play-circle-fill" size={56} color={AuroraColors.success} />
+            <MaterialIcons name="play-circle-fill" size={56} color="#FFFFFF" />
           </View>
-        </View>
 
-        <Text style={styles.title}>Start Your Route</Text>
-        <Text style={styles.date}>{getTodayLabel()}</Text>
+          <Text style={styles.title}>Start Your Route</Text>
+          <Text style={styles.date}>{getTodayLabel()}</Text>
 
-        <Text style={styles.desc}>
-          Data download ho gaya hai! Ab route start karein. Route start ke baad:
-        </Text>
+          <Text style={styles.desc}>
+            Data download ho gaya hai! Ab route start karein. Route start ke baad:
+          </Text>
 
-        <GlassCard variant="base" padding="lg" radius="lg" style={styles.featuresCard}>
-          <View style={styles.featureRow}>
-            <View style={styles.featureIconBox}>
-              <MaterialIcons name="store" size={18} color={AuroraColors.neonViolet} />
+          <View style={styles.features}>
+            <View style={styles.featureRow}>
+              <MaterialIcons name="store" size={20} color="#A7F3D0" />
+              <Text style={styles.featureText}>Shops list dikhegi</Text>
             </View>
-            <Text style={styles.featureText}>Shops list dikhegi</Text>
-          </View>
-          <View style={styles.featureRow}>
-            <View style={styles.featureIconBox}>
-              <MaterialIcons name="my-location" size={18} color={AuroraColors.neonViolet} />
+            <View style={styles.featureRow}>
+              <MaterialIcons name="my-location" size={20} color="#A7F3D0" />
+              <Text style={styles.featureText}>GPS tracking shuru hoga</Text>
             </View>
-            <Text style={styles.featureText}>GPS tracking shuru hoga</Text>
-          </View>
-          <View style={styles.featureRow}>
-            <View style={styles.featureIconBox}>
-              <MaterialIcons name="offline-bolt" size={18} color={AuroraColors.neonViolet} />
+            <View style={styles.featureRow}>
+              <MaterialIcons name="offline-bolt" size={20} color="#A7F3D0" />
+              <Text style={styles.featureText}>Offline recovery kaam karegi</Text>
             </View>
-            <Text style={styles.featureText}>Offline recovery kaam karegi</Text>
           </View>
-        </GlassCard>
 
-        {error ? (
-          <View style={styles.errorBox}>
-            <MaterialIcons name="error" size={20} color={AuroraColors.danger} />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
+          {error && (
+            <View style={styles.errorBox}>
+              <MaterialIcons name="error" size={20} color="#FCA5A5" />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
-        <View style={styles.buttonWrap}>
-          <NeonButton
-            label={isLoading ? 'Starting...' : 'Start Route'}
-            onPress={handleStartRoute}
-            disabled={isLoading}
-            loading={isLoading}
-            variant="success"
-            size="lg"
-            fullWidth
-            icon={
-              !isLoading ? <MaterialIcons name="route" size={22} color="#FFFFFF" /> : undefined
-            }
-          />
-        </View>
-
-        {resumableSessionId ? (
           <Pressable
             style={({ pressed }) => [
-              styles.summaryBtn,
-              pressed && { opacity: 0.7 },
+              styles.startBtn,
+              isLoading && styles.startBtnDisabled,
+              pressed && !isLoading && styles.startBtnPressed,
             ]}
-            onPress={handleViewSummary}
+            onPress={handleStartRoute}
+            disabled={isLoading}
           >
-            <MaterialIcons name="history" size={18} color={AuroraColors.neonViolet} />
-            <Text style={styles.summaryBtnText}>View Last Route Summary / Resume</Text>
+            <LinearGradient colors={['#FFFFFF', '#F0FDF4']} style={styles.btnGradient}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#059669" />
+              ) : (
+                <>
+                  <MaterialIcons name="route" size={24} color="#059669" />
+                  <Text style={styles.btnText}>Start Route</Text>
+                </>
+              )}
+            </LinearGradient>
           </Pressable>
-        ) : null}
 
-        <Text style={styles.footer}>
-          Route start hone ke baad GPS har 30 sec mein location save karega
-        </Text>
-      </View>
-    </AuroraBackground>
+          {resumableSessionId ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.summaryBtn,
+                pressed && styles.summaryBtnPressed,
+              ]}
+              onPress={handleViewSummary}
+            >
+              <MaterialIcons name="history" size={18} color="#A7F3D0" />
+              <Text style={styles.summaryBtnText}>View Last Route Summary / Resume</Text>
+            </Pressable>
+          ) : null}
+
+          <Text style={styles.footer}>
+            Route start hone ke baad GPS har 30 sec mein location save karega
+          </Text>
+        </View>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: AuroraSpacing.xl,
-  },
-  iconHalo: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: AuroraSpacing.xl,
-    overflow: 'hidden',
-    ...AuroraShadow.neon,
-  },
+  root: { flex: 1, backgroundColor: '#10B981' },
+  gradient: { flex: 1 },
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.xl },
   iconCircle: {
-    width: 108,
-    height: 108,
-    borderRadius: 54,
-    backgroundColor: 'rgba(255, 255, 255, 0.10)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: AuroraColors.glassBorder,
+    width: 110, height: 110, borderRadius: 55,
+    backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center',
+    marginBottom: Spacing.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
   },
-  title: {
-    fontSize: 30,
-    fontWeight: AuroraFont.weight.black,
-    color: AuroraColors.text,
-    textAlign: 'center',
-    letterSpacing: 1.2,
-    textShadowColor: AuroraColors.neonGlow,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
-  },
-  date: {
-    fontSize: AuroraFont.size.lg,
-    color: AuroraColors.textSecondary,
-    fontWeight: AuroraFont.weight.bold,
-    marginTop: 4,
-  },
-  desc: {
-    fontSize: AuroraFont.size.base,
-    color: AuroraColors.textSecondary,
-    textAlign: 'center',
-    marginTop: AuroraSpacing.md,
-    lineHeight: 22,
-  },
-  featuresCard: {
-    marginTop: AuroraSpacing.lg,
-    marginBottom: AuroraSpacing.lg,
-    width: '100%',
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: AuroraSpacing.sm,
-    marginBottom: AuroraSpacing.sm,
-  },
-  featureIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: AuroraRadius.sm,
-    backgroundColor: 'rgba(99, 102, 241, 0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  featureText: {
-    fontSize: AuroraFont.size.base,
-    color: AuroraColors.text,
-    fontWeight: AuroraFont.weight.semibold,
-  },
+  title: { fontSize: 28, fontWeight: '900', color: '#FFFFFF', textAlign: 'center' },
+  date: { fontSize: FontSize.lg, color: 'rgba(255,255,255,0.8)', fontWeight: FontWeight.bold, marginTop: 2 },
+  desc: { fontSize: FontSize.base, color: 'rgba(255,255,255,0.75)', textAlign: 'center', marginTop: Spacing.md, lineHeight: 22 },
+  features: { marginTop: Spacing.lg, marginBottom: Spacing.xl, width: '100%' },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
+  featureText: { fontSize: FontSize.base, color: 'rgba(255,255,255,0.9)', fontWeight: FontWeight.semibold },
   errorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: AuroraSpacing.sm,
-    backgroundColor: 'rgba(248, 113, 113, 0.12)',
-    borderRadius: AuroraRadius.md,
-    paddingHorizontal: AuroraSpacing.md,
-    paddingVertical: AuroraSpacing.sm,
-    marginBottom: AuroraSpacing.md,
-    marginTop: AuroraSpacing.xs,
-    borderWidth: 1,
-    borderColor: 'rgba(248, 113, 113, 0.30)',
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    backgroundColor: 'rgba(239,68,68,0.2)', borderRadius: 12,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+    marginBottom: Spacing.md, borderWidth: 1, borderColor: 'rgba(239,68,68,0.4)',
   },
-  errorText: {
-    fontSize: AuroraFont.size.sm,
-    color: AuroraColors.danger,
-    flex: 1,
-    fontWeight: AuroraFont.weight.semibold,
-  },
-  buttonWrap: {
-    width: '100%',
-    marginTop: AuroraSpacing.sm,
-  },
+  errorText: { fontSize: FontSize.sm, color: '#FCA5A5', flex: 1 },
+  startBtn: { borderRadius: 16, overflow: 'hidden', width: '100%', ...Shadow.xl },
+  btnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: 18 },
+  startBtnDisabled: { opacity: 0.5 },
+  startBtnPressed: { opacity: 0.85 },
+  btnText: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: '#059669' },
   summaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: AuroraSpacing.sm,
-    marginTop: AuroraSpacing.md,
-    paddingVertical: AuroraSpacing.sm,
-    paddingHorizontal: AuroraSpacing.md,
-    borderRadius: AuroraRadius.md,
-    borderWidth: 1,
-    borderColor: AuroraColors.glassBorder,
-    backgroundColor: AuroraColors.glassBase,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
+    marginTop: Spacing.md, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md,
+    borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
-  summaryBtnText: {
-    fontSize: AuroraFont.size.sm,
-    color: AuroraColors.neonViolet,
-    fontWeight: AuroraFont.weight.semibold,
-  },
-  footer: {
-    fontSize: AuroraFont.size.xs,
-    color: AuroraColors.textMuted,
-    marginTop: AuroraSpacing.md,
-    textAlign: 'center',
-    letterSpacing: AuroraFont.tracking.wide,
-  },
+  summaryBtnPressed: { opacity: 0.7 },
+  summaryBtnText: { fontSize: FontSize.sm, color: '#A7F3D0', fontWeight: FontWeight.semibold },
+  footer: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.5)', marginTop: Spacing.md, textAlign: 'center' },
 });

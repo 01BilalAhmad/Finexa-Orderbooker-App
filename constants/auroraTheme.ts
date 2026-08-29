@@ -81,6 +81,18 @@ export const AuroraColors = {
   glassOnGradient: 'rgba(255,255,255,0.18)', // pill on hero
   glassOnGradientBorder: 'rgba(255,255,255,0.28)',
   glassOnGradientText: 'rgba(255,255,255,0.92)',
+
+  // ── BACKWARD-COMPAT ALIASES (for legacy "dark Aurora" code that
+  // referenced now-removed property names. Values map to LIGHT Aurora
+  // equivalents so screens auto-theme to the new light look.)
+  bgVoid: '#F8FAFC', // was deep midnight, now light slate
+  bgDeep: '#F8FAFC',
+  bgSoft: 'rgba(255,255,255,0.78)',
+  neonIndigo: '#6366F1', // indigo-500
+  neonViolet: '#8B5CF6', // violet-500
+  neonPurple: '#7C3AED', // violet-600
+  neonGlow: '#6366F1', // indigo glow color
+  danger: '#F43F5E', // rose-500
 } as const;
 
 // ============ GRADIENTS ============

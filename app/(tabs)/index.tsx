@@ -22,7 +22,6 @@ import { ApiService, Shop, Transaction } from '@/services/api';
 import { router } from 'expo-router';
 import { getShopDisplayBalance } from '@/components/ui/ShopCard';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { AuroraColors, AuroraGradients } from '@/constants/auroraTheme';
 import { ROUTE_DAYS, DAY_LABELS } from '@/constants/config';
 import { getTodayDayName, getTodayLabel, getTodayDateStr, capitalize, formatPKR } from '@/utils/format';
 import { ShopCard } from '@/components/ui/ShopCard';
@@ -1077,15 +1076,15 @@ export default function TodayRouteScreen() {
             <RefreshControl
               refreshing={isLoadingToday}
               onRefresh={handleRefresh}
-              tintColor={AuroraColors.neonViolet}
-              colors={[AuroraColors.neonIndigo]}
+              tintColor={Colors.primary}
+              colors={[Colors.primary]}
             />
           }
           ListHeaderComponent={
             <View>
               {/* Hero Card - All Routes */}
               <LinearGradient
-                colors={[...AuroraGradients.primary]}
+                colors={['#2563EB', '#3B82F6', '#60A5FA']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroCard}
@@ -1182,7 +1181,7 @@ export default function TodayRouteScreen() {
                     <View style={styles.bentoWideTop}>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.bentoRecoveryValue}>{formatPKR(todayRecovery)}</Text>
-                        <Text style={styles.bentoLabel}>Today&apos;s Recovery</Text>
+                        <Text style={styles.bentoLabel}>Today's Recovery</Text>
                       </View>
                       <View style={styles.bentoRecoveryIcon}>
                         <MaterialIcons name="trending-up" size={16} color="#34D399" />
@@ -1383,15 +1382,15 @@ export default function TodayRouteScreen() {
             <RefreshControl
               refreshing={isLoadingToday}
               onRefresh={handleRefresh}
-              tintColor={AuroraColors.neonViolet}
-              colors={[AuroraColors.neonIndigo]}
+              tintColor={Colors.primary}
+              colors={[Colors.primary]}
             />
           }
           ListHeaderComponent={
             <View>
               {/* Hero Card - Normal */}
               <LinearGradient
-                colors={[...AuroraGradients.primary]}
+                colors={['#2563EB', '#3B82F6', '#60A5FA']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroCard}
@@ -1485,7 +1484,7 @@ export default function TodayRouteScreen() {
                     <View style={styles.bentoWideTop}>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.bentoRecoveryValue}>{formatPKR(todayRecovery)}</Text>
-                        <Text style={styles.bentoLabel}>Today&apos;s Recovery</Text>
+                        <Text style={styles.bentoLabel}>Today's Recovery</Text>
                       </View>
                       <View style={styles.bentoRecoveryIcon}>
                         <MaterialIcons name="trending-up" size={16} color="#34D399" />
@@ -1907,7 +1906,7 @@ export default function TodayRouteScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: AuroraColors.bgDeep,
+    backgroundColor: Colors.background,
   },
   listContent: {
     paddingBottom: 100,
