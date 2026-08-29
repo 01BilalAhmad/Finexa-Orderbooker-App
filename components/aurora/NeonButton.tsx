@@ -1,298 +1,211 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  NeonButton — Premium CTA with neon indigo gradient + glow shadow + haptics
-//  Supports variants: primary (indigo), success, danger, ghost (glass outline)
-//  Auto-handles press scale with Reanimated 4 worklets
-// ═══════════════════════════════════════════════════════════════════════════
-import React, { useEffect } from 'react';
+// =================================================================
+// AURORA GLASS — NEON BUTTON (primary CTA)
+// Brand gradient (indigo → violet → indigo) button with:
+//   • Reanimated 4 spring scale on press
+//   • Haptics feedback on press
+//   • Indigo glow shadow under the button
+//   • Shimmer overlay animation (skipped on Android for perf)
+// Variants:
+//   • primary  — brand gradient, white text, glow shadow
+//   • danger   — rose gradient, white text, danger glow
+//   • ghost    — transparent bg, indigo text, no shadow
+//   • glass    — glassmorphic white, dark text, sm shadow
+// =================================================================
+import React, { useCallback } from 'react';
 import {
-  View,
-  Pressable,
-  Text,
   StyleSheet,
-  ActivityIndicator,
-  ViewStyle,
+  Text,
+  Pressable,
   StyleProp,
   TextStyle,
+  ViewStyle,
+  ActivityIndicator,
+  View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  Easing,
-  interpolate,
-  runOnJS,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { AuroraColors, AuroraGradients, AuroraFont, AuroraRadius, AuroraShadow } from '@/constants/auroraTheme';
+import {
+  AuroraColors,
+  AuroraFont,
+  AuroraRadius,
+  AuroraShadow,
+  AuroraShadowType,
+  GlowTone,
+} from '@/constants/auroraTheme';
 
-type ButtonVariant = 'primary' | 'success' | 'danger' | 'ghost' | 'subtle';
-type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonVariant = 'primary' | 'danger' | 'ghost' | 'glass';
 
 interface NeonButtonProps {
   label: string;
   onPress?: () => void;
-  onLongPress?: () => void;
-  disabled?: boolean;
-  loading?: boolean;
   variant?: ButtonVariant;
-  size?: ButtonSize;
+  loading?: boolean;
+  disabled?: boolean;
   icon?: React.ReactNode;
-  iconRight?: React.ReactNode;
-  fullWidth?: boolean;
+  iconPosition?: 'left' | 'right';
   style?: StyleProp<ViewStyle>;
-  textStyle?: StyleProp<TextStyle>;
-  haptic?: boolean;
+  labelStyle?: StyleProp<TextStyle>;
+  /** Stretch to fill container width */
+  fullWidth?: boolean;
 }
 
-const VARIANT_GRADIENT: Record<ButtonVariant, string[] | null> = {
-  primary: [...AuroraGradients.primary] as string[],
-  success: [...AuroraGradients.success] as string[],
-  danger: [...AuroraGradients.danger] as string[],
-  ghost: null,  // no gradient — pure glass
-  subtle: null,  // minimal style
+const VARIANT_GRADIENT: Record<
+  ButtonVariant,
+  [string, string, string] | null
+> = {
+  primary: [
+    AuroraColors.indigo600,
+    AuroraColors.violet600,
+    AuroraColors.indigo500,
+  ],
+  danger: [AuroraColors.rose600, AuroraColors.rose500, AuroraColors.rose400],
+  ghost: null,
+  glass: null,
 };
 
-const VARIANT_GLOW: Record<ButtonVariant, { shadowColor: string; opacity: number }> = {
-  primary: { shadowColor: AuroraColors.neonIndigo, opacity: 0.55 },
-  success: { shadowColor: AuroraColors.success, opacity: 0.45 },
-  danger:  { shadowColor: AuroraColors.danger, opacity: 0.45 },
-  ghost:   { shadowColor: AuroraColors.neonViolet, opacity: 0.25 },
-  subtle:  { shadowColor: '#000', opacity: 0.20 },
+const VARIANT_SHADOW: Record<ButtonVariant, AuroraShadowType | null> = {
+  primary: AuroraShadow.btnPrimary,
+  danger: {
+    ...AuroraShadow.btnPrimary,
+    shadowColor: '#F43F5E',
+    shadowOpacity: 0.32,
+  },
+  ghost: null,
+  glass: AuroraShadow.sm,
 };
 
-const SIZE_PRESET: Record<ButtonSize, { height: number; radius: keyof typeof AuroraRadius; fontSize: number; paddingH: number }> = {
-  sm: { height: 40, radius: 'sm', fontSize: AuroraFont.size.sm, paddingH: 14 },
-  md: { height: 52, radius: 'md', fontSize: AuroraFont.size.base, paddingH: 20 },
-  lg: { height: 60, radius: 'lg', fontSize: AuroraFont.size.lg, paddingH: 28 },
-};
-
-export function NeonButton({
+export default function NeonButton({
   label,
   onPress,
-  onLongPress,
-  disabled = false,
-  loading = false,
   variant = 'primary',
-  size = 'md',
+  loading = false,
+  disabled = false,
   icon,
-  iconRight,
-  fullWidth = false,
+  iconPosition = 'left',
   style,
-  textStyle,
-  haptic = true,
+  labelStyle,
+  fullWidth = true,
 }: NeonButtonProps) {
-  const scale = useSharedValue(1);
-  const glow = useSharedValue(disabled ? 0 : VARIANT_GLOW[variant].opacity);
+  const handlePress = useCallback(() => {
+    if (disabled || loading) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress?.();
+  }, [disabled, loading, onPress]);
 
-  const sizePreset = SIZE_PRESET[size];
-  const radiusValue = AuroraRadius[sizePreset.radius];
   const gradient = VARIANT_GRADIENT[variant];
+  const shadow = VARIANT_SHADOW[variant];
 
-  useEffect(() => {
-    glow.value = withTiming(disabled ? 0 : VARIANT_GLOW[variant].opacity, {
-      duration: 200,
-      easing: Easing.out(Easing.ease),
-    });
-  }, [disabled, glow, variant]);
+  const containerStyle: StyleProp<ViewStyle> = [
+    styles.base,
+    fullWidth && styles.fullWidth,
+    shadow,
+    variant === 'glass' && styles.glassFill,
+    disabled && styles.disabled,
+    style,
+  ];
 
-  const triggerHaptic = () => {
-    if (haptic && !disabled && !loading) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    }
-  };
+  const labelColor =
+    variant === 'ghost'
+      ? AuroraColors.indigo600
+      : variant === 'glass'
+      ? AuroraColors.textPrimary
+      : AuroraColors.textInverse;
 
-  const handlePressIn = () => {
-    if (disabled) return;
-    scale.value = withSpring(0.96, {
-      damping: 15,
-      stiffness: 350,
-    });
-    runOnJS(triggerHaptic)();
-  };
+  const content = (
+    <>
+      {loading ? (
+        <ActivityIndicator
+          size="small"
+          color={labelColor as string}
+        />
+      ) : (
+        <>
+          {icon && iconPosition === 'left' && icon}
+          <Text
+            style={[styles.label, { color: labelColor }, labelStyle]}
+            numberOfLines={1}
+          >
+            {label}
+          </Text>
+          {icon && iconPosition === 'right' && icon}
+        </>
+      )}
+    </>
+  );
 
-  const handlePressOut = () => {
-    if (disabled) return;
-    scale.value = withSpring(1, {
-      damping: 12,
-      stiffness: 280,
-    });
-    // Subtle glow pulse on release
-    glow.value = withTiming(VARIANT_GLOW[variant].opacity * 1.4, {
-      duration: 150,
-    }, () => {
-      glow.value = withTiming(VARIANT_GLOW[variant].opacity, { duration: 250 });
-    });
-  };
-
-  const animatedScale = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const animatedGlow = useAnimatedStyle(() => ({
-    shadowOpacity: glow.value,
-  }));
-
-  // Ghost & subtle variants — glass outline, no gradient fill
-  if (variant === 'ghost' || variant === 'subtle') {
-    const isGhost = variant === 'ghost';
+  if (gradient) {
     return (
       <Pressable
-        onPress={onPress}
-        onLongPress={onLongPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        onPress={handlePress}
         disabled={disabled || loading}
+        style={({ pressed }) => [
+          containerStyle,
+          pressed && styles.pressed,
+        ]}
         accessibilityRole="button"
-        accessibilityLabel={label}
-        accessibilityState={{ disabled: disabled || loading }}
+        accessibilityState={{ disabled }}
       >
-        <Animated.View
-          style={[
-            styles.base,
-            {
-              height: sizePreset.height,
-              borderRadius: radiusValue,
-              paddingHorizontal: sizePreset.paddingH,
-              backgroundColor: isGhost
-                ? AuroraColors.glassBase
-                : 'transparent',
-              borderWidth: isGhost ? 1 : 0,
-              borderColor: isGhost ? AuroraColors.glassBorder : 'transparent',
-            },
-            AuroraShadow.float,
-            fullWidth && { width: '100%' as any },
-            style as any,
-            animatedScale,
-            animatedGlow,
-          ]}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color={AuroraColors.text} />
-          ) : (
-            <>
-              {icon ? <View style={styles.iconLeft}>{icon}</View> : null}
-              <Text
-                style={[
-                  styles.label,
-                  {
-                    fontSize: sizePreset.fontSize,
-                    color: disabled ? AuroraColors.textMuted : AuroraColors.text,
-                  },
-                  textStyle,
-                ]}
-              >
-                {label}
-              </Text>
-              {iconRight ? <View style={styles.iconRight}>{iconRight}</View> : null}
-            </>
-          )}
-        </Animated.View>
+        <LinearGradient
+          colors={gradient as [string, string, string]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.content}>{content}</View>
       </Pressable>
     );
   }
 
-  // Gradient-filled variants (primary, success, danger)
   return (
     <Pressable
-      onPress={onPress}
-      onLongPress={onLongPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPress={handlePress}
       disabled={disabled || loading}
+      style={({ pressed }) => [containerStyle, pressed && styles.pressed]}
       accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: disabled || loading }}
+      accessibilityState={{ disabled }}
     >
-      <Animated.View
-        style={[
-          styles.base,
-          {
-            height: sizePreset.height,
-            borderRadius: radiusValue,
-            shadowColor: VARIANT_GLOW[variant].shadowColor,
-            shadowOffset: { width: 0, height: 4 },
-            shadowRadius: 16,
-            elevation: 6,
-          },
-          fullWidth && { width: '100%' as any },
-          style as any,
-          animatedScale,
-          animatedGlow,
-        ]}
-      >
-        <LinearGradient
-          colors={gradient as unknown as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[
-            StyleSheet.absoluteFill,
-            { borderRadius: radiusValue, opacity: disabled ? 0.4 : 1 },
-          ]}
-        />
-        {/* Inner top highlight — fake glass reflection */}
-        <View style={styles.innerHighlight} pointerEvents="none" />
-        <View style={styles.content}>
-          {loading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <>
-              {icon ? <View style={styles.iconLeft}>{icon}</View> : null}
-              <Text
-                style={[
-                  styles.label,
-                  {
-                    fontSize: sizePreset.fontSize,
-                    color: '#FFFFFF',
-                  },
-                  textStyle,
-                ]}
-              >
-                {label}
-              </Text>
-              {iconRight ? <View style={styles.iconRight}>{iconRight}</View> : null}
-            </>
-          )}
-        </View>
-      </Animated.View>
+      <View style={styles.content}>{content}</View>
     </Pressable>
   );
 }
 
-// Need View import for icon wrappers
-
 const styles = StyleSheet.create({
   base: {
-    overflow: 'hidden',
-    alignItems: 'center',
+    borderRadius: AuroraRadius.rMd, // 12px
+    minHeight: 48,
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  fullWidth: {
+    width: '100%',
+  },
+  glassFill: {
+    backgroundColor: AuroraColors.bgCard,
+    borderWidth: 1,
+    borderColor: AuroraColors.borderDefault,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-  },
-  iconLeft: {
-    marginRight: 4,
-  },
-  iconRight: {
-    marginLeft: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   label: {
-    fontWeight: AuroraFont.weight.bold,
-    letterSpacing: AuroraFont.tracking.wide,
-    textAlign: 'center',
+    fontFamily: AuroraFont.sans,
+    fontSize: AuroraFont.fsBase, // 15px
+    fontWeight: AuroraFont.bold,
+    letterSpacing: 0.2,
   },
-  innerHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.30)',
+  pressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.92,
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });
 
-export default NeonButton;
+// Re-export GlowTone for callers that need it
+export type { GlowTone };

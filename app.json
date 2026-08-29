@@ -10,15 +10,15 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone."
+        "NSSpeechRecognitionUsageDescription": "Allow Finexa to use speech recognition for voice notes.",
+        "NSMicrophoneUsageDescription": "Allow Finexa to use the microphone for voice notes."
       }
     },
     "android": {
       "package": "com.finexa.smartcreditroutes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#070314"
+        "backgroundColor": "#4F46E5"
       },
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -42,7 +42,7 @@
           "image": "./assets/images/splash.png",
           "imageWidth": 280,
           "resizeMode": "contain",
-          "backgroundColor": "#070314"
+          "backgroundColor": "#F8FAFC"
         }
       ],
       [
@@ -89,7 +89,6 @@
       "eas": {
         "projectId": "2371ff21-2edc-4261-b18d-b6b44f84d734"
       }
-    },
-    "owner": "bilalahmadpk"
+    }
   }
 }

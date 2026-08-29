@@ -1,213 +1,239 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  FINEXA · AURORA GLASS DESIGN SYSTEM
-//  Premium glassmorphism + neon indigo glow on deep midnight base
-// ═══════════════════════════════════════════════════════════════════════════
+// =================================================================
+// FINEXA — AURORA GLASS DESIGN SYSTEM
+// Light theme: glassmorphic white cards on slate-50 background
+// Indigo/violet brand gradient + soft indigo glow shadows
+// Matches HTML mockup: finexa-app-preview-v2.html (data-style="aurora")
+// =================================================================
 
-/**
- * Aurora Glass palette — designed for a premium, glassmorphic feel.
- * - Background: deep midnight indigo with subtle violet undertones
- * - Surface: semi-transparent glass layers (rgba white + blur)
- * - Accent: neon indigo / electric violet glow
- * - Text: soft white / lavender secondary
- */
-
+// ============ COLOR PALETTE ============
 export const AuroraColors = {
-  // ── Deep Midnight Base ──
-  bgVoid:       '#070314',  // absolute void (status bar area)
-  bgDeep:       '#0B0720',  // app background
-  bgMid:        '#120A2E',  // elevated background
-  bgSoft:       '#1A0F3D',  // soft indigo
+  // ── Background layers ───────────────────────────────────────────
+  bgPage: '#F8FAFC', // slate-50 — main app background
+  bgCard: 'rgba(255,255,255,0.78)', // white glassmorphic card
+  bgElevated: 'rgba(255,255,255,0.92)', // inputs, list rows
+  bgGlass: 'rgba(255,255,255,0.72)', // modals, sheets
+  bgPill: 'rgba(255,255,255,0.85)', // chips, tabs, FAB border
 
-  // ── Glass Layers (translucent) ──
-  glassBase:    'rgba(255, 255, 255, 0.06)',  // base glass card
-  glassHover:   'rgba(255, 255, 255, 0.10)',  // pressed/hover state
-  glassStrong:  'rgba(255, 255, 255, 0.14)',  // strong glass card (modals)
-  glassBorder:  'rgba(255, 255, 255, 0.16)',  // glass border (hairline)
-  glassInner:   'rgba(255, 255, 255, 0.08)',  // inner highlights
+  // ── Text colors (DARK NAVY on LIGHT bg) ─────────────────────────
+  textPrimary: '#0F172A', // slate-900 — main text
+  textSecondary: '#475569', // slate-600 — secondary text
+  textMuted: '#94A3B8', // slate-400 — placeholder, hints
+  textInverse: '#FFFFFF', // white text on dark/gradient bg
 
-  // ── Neon Indigo Accents ──
-  neonIndigo:   '#6366F1',  // primary indigo
-  neonViolet:   '#818CF8',  // light indigo
-  neonPurple:   '#A78BFA',  // accent purple
-  neonPink:     '#E879F9',  // accent pink (rare)
-  neonCyan:     '#22D3EE',  // success/info accent
-  neonGlow:     'rgba(99, 102, 241, 0.40)',  // glow shadow color
+  // ── Borders (slate-tinted, semi-transparent) ───────────────────
+  borderSubtle: 'rgba(148,163,184,0.18)',
+  borderDefault: 'rgba(148,163,184,0.24)',
+  borderStrong: 'rgba(148,163,184,0.40)',
 
-  // ── Gradients ──
-  gradStart:    '#4F46E5',  // indigo-600
-  gradMid:      '#7C3AED',  // violet-600
-  gradEnd:      '#EC4899',  // pink-500 (rare accent)
+  // ── Indigo / violet brand palette ──────────────────────────────
+  indigo50: '#EEF2FF',
+  indigo100: '#E0E7FF',
+  indigo200: '#C7D2FE',
+  indigo300: '#A5B4FC',
+  indigo400: '#818CF8',
+  indigo500: '#6366F1',
+  indigo600: '#4F46E5',
+  indigo700: '#4338CA',
+  indigo800: '#3730A3',
+  indigo900: '#312E81',
 
-  // ── Text ──
-  text:         '#F5F3FF',  // primary text (soft white)
-  textSecondary:'rgba(245, 243, 255, 0.78)',  // secondary
-  textMuted:    'rgba(245, 243, 255, 0.50)',  // muted
-  textInverse:  '#0B0720',  // inverse (on light accents)
+  violet400: '#A78BFA',
+  violet500: '#8B5CF6',
+  violet600: '#7C3AED',
+  violet700: '#6D28D9',
 
-  // ── Semantic Colors ──
-  success:      '#34D399',
-  successGlow:  'rgba(52, 211, 153, 0.35)',
-  warning:      '#FBBF24',
-  warningGlow:  'rgba(251, 191, 36, 0.35)',
-  danger:       '#F87171',
-  dangerGlow:   'rgba(248, 113, 113, 0.35)',
-  info:         '#60A5FA',
-  infoGlow:     'rgba(96, 165, 250, 0.35)',
+  // ── Status colors ──────────────────────────────────────────────
+  emerald400: '#34D399',
+  emerald500: '#10B981',
+  emerald600: '#059669',
+  emeraldLight: '#D1FAE5',
+  emeraldBorder: '#A7F3D0',
 
-  // ── Tab Bar ──
-  tabBarBg:     'rgba(11, 7, 32, 0.85)',  // dark translucent
-  tabBarBorder: 'rgba(255, 255, 255, 0.10)',
-  tabActive:    '#A78BFA',
-  tabInactive:  'rgba(245, 243, 255, 0.45)',
-  tabGlow:      'rgba(167, 139, 250, 0.50)',
+  amber400: '#FBBF24',
+  amber500: '#F59E0B',
+  amber600: '#D97706',
+  amberLight: '#FEF3C7',
+  amberBorder: '#FDE68A',
+
+  rose400: '#FB7185',
+  rose500: '#F43F5E',
+  rose600: '#E11D48',
+  roseLight: '#FEE2E2',
+  roseBorder: '#FECACA',
+
+  sky400: '#38BDF8',
+  sky500: '#0EA5E9',
+
+  // ── Slate grays ────────────────────────────────────────────────
+  slate50: '#F8FAFC',
+  slate100: '#F1F5F9',
+  slate200: '#E2E8F0',
+  slate300: '#CBD5E1',
+  slate400: '#94A3B8',
+  slate500: '#64748B',
+  slate600: '#475569',
+  slate700: '#334155',
+  slate800: '#1E293B',
+  slate900: '#0F172A',
+  slate950: '#020617',
+
+  // ── Glass overlay on gradient heroes (semi-transparent white) ──
+  glassOnGradient: 'rgba(255,255,255,0.18)', // pill on hero
+  glassOnGradientBorder: 'rgba(255,255,255,0.28)',
+  glassOnGradientText: 'rgba(255,255,255,0.92)',
 } as const;
 
-// ────────────────────────────────────────────────────────────────────────────
-//  Aurora Glass Effects (shadows, blurs, glows)
-// ────────────────────────────────────────────────────────────────────────────
+// ============ GRADIENTS ============
+export const AuroraGradients = {
+  // Brand — used for hero sections, primary buttons, FABs, active states
+  brand: ['#4F46E5', '#7C3AED', '#6366F1'], // indigo-600 → violet-600 → indigo-500
+  brandStart: '#4F46E5',
+  brandMid: '#7C3AED',
+  brandEnd: '#6366F1',
 
-export const AuroraShadow = {
-  // Soft ambient glow for glass cards
-  glass: {
-    shadowColor: '#000',
+  // Danger — destructive actions, overdue indicators
+  danger: ['#E11D48', '#F43F5E', '#FB7185'], // rose-600 → rose-500 → rose-400
+  dangerStart: '#E11D48',
+  dangerMid: '#F43F5E',
+  dangerEnd: '#FB7185',
+
+  // Success
+  success: ['#059669', '#10B981', '#34D399'], // emerald-600 → emerald-500 → emerald-400
+
+  // Soft indigo background orbs (radial gradient overlays on slate-50 bg)
+  orbTopLeft: 'rgba(124,58,237,0.16)', // violet-600 at 16% opacity
+  orbBottomRight: 'rgba(79,70,229,0.14)', // indigo-600 at 14% opacity
+
+  // Glow under hero gradients
+  glowViolet: 'rgba(124,58,237,0.32)',
+  glowIndigo: 'rgba(99,102,241,0.45)',
+} as const;
+
+// ============ TYPOGRAPHY ============
+export const AuroraFont = {
+  sans: 'Inter',
+  display: 'Manrope',
+  mono: 'JetBrains Mono',
+  // sizes (px)
+  fs2xs: 10,
+  fsXs: 11,
+  fsSm: 13,
+  fsBase: 15,
+  fsMd: 16,
+  fsLg: 18,
+  fsXl: 20,
+  fs2xl: 24,
+  fs3xl: 30,
+  fs4xl: 40,
+  fs5xl: 56,
+  // weights
+  regular: '400' as const,
+  medium: '500' as const,
+  semibold: '600' as const,
+  bold: '700' as const,
+  extrabold: '800' as const,
+} as const;
+
+// ============ SPACING ============
+export const AuroraSpacing = {
+  s1: 4,
+  s2: 8,
+  s3: 12,
+  s4: 16,
+  s5: 20,
+  s6: 24,
+  s8: 32,
+  s10: 40,
+} as const;
+
+// ============ BORDER RADIUS ============
+export const AuroraRadius = {
+  rXs: 6,
+  rSm: 8,
+  rMd: 12,
+  rLg: 16,
+  rXl: 20,
+  r2xl: 28,
+  r3xl: 40,
+  rFull: 9999,
+} as const;
+
+// ============ SHADOWS (soft indigo-tinted, depth-focused) ============
+// On Android, elevation replaces shadow* properties.
+export interface AuroraShadowType {
+  shadowColor: string;
+  shadowOffset: { width: number; height: number };
+  shadowOpacity: number;
+  shadowRadius: number;
+  elevation: number;
+}
+
+export const AuroraShadow: Record<string, AuroraShadowType> = {
+  xs: {
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  sm: {
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  // Indigo-tinted medium shadow (used on cards for soft glow)
+  md: {
+    shadowColor: '#4F46E5', // indigo-600
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.40,
+    shadowOpacity: 0.12,
     shadowRadius: 24,
+    elevation: 4,
+  },
+  lg: {
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.18,
+    shadowRadius: 48,
     elevation: 8,
   },
-  // Neon indigo glow for primary CTAs
-  neon: {
-    shadowColor: AuroraColors.neonIndigo,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.55,
-    shadowRadius: 16,
-    elevation: 6,
+  xl: {
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 32 },
+    shadowOpacity: 0.22,
+    shadowRadius: 64,
+    elevation: 12,
   },
-  // Strong neon for active/pressed state
-  neonStrong: {
-    shadowColor: AuroraColors.neonViolet,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.70,
+  // Brand-colored glow (used on active buttons, FABs)
+  glow: {
+    shadowColor: '#6366F1', // indigo-500
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 32,
+    elevation: 8,
+  },
+  btnPrimary: {
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.32,
     shadowRadius: 20,
-    elevation: 10,
+    elevation: 4,
   },
-  // Subtle floating shadow
-  float: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-} as const;
+};
 
-// ────────────────────────────────────────────────────────────────────────────
-//  Aurora Glass Gradients (Linear presets)
-// ────────────────────────────────────────────────────────────────────────────
-
-export const AuroraGradients = {
-  // App background — deep midnight with violet bloom
-  background: ['#070314', '#0B0720', '#1A0F3D'] as const,
-  // Primary CTA — neon indigo to violet
-  primary: ['#6366F1', '#818CF8', '#A78BFA'] as const,
-  // Success — emerald to teal
-  success: ['#34D399', '#10B981'] as const,
-  // Danger — rose to red
-  danger: ['#F87171', '#EF4444'] as const,
-  // Tab indicator — neon indigo
-  tabIndicator: ['#A78BFA', '#6366F1'] as const,
-  // Aurora glow accent (for hero areas)
-  aurora: ['#4F46E5', '#7C3AED', '#EC4899'] as const,
-  // Status bar tint
-  statusBar: ['#070314', '#0B0720'] as const,
-} as const;
-
-// ────────────────────────────────────────────────────────────────────────────
-//  Typography (Aurora uses Manrope-style geometric sans)
-// ────────────────────────────────────────────────────────────────────────────
-
-export const AuroraFont = {
-  family: {
-    regular: 'System',
-    medium: 'System',
-    semibold: 'System',
-    bold: 'System',
-    extrabold: 'System',
-  },
-  size: {
-    caption: 11,
-    xs: 12,
-    sm: 13,
-    base: 15,
-    md: 16,
-    lg: 18,
-    xl: 20,
-    xxl: 24,
-    xxxl: 30,
-    display: 36,
-    hero: 44,
-  },
-  weight: {
-    regular: '400' as const,
-    medium: '500' as const,
-    semibold: '600' as const,
-    bold: '700' as const,
-    extrabold: '800' as const,
-    black: '900' as const,
-  },
-  tracking: {
-    tight: -0.5,
-    normal: 0,
-    wide: 0.5,
-    wider: 1.2,
-  },
-  lineHeight: {
-    tight: 1.15,
-    normal: 1.4,
-    relaxed: 1.6,
-  },
-} as const;
-
-// ────────────────────────────────────────────────────────────────────────────
-//  Aurora Glass Spacing & Radius
-// ────────────────────────────────────────────────────────────────────────────
-
-export const AuroraSpacing = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-  xxl: 48,
-  xxxl: 64,
-} as const;
-
-export const AuroraRadius = {
-  xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 20,
-  xl: 24,
-  xxl: 32,
-  full: 9999,
-} as const;
-
-// ────────────────────────────────────────────────────────────────────────────
-//  Aurora Glass — Live "aurora" gradient stops for animated background
-//  These positions create the floating northern-lights feel
-// ────────────────────────────────────────────────────────────────────────────
-
+// ============ AURORA FLOATING ORBS (background) ============
+// Position percentages for the radial gradient overlays on the main background
 export const AuroraOrbs = [
-  // Top-left indigo orb
-  { color: 'rgba(99, 102, 241, 0.35)', size: 320, x: -80, y: -60, blur: 80 },
-  // Top-right violet orb
-  { color: 'rgba(167, 139, 250, 0.30)', size: 280, x: 220, y: -100, blur: 70 },
-  // Bottom-center pink orb
-  { color: 'rgba(236, 72, 153, 0.18)', size: 360, x: 60, y: 480, blur: 90 },
-  // Mid-left cyan orb
-  { color: 'rgba(34, 211, 238, 0.14)', size: 240, x: -60, y: 360, blur: 60 },
+  { x: 15, y: 8, size: 60, color: AuroraGradients.orbTopLeft }, // top-left violet
+  { x: 85, y: 85, size: 50, color: AuroraGradients.orbBottomRight }, // bottom-right indigo
 ] as const;
 
-// Type exports for consumers
-export type AuroraColorKey = keyof typeof AuroraColors;
-export type AuroraGradientKey = keyof typeof AuroraGradients;
+// ============ ANIMATION EASING ============
+export const AuroraEasing = {
+  spring: { tension: 200, friction: 12 }, // matches cubic-bezier(0.34,1.56,0.64,1)
+  out: { duration: 300 }, // matches cubic-bezier(0.16,1,0.3,1)
+} as const;
+
+// ============ TYPE EXPORTS ============
+export type GlowTone = 'brand' | 'danger' | 'success' | 'default';

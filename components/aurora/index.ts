@@ -1,19 +1,16 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  Aurora Glass — Export barrel
-//  Import like: import { GlassCard, NeonButton, AuroraBackground } from '@/components/aurora';
-// ═══════════════════════════════════════════════════════════════════════════
-export { AuroraBackground } from './AuroraBackground';
-export { GlassCard } from './GlassCard';
-export { NeonButton } from './NeonButton';
-export { GlassInput } from './GlassInput';
+// Aurora Glass design system — barrel export
+export { default as AuroraBackground } from './AuroraBackground';
+export { default as GlassCard } from './GlassCard';
+export { default as NeonButton } from './NeonButton';
+export { default as GlassInput } from './GlassInput';
 
-// Theme exports
+// Re-export the most-used tokens for convenience
 export {
   AuroraColors,
-  AuroraShadow,
   AuroraGradients,
   AuroraFont,
   AuroraSpacing,
   AuroraRadius,
-  AuroraOrbs,
+  AuroraShadow,
 } from '@/constants/auroraTheme';
+export type { GlowTone } from '@/constants/auroraTheme';

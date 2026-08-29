@@ -1,137 +1,127 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  GlassCard — Glassmorphic card with backdrop blur (iOS) + simulated glass (Android)
-//  Semi-transparent surface with hairline border + soft neon glow shadow
-// ═══════════════════════════════════════════════════════════════════════════
+// =================================================================
+// AURORA GLASS — GLASS CARD
+// White glassmorphic card with:
+//   • background rgba(255,255,255,0.78)
+//   • backdrop blur (iOS BlurView, Android fallback to elevated white)
+//   • subtle slate border
+//   • soft indigo-tinted shadow
+// Optional glow tone variants: 'default' | 'brand' | 'danger' | 'success'
+// =================================================================
 import React from 'react';
-import { View, StyleSheet, Platform, ViewStyle, StyleProp } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+  Platform,
+  ViewProps,
+} from 'react-native';
 import { BlurView } from 'expo-blur';
-import { AuroraColors, AuroraRadius, AuroraShadow, AuroraSpacing } from '@/constants/auroraTheme';
+import {
+  AuroraColors,
+  AuroraRadius,
+  AuroraShadow,
+  AuroraShadowType,
+  GlowTone,
+} from '@/constants/auroraTheme';
 
-type GlassVariant = 'base' | 'strong' | 'subtle';
-type GlowTone = 'none' | 'indigo' | 'success' | 'danger' | 'warning' | 'info';
-
-interface GlassCardProps {
-  children: React.ReactNode;
+interface GlassCardProps extends ViewProps {
+  children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  /**
-   * Glass opacity variant:
-   *  - subtle: very faint (for nested elements)
-   *  - base:   standard glass card
-   *  - strong: modal/dialog glass
-   */
-  variant?: GlassVariant;
-  /**
-   * Optional neon glow tone around the card
-   */
+  /** Glow tone — adds a colored glow shadow underneath the card */
   glow?: GlowTone;
-  /**
-   * Padding preset (uses AuroraSpacing scale)
-   */
-  padding?: keyof typeof AuroraSpacing | number;
-  /**
-   * Radius preset (uses AuroraRadius scale)
-   */
-  radius?: keyof typeof AuroraRadius | number;
-  /**
-   * Disable blur (use plain translucent overlay)
-   */
-  noBlur?: boolean;
-  /**
-   * Override border color
-   */
-  borderColor?: string;
-  /**
-   * Override background color
-   */
-  backgroundColor?: string;
+  /** Skip the white fill — for transparent overlay cards (rare) */
+  transparent?: boolean;
+  /** Card padding preset: 'none' | 'sm' | 'md' | 'lg' */
+  padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-const GLASS_OPACITY: Record<GlassVariant, number> = {
-  subtle: 0.04,
-  base: 0.06,
-  strong: 0.14,
+const PADDING_MAP: Record<NonNullable<GlassCardProps['padding']>, number> = {
+  none: 0,
+  sm: 12,
+  md: 16,
+  lg: 20,
 };
 
-const GLOW_TONES: Record<GlowTone, { color: string; opacity: number; radius: number } | null> = {
-  none: null,
-  indigo: { color: AuroraColors.neonIndigo, opacity: 0.30, radius: 16 },
-  success: { color: AuroraColors.success, opacity: 0.30, radius: 14 },
-  danger: { color: AuroraColors.danger, opacity: 0.30, radius: 14 },
-  warning: { color: AuroraColors.warning, opacity: 0.30, radius: 14 },
-  info: { color: AuroraColors.info, opacity: 0.30, radius: 14 },
+const GLOW_SHADOW_MAP: Record<GlowTone, AuroraShadowType> = {
+  default: AuroraShadow.sm,
+  brand: AuroraShadow.md,
+  danger: {
+    ...AuroraShadow.md,
+    shadowColor: '#F43F5E', // rose-500
+    shadowOpacity: 0.20,
+  },
+  success: {
+    ...AuroraShadow.md,
+    shadowColor: '#10B981', // emerald-500
+    shadowOpacity: 0.20,
+  },
 };
 
-export function GlassCard({
+export default function GlassCard({
   children,
   style,
-  variant = 'base',
-  glow = 'none',
-  padding = 'lg',
-  radius = 'lg',
-  noBlur = false,
-  borderColor,
-  backgroundColor,
+  glow = 'default',
+  transparent = false,
+  padding = 'md',
+  ...rest
 }: GlassCardProps) {
-  const padValue = typeof padding === 'number' ? padding : AuroraSpacing[padding];
-  const radiusValue = typeof radius === 'number' ? radius : AuroraRadius[radius];
-  const opacity = GLASS_OPACITY[variant];
-  const glowConfig = GLOW_TONES[glow];
-
-  const baseStyle: ViewStyle = {
-    borderRadius: radiusValue,
-    padding: padValue,
-    borderWidth: 1,
-    borderColor: borderColor ?? AuroraColors.glassBorder,
-    backgroundColor: backgroundColor ?? `rgba(255, 255, 255, ${opacity})`,
-    overflow: 'hidden',
-  };
-
-  const glowStyle: ViewStyle = glowConfig
-    ? {
-        shadowColor: glowConfig.color,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: glowConfig.opacity,
-        shadowRadius: glowConfig.radius,
-        elevation: 4,
-      }
-    : AuroraShadow.glass;
-
-  // iOS: use BlurView for true backdrop blur
-  if (Platform.OS === 'ios' && !noBlur) {
+  // On iOS we can use BlurView for real backdrop blur. On Android it's
+  // a costly no-op (blur is not supported), so we fall back to a semi-
+  // translucent white background that visually still reads as glass.
+  if (Platform.OS === 'ios' && !transparent) {
     return (
-      <View style={[baseStyle, glowStyle, style]}>
+      <View style={[styles.outerGlow, GLOW_SHADOW_MAP[glow], style]}>
         <BlurView
-          intensity={variant === 'strong' ? 80 : 60}
-          tint="dark"
-          style={[StyleSheet.absoluteFill, { borderRadius: radiusValue }]}
-        />
-        <View style={styles.content}>{children}</View>
+          intensity={60}
+          tint="light"
+          style={[
+            styles.card,
+            { padding: PADDING_MAP[padding] },
+            !transparent && styles.cardFill,
+          ]}
+          {...(rest as any)}
+        >
+          {children}
+        </BlurView>
       </View>
     );
   }
 
-  // Android: simulated glass (semi-transparent + inner highlight border)
+  // Android / fallback — semi-translucent white card with elevation
   return (
-    <View style={[baseStyle, glowStyle, style]}>
-      {/* Inner top highlight — fake glass reflection */}
-      <View style={styles.innerHighlight} pointerEvents="none" />
-      <View style={styles.content}>{children}</View>
+    <View
+      style={[
+        styles.outerGlow,
+        GLOW_SHADOW_MAP[glow],
+        styles.card,
+        { padding: PADDING_MAP[padding] },
+        !transparent && styles.cardFillFallback,
+        style,
+      ]}
+      {...rest}
+    >
+      {children}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 0,
+  outerGlow: {
+    borderRadius: AuroraRadius.rXl, // 20px
+    overflow: 'hidden',
   },
-  innerHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.30)',
+  card: {
+    borderWidth: 1,
+    borderColor: AuroraColors.borderSubtle,
+    borderRadius: AuroraRadius.rXl,
+  },
+  cardFill: {
+    backgroundColor: AuroraColors.bgCard, // rgba(255,255,255,0.78)
+  },
+  cardFillFallback: {
+    // Android: pure white is more legible than translucent.
+    // Slate-50 backdrop is light enough that solid white reads as glass.
+    backgroundColor: '#FFFFFF',
   },
 });
-
-export default GlassCard;

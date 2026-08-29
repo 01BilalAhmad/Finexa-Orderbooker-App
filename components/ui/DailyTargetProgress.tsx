@@ -59,7 +59,7 @@ export function DailyTargetProgress({ todayRecovery }: DailyTargetProgressProps)
   const remaining = Math.max(target - todayRecovery, 0);
 
   // Color coding: green if >= 50%, yellow if > 0% and < 50%, red if 0%
-  let progressColor = Colors.danger;
+  let progressColor: string = Colors.danger;
   if (progressPct >= 50) {
     progressColor = Colors.primary;
   } else if (progressPct > 0) {

@@ -1,51 +1,60 @@
-// ═══════════════════════════════════════════════════════════════════════════
-//  FINEXA — Aurora Glass Global Theme
-//  All existing components using Colors.* automatically get the Aurora aesthetic:
-//  dark midnight background, glassmorphic surfaces, soft white text, neon accents
-// ═══════════════════════════════════════════════════════════════════════════
+// =================================================================
+// FINEXA — THEME CONSTANTS (Aurora Glass palette aligned)
+// Re-exports the canonical Aurora design tokens plus legacy aliases
+// (Colors.*, Spacing, Radius, FontSize, FontWeight, Shadow) for
+// screens that still use the old API. Aurora tokens live in
+// constants/auroraTheme.ts and are the source of truth.
+// =================================================================
+import { AuroraColors, AuroraShadow as AuroraShadowTokens } from './auroraTheme';
 
+// ============ LEGACY Colors alias (auto-themed to Aurora) ============
 export const Colors = {
-  // ── Brand Accents (kept compatible with old code) ──
-  primary: '#6366F1',         // Aurora neon indigo
-  primaryLight: 'rgba(99, 102, 241, 0.18)',  // indigo glass tint
-  primaryDark: '#4F46E5',     // deeper indigo
-  secondary: '#A78BFA',       // Aurora neon purple
-  secondaryLight: 'rgba(167, 139, 250, 0.18)',
-  danger: '#F87171',
-  dangerLight: 'rgba(248, 113, 113, 0.15)',
-  success: '#34D399',
-  successLight: 'rgba(52, 211, 153, 0.15)',
-  warning: '#FBBF24',
-  warningLight: 'rgba(251, 191, 36, 0.15)',
+  // Primary / brand — Aurora indigo (was blue)
+  primary: AuroraColors.indigo600, // #4F46E5
+  primaryLight: AuroraColors.indigo100, // #E0E7FF
+  primaryDark: AuroraColors.indigo800, // #3730A3
 
-  // ── Aurora Background ──
-  background: '#0B0720',          // deep midnight (replaces light gray)
-  surface: 'rgba(255, 255, 255, 0.06)',     // glass base — semi-transparent
-  surfaceElevated: 'rgba(255, 255, 255, 0.12)',  // glass strong
-  border: 'rgba(255, 255, 255, 0.16)',      // glass hairline border
-  borderLight: 'rgba(255, 255, 255, 0.08)',
+  // Secondary (amber, kept)
+  secondary: '#F59E0B',
+  secondaryLight: '#FEF3C7',
 
-  // ── Text (light on dark) ──
-  text: '#F5F3FF',                  // soft white
-  textSecondary: 'rgba(245, 243, 255, 0.78)',
-  textMuted: 'rgba(245, 243, 255, 0.50)',
-  textInverse: '#0B0720',
+  // Status
+  danger: AuroraColors.rose500, // #F43F5E
+  dangerLight: AuroraColors.roseLight,
+  success: AuroraColors.emerald500, // #10B981
+  successLight: AuroraColors.emeraldLight,
+  warning: '#F59E0B',
+  warningLight: '#FFFBEB',
 
-  // ── Tab Bar ──
-  tabBar: 'rgba(11, 7, 32, 0.85)',       // dark translucent
-  tabBarBorder: 'rgba(255, 255, 255, 0.10)',
-  tabActive: '#A78BFA',                  // neon purple
-  tabInactive: 'rgba(245, 243, 255, 0.45)',
+  // Background layers
+  background: AuroraColors.bgPage, // #F8FAFC slate-50
+  surface: '#FFFFFF',
+  surfaceElevated: '#FFFFFF',
+  border: AuroraColors.slate200, // #E2E8F0 (kept for legacy borders)
+  borderLight: AuroraColors.slate100, // #F1F5F9
 
-  // ── Extended palette (kept for backward compat with screens using these) ──
-  blue: '#6366F1',          // maps to neon indigo
-  blueLight: 'rgba(99, 102, 241, 0.18)',
-  purple: '#A78BFA',        // maps to neon purple
-  purpleLight: 'rgba(167, 139, 250, 0.18)',
-  orange: '#FBBF24',
-  orangeLight: 'rgba(251, 191, 36, 0.15)',
+  // Text (DARK navy on light bg)
+  text: AuroraColors.textPrimary, // #0F172A
+  textSecondary: AuroraColors.textSecondary, // #475569
+  textMuted: AuroraColors.textMuted, // #94A3B8
+  textInverse: AuroraColors.textInverse, // #FFFFFF
+
+  // Tab bar — light with indigo active
+  tabBar: '#FFFFFF',
+  tabBarBorder: AuroraColors.slate200,
+  tabActive: AuroraColors.indigo600, // #4F46E5
+  tabInactive: AuroraColors.textMuted, // #94A3B8
+
+  // Extended palette (Aurora-aligned)
+  blue: AuroraColors.indigo500, // #6366F1 (now indigo)
+  blueLight: AuroraColors.indigo100,
+  purple: AuroraColors.violet600, // #7C3AED
+  purpleLight: AuroraColors.indigo50, // #EEF2FF
+  orange: '#EA580C',
+  orangeLight: '#FFF7ED',
 };
 
+// ============ SPACING (Aurora-aligned) ============
 export const Spacing = {
   xs: 4,
   sm: 8,
@@ -55,16 +64,18 @@ export const Spacing = {
   xxl: 48,
 };
 
+// ============ RADIUS (Aurora-aligned) ============
 export const Radius = {
-  xs: 4,
+  xs: 6,
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 24,
-  xxl: 32,
+  xl: 20,
+  xxl: 28,
   full: 9999,
 };
 
+// ============ FONT SIZE ============
 export const FontSize = {
   xs: 11,
   sm: 13,
@@ -76,6 +87,7 @@ export const FontSize = {
   xxxl: 30,
 };
 
+// ============ FONT WEIGHT ============
 export const FontWeight = {
   regular: '400' as const,
   medium: '500' as const,
@@ -84,33 +96,10 @@ export const FontWeight = {
   extrabold: '800' as const,
 };
 
+// ============ SHADOWS (Aurora indigo-tinted) ============
 export const Shadow = {
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.30,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.40,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  xl: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.50,
-    shadowRadius: 24,
-    elevation: 12,
-  },
+  sm: AuroraShadowTokens.sm,
+  md: AuroraShadowTokens.md,
+  lg: AuroraShadowTokens.lg,
+  xl: AuroraShadowTokens.xl,
 };
