@@ -1,20 +1,19 @@
-// =================================================================
-// AURORA GLASS — LOGIN SCREEN
-// • Brand gradient hero (indigo→violet→indigo) with white text
-// • Glassmorphic "F" logo box on hero
-// • Slate-50 body with white glassmorphic inputs
-// • Brand gradient CTA button with indigo glow shadow
-// • Matches HTML mockup (finexa-app-preview-v2.html) Aurora style
-// =================================================================
+// Powered by Finexa
+// Login Screen — AURORA GLASS design (mockup screen 1):
+// brand-gradient hero (rounded bottom 28px) with glass logo tile + welcome
+// copy, aurora light page background, glass input cards with leading icons,
+// gradient primary button with indigo glow.
 import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  TextInput,
   Pressable,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -26,14 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useShops } from '@/hooks/useShops';
 import { useLock } from '@/hooks/useLock';
 import { SecureStorageService } from '@/services/secureStorage';
-import { AuroraBackground, GlassCard, NeonButton, GlassInput } from '@/components/aurora';
-import {
-  AuroraColors,
-  AuroraFont,
-  AuroraRadius,
-  AuroraShadow,
-  AuroraGradients,
-} from '@/constants/auroraTheme';
+import { AURORA, Colors, Spacing, FontSize, FontWeight, Shadow } from '@/constants/theme';
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -69,13 +61,18 @@ export default function LoginScreen() {
       } finally {
         setSyncingData(false);
       }
+      // After successful login + sync, check if PIN is set
       const hasPin = await SecureStorageService.hasPin();
       if (!hasPin) {
+        // First-time login — trigger PIN setup
         setNeedsPinSetup(true);
         resetIdleTimer();
       } else {
         resetIdleTimer();
       }
+      // After successful login, navigate to root — the root router will
+      // evaluate the correct next step (download, route-start, or tabs)
+      // Use setTimeout to ensure React state has been processed before navigation
       setTimeout(() => {
         router.replace('/');
       }, 100);
@@ -91,7 +88,18 @@ export default function LoginScreen() {
   const busy = isLoading || syncingData;
 
   return (
-    <AuroraBackground style={styles.root}>
+    <View style={styles.root}>
+      {/* ── Aurora page background: soft violet/indigo tints on #F8FAFC ── */}
+      <LinearGradient
+        colors={['#EDE9FE', '#F8FAFC', '#EEF2FF']}
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      {/* Aurora radial tint blobs (top-left violet / bottom-right indigo) */}
+      <View style={styles.auroraBlobA} pointerEvents="none" />
+      <View style={styles.auroraBlobB} pointerEvents="none" />
+
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -100,160 +108,156 @@ export default function LoginScreen() {
           style={styles.scroll}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: insets.top, paddingBottom: insets.bottom + 24 },
+            { paddingTop: insets.top, paddingBottom: insets.bottom + Spacing.xl },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          {/* ─────────────────────────────────────────────────────
-              TOP HERO — brand gradient with white text
-              ───────────────────────────────────────────────────── */}
-          <View style={styles.heroWrap}>
-            <LinearGradient
-              colors={[
-                AuroraGradients.brandStart, // #4F46E5
-                AuroraGradients.brandMid, // #7C3AED
-                AuroraGradients.brandEnd, // #6366F1
-              ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
+          {/* ── HERO (mockup .login-hero): brand gradient, rounded bottom 28 ── */}
+          <LinearGradient
+            colors={[...AURORA.brandGradient]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.loginHero}
+          >
+            {/* gradient-glow overlay */}
+            <View style={styles.heroGlow} pointerEvents="none" />
+            <View style={styles.heroBubble1} pointerEvents="none" />
+            <View style={styles.heroBubble2} pointerEvents="none" />
 
-            {/* Floating glassmorphic "F" logo box on hero */}
-            <View style={styles.logoBox}>
+            {/* Glass logo tile (mockup .login-logo: 64px, glass, r-18) */}
+            <View style={styles.loginLogo}>
               <Image
                 source={require('@/assets/images/logo.png')}
                 style={styles.logoImage}
                 contentFit="contain"
               />
             </View>
-
             <Text style={styles.heroTitle}>Finexa mein{'\n'}khush amdeed</Text>
-            <Text style={styles.heroSubtitle}>
-              Orderbooker account mein login karein
-            </Text>
+            <Text style={styles.heroSubtitle}>Orderbooker account mein login karein</Text>
+          </LinearGradient>
+
+          {/* ── BODY (mockup .login-body) on aurora background ── */}
+          <View style={styles.loginBody}>
+            {/* Username — glass input with leading icon (mockup .input-wrap) */}
+            <View style={styles.inputField}>
+              <MaterialIcons name="person" size={18} color={Colors.textMuted} />
+              <TextInput
+                style={styles.inputText}
+                value={username}
+                onChangeText={(v) => {
+                  setUsername(v);
+                  if (errorMessage) setErrorMessage(null);
+                }}
+                placeholder="Username"
+                placeholderTextColor={Colors.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+            </View>
+
+            {/* Password — glass input with leading + eye icon */}
+            <View style={styles.inputField}>
+              <MaterialIcons name="lock" size={18} color={Colors.textMuted} />
+              <TextInput
+                style={styles.inputText}
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  if (errorMessage) setErrorMessage(null);
+                }}
+                placeholder="Password"
+                placeholderTextColor={Colors.textMuted}
+                secureTextEntry={!showPassword}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+              />
+              <Pressable
+                onPress={() => setShowPassword((v) => !v)}
+                hitSlop={10}
+                style={styles.eyeToggle}
+              >
+                <MaterialIcons
+                  name={showPassword ? 'visibility-off' : 'visibility'}
+                  size={20}
+                  color={Colors.textSecondary}
+                />
+              </Pressable>
+            </View>
+
+            {/* Inline error message box */}
+            {errorMessage ? (
+              <View style={styles.errorBox}>
+                <MaterialIcons name="error-outline" size={16} color={AURORA.chipDangerText} />
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
+            {/* Sign In — brand gradient button with glow (mockup .btn-primary) */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.signInBtn,
+                pressed && !busy && { opacity: 0.92, transform: [{ scale: 0.98 }] },
+              ]}
+              onPress={handleLogin}
+              disabled={busy}
+            >
+              <LinearGradient
+                colors={[...AURORA.brandGradient]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.signInBtnGradient}
+              >
+                {busy ? (
+                  <>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text style={styles.signInBtnText}>
+                      {syncingData ? 'Syncing data...' : 'Signing in...'}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <MaterialIcons name="login" size={20} color="#FFFFFF" />
+                    <Text style={styles.signInBtnText}>Sign In</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </Pressable>
           </View>
 
-          {/* ─────────────────────────────────────────────────────
-              BODY — light slate-50 with glassmorphic form card
-              ───────────────────────────────────────────────────── */}
-          <View style={styles.bodyWrap}>
-            <GlassCard glow="brand" padding="lg" style={styles.formCard}>
-              {/* Card header */}
-              <Text style={styles.cardTitle}>Sign In</Text>
-              <Text style={styles.cardSubtitle}>
-                Apna username aur password darj karein
-              </Text>
-
-              {/* Username input */}
-              <View style={styles.fieldWrap}>
-                <GlassInput
-                  value={username}
-                  onChangeText={(v) => {
-                    setUsername(v);
-                    if (errorMessage) setErrorMessage(null);
-                  }}
-                  placeholder="Username"
-                  placeholderTextColor={AuroraColors.textMuted}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  returnKeyType="next"
-                  leadingIcon={
-                    <MaterialIcons
-                      name="person"
-                      size={20}
-                      color={AuroraColors.indigo600}
-                    />
-                  }
-                />
-              </View>
-
-              {/* Password input */}
-              <View style={styles.fieldWrap}>
-                <GlassInput
-                  value={password}
-                  onChangeText={(v) => {
-                    setPassword(v);
-                    if (errorMessage) setErrorMessage(null);
-                  }}
-                  placeholder="Password"
-                  placeholderTextColor={AuroraColors.textMuted}
-                  secureTextEntry={!showPassword}
-                  returnKeyType="done"
-                  onSubmitEditing={handleLogin}
-                  leadingIcon={
-                    <MaterialIcons
-                      name="lock"
-                      size={20}
-                      color={AuroraColors.indigo600}
-                    />
-                  }
-                  trailingIcon={
-                    <Pressable
-                      onPress={() => setShowPassword((v) => !v)}
-                      hitSlop={10}
-                    >
-                      <MaterialIcons
-                        name={showPassword ? 'visibility-off' : 'visibility'}
-                        size={20}
-                        color={AuroraColors.textSecondary}
-                      />
-                    </Pressable>
-                  }
-                />
-              </View>
-
-              {/* Inline error message box */}
-              {errorMessage ? (
-                <View style={styles.errorBox}>
-                  <MaterialIcons
-                    name="error-outline"
-                    size={16}
-                    color={AuroraColors.rose600}
-                  />
-                  <Text style={styles.errorText}>{errorMessage}</Text>
-                </View>
-              ) : null}
-
-              {/* Primary CTA — brand gradient with glow */}
-              <View style={styles.ctaWrap}>
-                <NeonButton
-                  label={
-                    busy
-                      ? syncingData
-                        ? 'Syncing data...'
-                        : 'Signing in...'
-                      : 'Sign In →'
-                  }
-                  onPress={handleLogin}
-                  loading={busy}
-                  icon={
-                    !busy && (
-                      <MaterialIcons
-                        name="login"
-                        size={20}
-                        color={AuroraColors.textInverse}
-                      />
-                    )
-                  }
-                />
-              </View>
-            </GlassCard>
-
-            {/* Footer */}
-            <Text style={styles.footerText}>Powered by Finexa</Text>
-          </View>
+          {/* Footer */}
+          <Text style={styles.footerText}>Powered by Finexa</Text>
         </ScrollView>
       </KeyboardAvoidingView>
-    </AuroraBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: AURORA.bgPage,
+  },
+  // Aurora tint blobs (radial gradient approximation)
+  auroraBlobA: {
+    position: 'absolute',
+    top: -160,
+    left: -120,
+    width: 380,
+    height: 380,
+    borderRadius: 190,
+    backgroundColor: 'rgba(124,58,237,0.20)',
+  },
+  auroraBlobB: {
+    position: 'absolute',
+    bottom: -140,
+    right: -110,
+    width: 340,
+    height: 340,
+    borderRadius: 170,
+    backgroundColor: 'rgba(79,70,229,0.18)',
   },
   keyboardAvoid: {
     flex: 1,
@@ -263,105 +267,152 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingHorizontal: Spacing.lg,
   },
 
-  // ── HERO ──────────────────────────────────────────────────────
-  heroWrap: {
-    paddingTop: 60,
-    paddingBottom: 56,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    borderBottomLeftRadius: AuroraRadius.r2xl, // 28
-    borderBottomRightRadius: AuroraRadius.r2xl,
+  // ── Hero (login-hero: 60px top / 40px bottom padding, rounded bottom 28) ──
+  loginHero: {
+    alignItems: 'flex-start',
+    paddingTop: 56,
+    paddingBottom: 36,
+    paddingHorizontal: Spacing.lg,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     overflow: 'hidden',
-    ...AuroraShadow.lg,
   },
-  logoBox: {
-    width: 72,
-    height: 72,
+  heroGlow: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+  heroBubble1: {
+    position: 'absolute',
+    top: -60,
+    right: -60,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+  },
+  heroBubble2: {
+    position: 'absolute',
+    bottom: -70,
+    left: -40,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  // Glass logo tile (64px, r-18, white glass bg + border)
+  loginLogo: {
+    width: 64,
+    height: 64,
     borderRadius: 18,
-    backgroundColor: AuroraColors.glassOnGradient, // rgba(255,255,255,0.18)
+    backgroundColor: 'rgba(255,255,255,0.18)',
     borderWidth: 1,
-    borderColor: AuroraColors.glassOnGradientBorder, // rgba(255,255,255,0.28)
+    borderColor: 'rgba(255,255,255,0.28)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
-    overflow: 'hidden',
+    marginBottom: Spacing.lg,
   },
   logoImage: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
   },
   heroTitle: {
-    fontFamily: AuroraFont.display,
     fontSize: 30,
-    fontWeight: AuroraFont.extrabold,
-    letterSpacing: -0.6,
-    color: AuroraColors.textInverse,
-    textAlign: 'center',
-    marginBottom: 8,
+    fontWeight: FontWeight.extrabold,
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
     lineHeight: 36,
+    marginBottom: 6,
   },
   heroSubtitle: {
-    fontFamily: AuroraFont.sans,
     fontSize: 14,
-    color: AuroraColors.glassOnGradientText, // rgba(255,255,255,0.92)
-    textAlign: 'center',
+    color: 'rgba(255,255,255,0.85)',
   },
 
-  // ── BODY ───────────────────────────────────────────────────────
-  bodyWrap: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 24,
+  // ── Body (login-body: 32px top, 24px sides) ──
+  loginBody: {
+    paddingTop: Spacing.xl,
   },
-  formCard: {
-    padding: 24,
-  },
-  cardTitle: {
-    fontFamily: AuroraFont.display,
-    fontSize: AuroraFont.fsXl, // 20
-    fontWeight: AuroraFont.extrabold,
-    color: AuroraColors.textPrimary,
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontFamily: AuroraFont.sans,
-    fontSize: AuroraFont.fsSm, // 13
-    color: AuroraColors.textSecondary,
-    marginBottom: 20,
-  },
-  fieldWrap: {
+
+  // ── Glass inputs (input: elevated glass, r-12, 1.5px border) ──
+  inputField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 54,
+    backgroundColor: AURORA.bgElevated,
+    borderWidth: 1.5,
+    borderColor: AURORA.borderDefault,
+    borderRadius: 12,
     marginBottom: 14,
+    paddingHorizontal: 16,
   },
+  inputText: {
+    flex: 1,
+    fontSize: FontSize.md,
+    color: Colors.text,
+    paddingVertical: 0,
+    height: '100%',
+  },
+  eyeToggle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Error box ──
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    backgroundColor: AURORA.chipDangerBg,
+    borderWidth: 1,
+    borderColor: AURORA.chipDangerBorder,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: AuroraColors.roseLight,
-    borderWidth: 1,
-    borderColor: AuroraColors.roseBorder,
-    borderRadius: AuroraRadius.rMd,
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   errorText: {
     flex: 1,
-    fontFamily: AuroraFont.sans,
-    fontSize: AuroraFont.fsSm,
-    color: AuroraColors.rose600,
-    fontWeight: AuroraFont.medium,
+    fontSize: FontSize.sm,
+    color: AURORA.chipDangerText,
+    fontWeight: FontWeight.semibold,
   },
-  ctaWrap: {
-    marginTop: 4,
+
+  // ── Sign In button (btn-primary: brand gradient + glow shadow) ──
+  signInBtn: {
+    height: 54,
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...Shadow.button,
   },
+  signInBtnGradient: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+  },
+  signInBtnText: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.bold,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+
+  // ── Footer ──
   footerText: {
     textAlign: 'center',
-    marginTop: 24,
-    fontSize: AuroraFont.fsXs, // 11
-    color: AuroraColors.textMuted,
-    fontFamily: AuroraFont.sans,
+    marginTop: Spacing.xxl,
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.semibold,
+    letterSpacing: 0.6,
   },
 });

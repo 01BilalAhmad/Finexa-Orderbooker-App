@@ -503,7 +503,7 @@ export function NotificationChoice({ visible, payload, onDone }: NotificationCho
             {payload.distributorPhone ? (
               <View style={styles.receiptDistStrip}>
                 <View style={styles.receiptDistIconWrap}>
-                  <MaterialIcons name="call" size={12} color="#1E40AF" />
+                  <MaterialIcons name="call" size={12} color="#4338CA" />
                 </View>
                 <Text style={styles.receiptDistLab}>Distributor No:</Text>
                 <Text style={styles.receiptDistVal}>{payload.distributorPhone}</Text>
@@ -541,7 +541,7 @@ export function NotificationChoice({ visible, payload, onDone }: NotificationCho
             {payload.orderbookerName ? (
               <View style={styles.receiptObStrip}>
                 <View style={styles.receiptObIcon}>
-                  <MaterialIcons name="badge" size={13} color="#2563EB" />
+                  <MaterialIcons name="badge" size={13} color="#4F46E5" />
                 </View>
                 <Text style={styles.receiptObLab}>Orderbooker:</Text>
                 <Text style={styles.receiptObVal}>{payload.orderbookerName}</Text>
@@ -741,12 +741,12 @@ export function NotificationChoice({ visible, payload, onDone }: NotificationCho
 // Modern Blue Theme Colors (matches RecoveryReceipt.tsx)
 // ═══════════════════════════════════════════════════════════
 const C = {
-  blue900: '#1E40AF',
-  blue800: '#1D4ED8',
-  blue700: '#2563EB',
-  blue600: '#3B82F6',
-  blue500: '#60A5FA',
-  blue100: '#DBEAFE',
+  blue900: '#4338CA',
+  blue800: '#4338CA',
+  blue700: '#4F46E5',
+  blue600: '#6366F1',
+  blue500: '#818CF8',
+  blue100: '#E0E7FF',
   blue50: '#EFF6FF',
   green600: '#16A34A',
   green500: '#22C55E',
@@ -1222,7 +1222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: Spacing.md,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4F46E5',
   },
   // WhatsApp Button
   btnWhatsapp: {

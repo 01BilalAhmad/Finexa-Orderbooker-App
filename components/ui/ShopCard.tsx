@@ -1,10 +1,12 @@
 // Finexa Recovery App
-import React, { memo, useEffect, useRef } from 'react';
+// ShopCard — AURORA GLASS design (mockup screen 3 "Shops"):
+// glass row + 42px tier-coloured avatar + edge tags + right-aligned mono
+// balance. Action strip (Collect / GPS / Call / Detail) preserved.
+import React, { memo, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Linking, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { AuroraColors, AuroraShadow, AuroraGradients, AuroraRadius } from '@/constants/auroraTheme';
+import { AURORA, Colors, Spacing, Radius, FontSize, FontWeight, Shadow, FontMono } from '@/constants/theme';
 import { Shop, CompanyBalance } from '@/services/api';
 import { formatPKR } from '@/utils/format';
 
@@ -41,12 +43,19 @@ interface ShopCardProps {
   companyId?: string;
 }
 
-// Map a balance to its color tier per the modern design spec.
-// Red > 50000, Amber 10000-50000, Green < 10000
-function getBalanceColor(balance: number): string {
-  if (balance > 50000) return '#EF4444';
-  if (balance >= 10000) return '#F59E0B';
-  return '#10B981';
+// Aurora tier gradients (mockup .tier-overdue/.tier-high/.tier-mid/.tier-low)
+function getTierColors(balance: number, isOverdue: boolean): [string, string] {
+  if (isOverdue) return ['#E11D48', '#F43F5E']; // tier-overdue (rose-600)
+  if (balance > 50000) return ['#F43F5E', '#FB7185']; // tier-high (rose-500)
+  if (balance >= 10000) return ['#F59E0B', '#FBBF24']; // tier-mid (amber-500)
+  return ['#10B981', '#34D399']; // tier-low (emerald-500)
+}
+
+// Balance text colour (mockup: rose for overdue/high, amber-600 for mid-high, emerald-600 low)
+function getBalanceColor(balance: number, isOverdue: boolean): string {
+  if (isOverdue || balance > 50000) return '#E11D48';
+  if (balance >= 10000) return '#D97706';
+  return '#059669';
 }
 
 // Build a short route-day label like "Mon, Thu" from the shop's routeDays array
@@ -82,7 +91,8 @@ export const ShopCard = memo(function ShopCard({
   const rawUtilisation = displayCreditLimit > 0 ? (displayBalance / displayCreditLimit) * 100 : 0;
   const utilisation = Math.min(rawUtilisation, 100);
   const isZeroBalance = displayBalance === 0;
-  const balanceColor = getBalanceColor(displayBalance);
+  const balanceColor = getBalanceColor(displayBalance, isOverdue);
+  const tierColors = getTierColors(displayBalance, isOverdue);
   const routeDayLabel = buildRouteDayLabel(shop);
   const initials = getShopInitials(shop.name);
 
@@ -103,95 +113,82 @@ export const ShopCard = memo(function ShopCard({
     if (shop.phone) Linking.openURL(`tel:${shop.phone}`);
   };
 
-  // Avatar gradient: Aurora brand indigo when recovered/visited, soft indigo otherwise
-  const avatarActive = hasRecovery || (isVisited && !hasRecovery);
-  const avatarColors: [string, string] = avatarActive
-    ? [AuroraColors.indigo600, AuroraColors.violet600]
-    : [AuroraColors.indigo100, AuroraColors.indigo200];
-  const avatarTextColor = avatarActive ? '#FFFFFF' : AuroraColors.indigo700;
+  // Edge tag (mockup .edge-tag): 9px pill under the shop area
+  let edgeTag: { text: string; bg: string; fg: string } | null = null;
+  if (isOverdue) {
+    edgeTag = { text: '⏰ Overdue', bg: AURORA.chipDangerBg, fg: AURORA.chipDangerText };
+  } else if (hasRecovery) {
+    edgeTag = { text: '✓ Recovered', bg: AURORA.chipSuccessBg, fg: AURORA.chipSuccessText };
+  } else if (isVisited) {
+    edgeTag = { text: '✓ Aaj visit', bg: AURORA.chipSuccessBg, fg: AURORA.chipSuccessText };
+  } else if (isZeroBalance) {
+    edgeTag = { text: '✓ Clear', bg: AURORA.chipSuccessBg, fg: AURORA.chipSuccessText };
+  } else if (displayBalance > 50000) {
+    edgeTag = { text: '💰 High balance', bg: AURORA.chipWarningBg, fg: AURORA.chipWarningText };
+  }
 
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <Pressable
         style={({ pressed }) => [
           styles.card,
-          hasRecovery && styles.cardRecovered,
-          isVisited && !hasRecovery && styles.cardVisited,
           isZeroBalance && !hasRecovery && styles.cardZero,
           pressed && styles.cardPressed,
         ]}
         onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
-        android_ripple={{ color: 'rgba(37,99,235,0.06)', borderless: true, radius: 240 }}
+        android_ripple={{ color: 'rgba(99,102,241,0.06)', borderless: true, radius: 240 }}
       >
-        {/* ============ MAIN HORIZONTAL ROW (matches mockup Screen 2) ============ */}
+        {/* ============ MAIN ROW (mockup .shop-row) ============ */}
         <View style={styles.mainRow}>
-          {/* LEFT — Avatar circle 46px with gradient + 2-letter initials */}
+          {/* LEFT — tier avatar 42px + 2-letter initials (mockup .shop-avatar) */}
           <LinearGradient
-            colors={avatarColors}
+            colors={tierColors}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.avatar}
           >
             {hasRecovery ? (
-              <MaterialIcons name="check" size={22} color="#FFFFFF" />
+              <MaterialIcons name="check" size={20} color="#FFFFFF" />
             ) : (
-              <Text style={[styles.avatarText, { color: avatarTextColor }]}>{initials}</Text>
+              <Text style={styles.avatarText}>{initials}</Text>
             )}
           </LinearGradient>
 
-          {/* MIDDLE — name + route badge / owner / address */}
+          {/* MIDDLE — name + route pill / owner / address / edge tag (mockup .shop-meta) */}
           <View style={styles.infoCol}>
-            {/* Row 1: shop name + route-day pill */}
             <View style={styles.nameRow}>
               <Text style={styles.shopName} numberOfLines={1}>{shop.name}</Text>
               {routeDayLabel ? (
                 <View style={styles.routePill}>
-                  <MaterialIcons name="event" size={9} color="#1E40AF" />
+                  <MaterialIcons name="event" size={9} color={AURORA.chipText} />
                   <Text style={styles.routePillText}>{routeDayLabel}</Text>
                 </View>
               ) : null}
-              {isOverdue ? (
-                <View style={styles.overduePill}>
-                  <MaterialIcons name="priority-high" size={8} color="#FFFFFF" />
-                  <Text style={styles.overduePillText}>OVERDUE</Text>
-                </View>
-              ) : null}
             </View>
-
-            {/* Row 2: owner name (muted) */}
             {shop.ownerName ? (
               <Text style={styles.ownerName} numberOfLines={1}>{shop.ownerName}</Text>
             ) : null}
-
-            {/* Row 3: map-pin icon + address */}
             {(shop.address || shop.area) ? (
               <View style={styles.addressRow}>
-                <MaterialIcons name="location-on" size={11} color="#94A3B8" />
+                <MaterialIcons name="location-on" size={11} color={Colors.textMuted} />
                 <Text style={styles.addressText} numberOfLines={1}>{shop.address || shop.area}</Text>
+              </View>
+            ) : null}
+            {edgeTag ? (
+              <View style={[styles.edgeTag, { backgroundColor: edgeTag.bg }]}>
+                <Text style={[styles.edgeTagText, { color: edgeTag.fg }]}>{edgeTag.text}</Text>
               </View>
             ) : null}
           </View>
 
-          {/* RIGHT — balance + chevron */}
+          {/* RIGHT — balance label above mono value (mockup .shop-balance) */}
           <View style={styles.rightCol}>
+            <Text style={styles.balanceLabel}>Balance</Text>
             <Text style={[styles.balanceValue, { color: balanceColor }]} numberOfLines={1}>
               {formatPKR(displayBalance)}
             </Text>
-            <Text style={styles.balanceLabel}>Balance</Text>
-            {hasRecovery ? (
-              <View style={styles.statusPillRecovered}>
-                <MaterialIcons name="check-circle" size={9} color="#FFFFFF" />
-                <Text style={styles.statusPillText}>Recovered</Text>
-              </View>
-            ) : isVisited ? (
-              <View style={styles.statusPillVisited}>
-                <MaterialIcons name="check-circle" size={9} color="#1E40AF" />
-                <Text style={[styles.statusPillText, { color: '#1E40AF' }]}>Visited</Text>
-              </View>
-            ) : null}
-            <MaterialIcons name="chevron-right" size={18} color="#94A3B8" style={styles.chevron} />
           </View>
         </View>
 
@@ -199,7 +196,7 @@ export const ShopCard = memo(function ShopCard({
         {isOverLimit ? (
           <View style={styles.bannerRow}>
             <Animated.View style={[styles.pulseDot, { transform: [{ scale: pulseAnim }] }]} />
-            <MaterialIcons name="warning" size={12} color="#EF4444" />
+            <MaterialIcons name="warning" size={12} color={AURORA.chipDangerText} />
             <Text style={styles.bannerText}>Over credit limit by {formatPKR(displayBalance - displayCreditLimit)}</Text>
           </View>
         ) : null}
@@ -209,7 +206,13 @@ export const ShopCard = memo(function ShopCard({
           <View style={styles.creditSection}>
             <View style={styles.creditTrack}>
               <LinearGradient
-                colors={isOverLimit ? ['#EF4444', '#F87171'] : rawUtilisation >= 90 ? ['#F59E0B', '#FBBF24'] : ['#3B82F6', '#60A5FA']}
+                colors={
+                  isOverLimit
+                    ? ['#E11D48', '#FB7185']
+                    : rawUtilisation >= 90
+                    ? ['#F59E0B', '#FBBF24']
+                    : ['#4F46E5', '#818CF8']
+                }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[styles.creditFill, { width: `${utilisation}%` }]}
@@ -235,10 +238,22 @@ export const ShopCard = memo(function ShopCard({
               disabled={isZeroBalance}
               hitSlop={4}
             >
-              <MaterialIcons name="payments" size={14} color={isZeroBalance ? '#94A3B8' : '#FFFFFF'} />
-              <Text style={[styles.collectChipText, isZeroBalance && { color: '#94A3B8' }]}>
-                {isZeroBalance ? 'No Balance' : 'Collect'}
-              </Text>
+              {isZeroBalance ? (
+                <View style={styles.collectChipGradient}>
+                  <MaterialIcons name="payments" size={14} color={Colors.textMuted} />
+                  <Text style={[styles.collectChipText, { color: Colors.textMuted }]}>No Balance</Text>
+                </View>
+              ) : (
+                <LinearGradient
+                  colors={[...AURORA.brandGradient]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.collectChipGradient}
+                >
+                  <MaterialIcons name="payments" size={14} color="#FFFFFF" />
+                  <Text style={styles.collectChipText}>Collect</Text>
+                </LinearGradient>
+              )}
             </Pressable>
           )}
 
@@ -248,21 +263,21 @@ export const ShopCard = memo(function ShopCard({
               onPress={onGpsVisit}
               hitSlop={6}
             >
-              <MaterialIcons name={isVisited ? 'check-circle' : 'my-location'} size={16} color={isVisited ? '#1E40AF' : '#2563EB'} />
+              <MaterialIcons name={isVisited ? 'check-circle' : 'my-location'} size={16} color={isVisited ? AURORA.chipText : Colors.primary} />
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]}
               onPress={handleCall}
               hitSlop={6}
             >
-              <MaterialIcons name="call" size={16} color="#10B981" />
+              <MaterialIcons name="call" size={16} color={Colors.emerald} />
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.7 }]}
               onPress={onPress}
               hitSlop={6}
             >
-              <MaterialIcons name="info-outline" size={16} color="#64748B" />
+              <MaterialIcons name="info-outline" size={16} color={Colors.textSecondary} />
             </Pressable>
           </View>
         </View>
@@ -272,26 +287,15 @@ export const ShopCard = memo(function ShopCard({
 });
 
 const styles = StyleSheet.create({
+  // Glass card (mockup .shop-row: bg-card, subtle border, r-lg, shadow-xs)
   card: {
-    // Aurora glassmorphic shop card
-    backgroundColor: AuroraColors.bgCard,
-    borderRadius: AuroraRadius.rXl, // 20
-    padding: 14,
+    backgroundColor: AURORA.bgCard,
+    borderRadius: 16,
+    padding: 12,
     marginBottom: Spacing.sm,
-    ...AuroraShadow.sm,
+    ...Shadow.sm,
     borderWidth: 1,
-    borderColor: AuroraColors.borderSubtle,
-  },
-  cardRecovered: {
-    // Aurora brand-tinted border for recovered cards
-    borderColor: AuroraColors.indigo400,
-    borderWidth: 1.5,
-    backgroundColor: AuroraColors.indigo50,
-  },
-  cardVisited: {
-    // Aurora violet tint for visited-only cards
-    borderColor: AuroraColors.violet400,
-    borderWidth: 1.5,
+    borderColor: AURORA.borderSubtle,
   },
   cardZero: {
     opacity: 0.78,
@@ -299,24 +303,25 @@ const styles = StyleSheet.create({
   cardPressed: {
     // handled by Animated scale
   },
-  // ===== Main horizontal row =====
+  // ===== Main row =====
   mainRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadow.sm,
   },
   avatarText: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    letterSpacing: -0.5,
+    fontSize: 14,
+    fontWeight: FontWeight.extrabold,
+    color: '#FFFFFF',
+    letterSpacing: 0,
   },
   infoCol: {
     flex: 1,
@@ -330,7 +335,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   shopName: {
-    fontSize: FontSize.base,
+    fontSize: 13,
     fontWeight: FontWeight.bold,
     color: Colors.text,
     flexShrink: 1,
@@ -339,35 +344,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: AURORA.chipBg,
+    borderWidth: 1,
+    borderColor: AURORA.chipBorder,
     borderRadius: Radius.full,
     paddingHorizontal: 6,
     paddingVertical: 1,
   },
   routePillText: {
     fontSize: 9,
-    color: '#1E40AF',
+    color: AURORA.chipText,
     fontWeight: FontWeight.bold,
     letterSpacing: 0.3,
   },
-  overduePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: '#EF4444',
-    borderRadius: Radius.full,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-  },
-  overduePillText: {
-    fontSize: 8,
-    color: '#FFFFFF',
-    fontWeight: FontWeight.bold,
-    letterSpacing: 0.5,
-  },
   ownerName: {
-    fontSize: FontSize.xs,
-    color: '#64748B',
+    fontSize: 11,
+    color: Colors.textMuted,
     fontWeight: FontWeight.medium,
   },
   addressRow: {
@@ -376,63 +368,50 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   addressText: {
-    fontSize: FontSize.xs,
-    color: '#64748B',
+    fontSize: 11,
+    color: Colors.textMuted,
     flex: 1,
   },
-  // ===== Right column =====
+  // Edge tag (mockup .edge-tag)
+  edgeTag: {
+    alignSelf: 'flex-start',
+    borderRadius: Radius.full,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 3,
+  },
+  edgeTagText: {
+    fontSize: 9,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.2,
+  },
+  // ===== Right column (mockup .shop-balance) =====
   rightCol: {
     alignItems: 'flex-end',
-    gap: 2,
-    minWidth: 72,
-  },
-  balanceValue: {
-    fontSize: 17,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+    gap: 1,
+    minWidth: 68,
   },
   balanceLabel: {
-    fontSize: 9,
-    color: '#94A3B8',
-    fontWeight: FontWeight.bold,
+    fontSize: 10,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.semibold,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
-  statusPillRecovered: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#2563EB',
-    borderRadius: Radius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginTop: 2,
-  },
-  statusPillVisited: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#DBEAFE',
-    borderRadius: Radius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginTop: 2,
-  },
-  statusPillText: {
-    fontSize: 9,
-    color: '#FFFFFF',
+  balanceValue: {
+    fontSize: 14,
     fontWeight: FontWeight.bold,
-    letterSpacing: 0.3,
-  },
-  chevron: {
-    marginTop: 2,
+    fontFamily: FontMono,
+    letterSpacing: -0.3,
   },
   // ===== Banner =====
   bannerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: AURORA.chipDangerBg,
+    borderWidth: 1,
+    borderColor: AURORA.chipDangerBorder,
     borderRadius: Radius.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 5,
@@ -442,11 +421,11 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#EF4444',
+    backgroundColor: Colors.rose,
   },
   bannerText: {
     fontSize: FontSize.xs,
-    color: '#EF4444',
+    color: AURORA.chipDangerText,
     fontWeight: FontWeight.semibold,
     flex: 1,
   },
@@ -457,7 +436,7 @@ const styles = StyleSheet.create({
   },
   creditTrack: {
     height: 5,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: AURORA.borderSubtle,
     borderRadius: Radius.full,
     overflow: 'hidden',
   },
@@ -467,7 +446,7 @@ const styles = StyleSheet.create({
   },
   creditMeta: {
     fontSize: 10,
-    color: '#94A3B8',
+    color: Colors.textMuted,
     fontWeight: FontWeight.medium,
   },
   // ===== Action strip =====
@@ -479,22 +458,26 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: AURORA.borderSubtle,
   },
   collectChip: {
     flex: 1,
+    borderRadius: Radius.full,
+    overflow: 'hidden',
+    ...Shadow.sm,
+  },
+  collectChipGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#2563EB',
-    borderRadius: Radius.full,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    ...Shadow.sm,
   },
   collectChipDisabled: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: AURORA.bgElevated,
+    borderWidth: 1,
+    borderColor: AURORA.borderDefault,
     elevation: 0,
     shadowOpacity: 0,
   },
@@ -509,7 +492,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#2563EB',
+    backgroundColor: Colors.emerald,
     borderRadius: Radius.full,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -528,14 +511,14 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: AURORA.borderDefault,
+    backgroundColor: AURORA.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconBtnActive: {
-    borderColor: '#BFDBFE',
-    backgroundColor: '#DBEAFE',
+    borderColor: AURORA.chipBorder,
+    backgroundColor: AURORA.chipActiveBg,
   },
 });

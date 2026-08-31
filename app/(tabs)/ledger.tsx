@@ -21,8 +21,6 @@ import { useShops } from '@/hooks/useShops';
 import { ApiService, LedgerResponse, Shop, Transaction } from '@/services/api';
 import { getShopDisplayBalance } from '@/components/ui/ShopCard';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { AuroraBackground } from '@/components/aurora';
-import { AuroraGradients, AuroraColors } from '@/constants/auroraTheme';
 import { formatPKR, formatDateTime } from '@/utils/format';
 import { downloadLedgerPdf } from '@/utils/generateLedgerPdf';
 import { CompanySelector } from '@/components/ui/CompanySelector';
@@ -95,20 +93,20 @@ function TxnRow({ item }: { item: Transaction }) {
   const isCredit = item.type === 'credit';
   return (
     <View style={txnStyles.row}>
-      {/* Type indicator icon */}
-      <View style={[txnStyles.typeIcon, { backgroundColor: isCredit ? '#FEF3C7' : '#DBEAFE' }]}>
+      {/* Type indicator icon (mockup .ledger-row-icon: recovery green / credit rose) */}
+      <View style={[txnStyles.typeIcon, { backgroundColor: isCredit ? '#FEE2E2' : '#D1FAE5' }]}>
         <MaterialIcons
           name={isCredit ? 'add-circle' : 'remove-circle'}
           size={20}
-          color={isCredit ? Colors.secondary : '#2563EB'}
+          color={isCredit ? '#B91C1C' : '#047857'}
         />
       </View>
 
       <View style={txnStyles.body}>
         <View style={txnStyles.topRow}>
           <View style={txnStyles.badges}>
-            <View style={[txnStyles.typeBadge, { backgroundColor: isCredit ? '#FEF3C7' : '#DBEAFE' }]}>
-              <Text style={[txnStyles.typeBadgeText, { color: isCredit ? '#92400E' : '#2563EB' }]}>
+            <View style={[txnStyles.typeBadge, { backgroundColor: isCredit ? '#FEE2E2' : '#D1FAE5' }]}>
+              <Text style={[txnStyles.typeBadgeText, { color: isCredit ? '#B91C1C' : '#047857' }]}>
                 {isCredit ? 'CREDIT' : 'RECOVERY'}
               </Text>
             </View>
@@ -123,7 +121,7 @@ function TxnRow({ item }: { item: Transaction }) {
               </View>
             ) : null}
           </View>
-          <Text style={[txnStyles.amount, { color: isCredit ? Colors.secondary : '#2563EB' }]}>
+          <Text style={[txnStyles.amount, { color: isCredit ? '#E11D48' : '#059669' }]}>
             {isCredit ? '+' : '-'}{formatPKR(item.amount)}
           </Text>
         </View>
@@ -264,13 +262,13 @@ export default function LedgerScreen() {
   const reversedTxns = ledger ? [...ledger.transactions].reverse() : [];
 
   const balanceColor =
-    (ledger?.summary.currentBalance ?? 0) > 0 ? Colors.danger : AuroraColors.indigo600;
+    (ledger?.summary.currentBalance ?? 0) > 0 ? Colors.danger : '#4F46E5';
 
   return (
-    <AuroraBackground style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* ── Gradient header ── */}
       <LinearGradient
-        colors={[AuroraGradients.brandStart, AuroraGradients.brandMid, AuroraGradients.brandEnd]}
+        colors={['#4F46E5', '#7C3AED', '#6366F1']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}
@@ -318,7 +316,7 @@ export default function LedgerScreen() {
         onPress={() => setShowShopPicker(true)}
       >
         <View style={styles.shopSelectorIcon}>
-          <MaterialIcons name="store" size={18} color={AuroraColors.indigo600} />
+          <MaterialIcons name="store" size={18} color="#4F46E5" />
         </View>
         <Text
           style={[styles.shopSelectorText, !selectedShop && styles.shopSelectorPlaceholder]}
@@ -332,9 +330,9 @@ export default function LedgerScreen() {
       {/* ── Content ── */}
       {!selectedShop ? (
         <View style={styles.emptyContainer}>
-          <LinearGradient colors={[AuroraColors.indigo100, AuroraColors.bgPage]} style={styles.emptyGrad}>
+          <LinearGradient colors={['#E0E7FF', '#F8FAFC']} style={styles.emptyGrad}>
             <View style={styles.emptyIconWrap}>
-              <MaterialIcons name="menu-book" size={48} color={AuroraColors.indigo600} />
+              <MaterialIcons name="menu-book" size={48} color="#4F46E5" />
             </View>
             <Text style={styles.emptyTitle}>Select a Shop</Text>
             <Text style={styles.emptySubtitle}>
@@ -344,7 +342,7 @@ export default function LedgerScreen() {
         </View>
       ) : isLoadingLedger ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={AuroraColors.indigo600} />
+          <ActivityIndicator size="large" color="#4F46E5" />
           <Text style={styles.loadingText}>Loading ledger...</Text>
         </View>
       ) : ledger ? (
@@ -406,10 +404,10 @@ export default function LedgerScreen() {
                       ? `${(ledger.summary.totalRecovery / 1000).toFixed(0)}K`
                       : formatPKR(ledger.summary.totalRecovery)
                   }
-                  color="#2563EB"
-                  bg="#DBEAFE"
+                  color="#4F46E5"
+                  bg="#E0E7FF"
                   icon="trending-up"
-                  borderColor="#2563EB"
+                  borderColor="#4F46E5"
                 />
                 <SummaryCard
                   label="Balance"
@@ -422,7 +420,7 @@ export default function LedgerScreen() {
                   }
                   color={balanceColor}
                   bg={
-                    ledger.summary.currentBalance > 0 ? Colors.dangerLight : '#DBEAFE'
+                    ledger.summary.currentBalance > 0 ? Colors.dangerLight : '#E0E7FF'
                   }
                   icon="account-balance-wallet"
                   borderColor={balanceColor}
@@ -436,7 +434,7 @@ export default function LedgerScreen() {
                 disabled={isGeneratingPdf}
               >
                 <LinearGradient
-                  colors={[AuroraGradients.brandStart, AuroraGradients.brandMid]}
+                  colors={['#4F46E5', '#6366F1']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.pdfGradient}
@@ -465,7 +463,7 @@ export default function LedgerScreen() {
               {/* Transaction header */}
               <View style={styles.txnHeader}>
                 <View style={styles.txnHeaderIcon}>
-                  <MaterialIcons name="receipt-long" size={16} color={AuroraColors.indigo600} />
+                  <MaterialIcons name="receipt-long" size={16} color="#4F46E5" />
                 </View>
                 <Text style={styles.txnHeaderTitle}>
                   Transactions
@@ -510,7 +508,7 @@ export default function LedgerScreen() {
           <View style={styles.pickerHandle} />
           <View style={styles.pickerHeader}>
             <View style={styles.pickerHeaderIcon}>
-              <MaterialIcons name="store" size={18} color="#2563EB" />
+              <MaterialIcons name="store" size={18} color="#4F46E5" />
             </View>
             <Text style={styles.pickerTitle}>Select Shop</Text>
             <Pressable onPress={() => setShowShopPicker(false)} hitSlop={12}>
@@ -529,7 +527,7 @@ export default function LedgerScreen() {
             />
           </View>
           {isLoadingAll ? (
-            <ActivityIndicator color="#2563EB" style={{ marginVertical: Spacing.md }} />
+            <ActivityIndicator color="#4F46E5" style={{ marginVertical: Spacing.md }} />
           ) : (
             <FlatList
               data={filteredShops}
@@ -554,11 +552,11 @@ export default function LedgerScreen() {
                     </View>
                   </View>
                   <View style={styles.shopPickerRight}>
-                    <Text style={[styles.shopPickerBalance, { color: getShopDisplayBalance(item, selectedCompanyId || user?.companyId).balance > 0 ? Colors.danger : '#2563EB' }]}>
+                    <Text style={[styles.shopPickerBalance, { color: getShopDisplayBalance(item, selectedCompanyId || user?.companyId).balance > 0 ? Colors.danger : '#4F46E5' }]}>
                       {formatPKR(getShopDisplayBalance(item, selectedCompanyId || user?.companyId).balance)}
                     </Text>
                     {item.id === selectedShop?.id ? (
-                      <MaterialIcons name="check-circle" size={16} color="#2563EB" />
+                      <MaterialIcons name="check-circle" size={16} color="#4F46E5" />
                     ) : null}
                   </View>
                 </Pressable>
@@ -570,7 +568,7 @@ export default function LedgerScreen() {
           )}
         </View>
       </Modal>
-    </AuroraBackground>
+    </View>
   );
 }
 
@@ -642,11 +640,11 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: '#E0E7FF',
   },
   shopSelectorText: { flex: 1, fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: Colors.text },
   shopSelectorPlaceholder: { color: Colors.textMuted, fontWeight: FontWeight.regular },
@@ -669,13 +667,13 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#2563EB',
+    borderColor: '#4F46E5',
   },
-  shopInitialsText: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: '#2563EB' },
+  shopInitialsText: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: '#4F46E5' },
   shopInfoName: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.text },
   shopInfoOwner: { fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: 1, marginBottom: 4 },
   shopInfoMeta: { flexDirection: 'row', alignItems: 'center', gap: 3, flexWrap: 'wrap' },
@@ -730,13 +728,13 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 8,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   txnHeaderTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.text },
   txnCountBadge: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4F46E5',
     borderRadius: Radius.full,
     minWidth: 24,
     height: 24,
@@ -764,7 +762,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -788,7 +786,7 @@ const styles = StyleSheet.create({
   loadingText: { fontSize: FontSize.base, color: Colors.textSecondary },
   retryBtn: {
     marginTop: Spacing.md,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4F46E5',
     borderRadius: 30,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
@@ -825,7 +823,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -853,13 +851,13 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.borderLight,
     borderRadius: Radius.sm,
   },
-  shopPickerItemActive: { backgroundColor: '#DBEAFE' },
+  shopPickerItemActive: { backgroundColor: '#E0E7FF' },
   shopPickerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: Spacing.md, gap: Spacing.sm },
   shopPickerAvatar: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -868,7 +866,7 @@ const styles = StyleSheet.create({
   shopPickerAvatarText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
-    color: '#2563EB',
+    color: '#4F46E5',
   },
   shopPickerName: { fontSize: FontSize.base, fontWeight: FontWeight.semibold, color: Colors.text, marginBottom: 2 },
   shopPickerArea: { fontSize: FontSize.sm, color: Colors.textSecondary },

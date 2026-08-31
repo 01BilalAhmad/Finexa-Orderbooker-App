@@ -46,7 +46,7 @@ interface DailyReportProps {
 }
 
 // Color palette for company-wise breakdown dots
-const COMPANY_DOT_COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#8B5CF6', '#EC4899'];
+const COMPANY_DOT_COLORS = ['#6366F1', '#22C55E', '#F59E0B', '#8B5CF6', '#EC4899'];
 
 export function DailyReportCard({
   visible,
@@ -198,7 +198,7 @@ export function DailyReportCard({
             <View style={styles.modalHeader}>
               <View style={styles.modalHeaderTitle}>
                 <View style={styles.modalHeaderIcon}>
-                  <MaterialIcons name="description" size={16} color="#2563EB" />
+                  <MaterialIcons name="description" size={16} color="#4F46E5" />
                 </View>
                 <Text style={styles.modalHeaderTitleText}>Daily Recovery Report</Text>
               </View>
@@ -276,7 +276,7 @@ export function DailyReportCard({
                   <View style={styles.block}>
                     <View style={styles.coTitleRow}>
                       <View style={styles.coTitleIcon}>
-                        <MaterialIcons name="business" size={13} color="#2563EB" />
+                        <MaterialIcons name="business" size={13} color="#4F46E5" />
                       </View>
                       <Text style={styles.coTitle}>Company-wise Recovery</Text>
                     </View>
@@ -311,7 +311,7 @@ export function DailyReportCard({
                   <View style={styles.msgRow}>
                     {/* SMS pill — BLUE */}
                     <View style={styles.msgPillBlue}>
-                      <MaterialIcons name="sms" size={12} color="#1D4ED8" />
+                      <MaterialIcons name="sms" size={12} color="#4338CA" />
                       <Text style={styles.msgPillBlueText}>SMS: {smsSent}</Text>
                     </View>
 
@@ -398,12 +398,12 @@ export function DailyReportCard({
 // Modern Blue Theme Colors
 // ═══════════════════════════════════════════════════════════
 const C = {
-  blue900: '#1E40AF',
-  blue800: '#1D4ED8',
-  blue700: '#2563EB',
-  blue600: '#3B82F6',
-  blue500: '#60A5FA',
-  blue100: '#DBEAFE',
+  blue900: '#4338CA',
+  blue800: '#4338CA',
+  blue700: '#4F46E5',
+  blue600: '#6366F1',
+  blue500: '#818CF8',
+  blue100: '#E0E7FF',
   blue50: '#EFF6FF',
   green700: '#15803D',
   green600: '#16A34A',

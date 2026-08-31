@@ -130,7 +130,7 @@ export function EditRecoveryModal({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.iconWrap}>
-              <MaterialIcons name="edit" size={24} color="#2563EB" />
+              <MaterialIcons name="edit" size={24} color="#4F46E5" />
             </View>
             <Text style={styles.title}>Edit Pending Recovery</Text>
             <Text style={styles.subtitle}>
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderRadius: Radius.md,
     borderWidth: 1.5,
-    borderColor: '#2563EB',
+    borderColor: '#4F46E5',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     gap: Spacing.xs,
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 14,
     borderRadius: Radius.md,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4F46E5',
     ...Shadow.md,
   },
   saveBtnDisabled: {

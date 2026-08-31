@@ -18,7 +18,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BarChart } from 'react-native-chart-kit';
-import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { AURORA, Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
 import { Shop, Transaction, ApiService } from '@/services/api';
 import { getShopDisplayBalance } from '@/components/ui/ShopCard';
 import { formatPKR, formatDateTime } from '@/utils/format';
@@ -332,7 +332,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
         <View style={styles.container}>
           {/* ============ HERO HEADER (blue gradient, centered avatar) ============ */}
           <LinearGradient
-            colors={['#1E40AF', '#2563EB', '#3B82F6']}
+            colors={['#4F46E5', '#7C3AED', '#6366F1']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroHeader}
@@ -344,7 +344,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
 
             {/* Close button — top-right white circle */}
             <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={12}>
-              <MaterialIcons name="close" size={20} color="#2563EB" />
+              <MaterialIcons name="close" size={20} color="#4F46E5" />
             </Pressable>
 
             {/* Centered avatar + name + owner */}
@@ -413,11 +413,11 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                   style={({ pressed }) => [styles.phoneChip, pressed && { opacity: 0.8 }]}
                   onPress={() => Linking.openURL(`tel:${currentPhone}`)}
                 >
-                  <MaterialIcons name="call" size={13} color="#2563EB" />
+                  <MaterialIcons name="call" size={13} color="#4F46E5" />
                   <Text style={styles.phoneChipText}>{currentPhone}</Text>
                 </Pressable>
                 <Pressable onPress={handleEditPhone} hitSlop={8} style={styles.phoneEditBtn}>
-                  <MaterialIcons name="edit" size={14} color="#2563EB" />
+                  <MaterialIcons name="edit" size={14} color="#4F46E5" />
                   <Text style={styles.phoneEditText}>Edit</Text>
                 </Pressable>
               </View>
@@ -452,7 +452,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                 <View style={styles.companyBreakdownList}>
                   {companyBalances.map((cb, idx) => (
                     <View key={cb.companyId || idx} style={styles.companyBreakdownRow}>
-                      <View style={[styles.companyDot, { backgroundColor: idx % 2 === 0 ? '#2563EB' : '#3B82F6' }]} />
+                      <View style={[styles.companyDot, { backgroundColor: idx % 2 === 0 ? '#4F46E5' : '#6366F1' }]} />
                       <Text style={styles.companyName} numberOfLines={1}>{cb.companyName || `Company ${idx + 1}`}</Text>
                       <Text style={styles.companyBalance}>{formatPKR(cb.balance || 0)}</Text>
                     </View>
@@ -465,13 +465,13 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                 <View style={styles.utilisationSection}>
                   <View style={styles.utilisationHeader}>
                     <Text style={styles.utilisationLabel}>Credit Utilisation</Text>
-                    <Text style={[styles.utilisationPct, { color: isOverLimit ? '#EF4444' : utilisationPct > 80 ? '#F59E0B' : '#2563EB' }]}>
+                    <Text style={[styles.utilisationPct, { color: isOverLimit ? '#EF4444' : utilisationPct > 80 ? '#F59E0B' : '#4F46E5' }]}>
                       {utilisationPct.toFixed(0)}%
                     </Text>
                   </View>
                   <View style={styles.progressTrack}>
                     <LinearGradient
-                      colors={isOverLimit ? ['#EF4444', '#F87171'] : utilisationPct > 80 ? ['#F59E0B', '#FBBF24'] : ['#2563EB', '#3B82F6']}
+                      colors={isOverLimit ? ['#EF4444', '#F87171'] : utilisationPct > 80 ? ['#F59E0B', '#FBBF24'] : ['#4F46E5', '#818CF8']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       style={[styles.progressFill, { width: `${utilisationPct}%` }]}
@@ -487,11 +487,11 @@ export const ShopDetailModal = memo(function ShopDetailModal({
             {/* ============ STATS ROW (3 mini cards) ============ */}
             <View style={styles.statsRow}>
               <View style={styles.statCard}>
-                <View style={[styles.statIconWrap, { backgroundColor: '#DBEAFE' }]}>
-                  <MaterialIcons name="trending-up" size={15} color="#2563EB" />
+                <View style={[styles.statIconWrap, { backgroundColor: '#E0E7FF' }]}>
+                  <MaterialIcons name="trending-up" size={15} color="#4F46E5" />
                 </View>
                 <Text style={styles.statLabel}>TOTAL CREDIT</Text>
-                <Text style={[styles.statValue, { color: '#2563EB' }]} numberOfLines={1}>
+                <Text style={[styles.statValue, { color: '#4F46E5' }]} numberOfLines={1}>
                   {formatPKR(totalCredit)}
                 </Text>
               </View>
@@ -529,7 +529,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                 onPress={handleCallPress}
               >
                 <View style={styles.actionBtnIconCircle}>
-                  <MaterialIcons name="call" size={16} color="#2563EB" />
+                  <MaterialIcons name="call" size={16} color="#4F46E5" />
                 </View>
                 <Text style={styles.actionBtnText}>Call</Text>
               </Pressable>
@@ -538,7 +538,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                 onPress={handleNavigatePress}
               >
                 <View style={styles.actionBtnIconCircle}>
-                  <MaterialIcons name="directions" size={16} color="#2563EB" />
+                  <MaterialIcons name="directions" size={16} color="#4F46E5" />
                 </View>
                 <Text style={styles.actionBtnText}>Navigate</Text>
               </Pressable>
@@ -547,7 +547,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                 onPress={handleWhatsappPress}
               >
                 <View style={styles.actionBtnIconCircle}>
-                  <MaterialIcons name="chat" size={16} color="#2563EB" />
+                  <MaterialIcons name="chat" size={16} color="#4F46E5" />
                 </View>
                 <Text style={styles.actionBtnText}>WhatsApp</Text>
               </Pressable>
@@ -562,7 +562,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                 </View>
                 <View style={styles.chartLegend}>
                   <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: '#2563EB' }]} />
+                    <View style={[styles.legendDot, { backgroundColor: '#4F46E5' }]} />
                     <Text style={styles.legendText}>Recovery</Text>
                   </View>
                 </View>
@@ -570,7 +570,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
 
               {chartLoading ? (
                 <View style={styles.chartLoading}>
-                  <ActivityIndicator size="small" color="#2563EB" />
+                  <ActivityIndicator size="small" color="#4F46E5" />
                   <Text style={styles.chartLoadingText}>Loading chart...</Text>
                 </View>
               ) : !hasChartData ? (
@@ -625,7 +625,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
               </View>
               <View style={styles.viewAllLink}>
                 <Text style={styles.viewAllText}>View All</Text>
-                <MaterialIcons name="chevron-right" size={14} color="#2563EB" />
+                <MaterialIcons name="chevron-right" size={14} color="#4F46E5" />
               </View>
             </View>
 
@@ -681,7 +681,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
 
             {/* ============ TRANSACTION ROWS ============ */}
             {loading ? (
-              <ActivityIndicator color="#2563EB" style={{ marginVertical: Spacing.md }} />
+              <ActivityIndicator color="#4F46E5" style={{ marginVertical: Spacing.md }} />
             ) : recentTxns.length === 0 ? (
               <View style={styles.emptyTxnWrap}>
                 <MaterialIcons name="receipt-long" size={36} color={Colors.textMuted} />
@@ -695,12 +695,12 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                 ]}>
                   <View style={[
                     styles.txnTypeIcon,
-                    { backgroundColor: txn.type === 'credit' ? '#FEF3C7' : txn.type === 'claim' ? '#FEE2E2' : '#DBEAFE' },
+                    { backgroundColor: txn.type === 'credit' ? '#FEF3C7' : txn.type === 'claim' ? '#FEE2E2' : '#E0E7FF' },
                   ]}>
                     <MaterialIcons
                       name={txn.type === 'credit' ? 'arrow-downward' : txn.type === 'claim' ? 'remove-circle-outline' : 'arrow-upward'}
                       size={14}
-                      color={txn.type === 'credit' ? '#F59E0B' : txn.type === 'claim' ? '#EF4444' : '#2563EB'}
+                      color={txn.type === 'credit' ? '#F59E0B' : txn.type === 'claim' ? '#EF4444' : '#4F46E5'}
                     />
                   </View>
                   <View style={styles.txnInfo}>
@@ -723,7 +723,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                   <View style={styles.txnAmountCol}>
                     <Text style={[
                       styles.txnAmount,
-                      { color: txn.type === 'credit' ? '#F59E0B' : txn.type === 'claim' ? '#EF4444' : '#2563EB' },
+                      { color: txn.type === 'credit' ? '#F59E0B' : txn.type === 'claim' ? '#EF4444' : '#4F46E5' },
                     ]}>
                       {formatPKR(txn.amount)}
                     </Text>
@@ -735,7 +735,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
                         onPress={() => onEditPendingRecovery(txn)}
                         hitSlop={6}
                       >
-                        <MaterialIcons name="edit" size={14} color="#2563EB" />
+                        <MaterialIcons name="edit" size={14} color="#4F46E5" />
                         <Text style={styles.txnEditBtnText}>Edit</Text>
                       </Pressable>
                     ) : null}
@@ -787,7 +787,7 @@ export const ShopDetailModal = memo(function ShopDetailModal({
             <View style={styles.phoneEditCard}>
               <View style={styles.phoneEditHeader}>
                 <View style={styles.phoneEditIconWrap}>
-                  <MaterialIcons name="phone" size={22} color="#2563EB" />
+                  <MaterialIcons name="phone" size={22} color="#4F46E5" />
                 </View>
                 <Text style={styles.phoneEditTitle}>Edit Phone & Owner</Text>
                 <Text style={styles.phoneEditSubtitle}>{shop.name}</Text>
@@ -1032,14 +1032,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 7,
   },
   phoneChipText: {
     fontSize: FontSize.xs,
-    color: '#2563EB',
+    color: '#4F46E5',
     fontWeight: FontWeight.semibold,
   },
   phoneEditBtn: {
@@ -1055,7 +1055,7 @@ const styles = StyleSheet.create({
   },
   phoneEditText: {
     fontSize: FontSize.xs,
-    color: '#2563EB',
+    color: '#4F46E5',
     fontWeight: FontWeight.semibold,
   },
   noPhoneChip: {
@@ -1104,7 +1104,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   balanceCardLimitPill: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 6,
@@ -1112,14 +1112,14 @@ const styles = StyleSheet.create({
   },
   balanceCardLimitLabel: {
     fontSize: 9,
-    color: '#1E40AF',
+    color: '#4338CA',
     fontWeight: FontWeight.bold,
     letterSpacing: 0.4,
     textTransform: 'uppercase',
   },
   balanceCardLimitValue: {
     fontSize: FontSize.sm,
-    color: '#1E40AF',
+    color: '#4338CA',
     fontWeight: FontWeight.bold,
     marginTop: 1,
   },
@@ -1236,7 +1236,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
   },
   actionBtnPrimary: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4F46E5',
     paddingVertical: 16,
     ...Shadow.md,
   },
@@ -1250,13 +1250,13 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionBtnText: {
     fontSize: FontSize.xs,
-    color: '#1E40AF',
+    color: '#4338CA',
     fontWeight: FontWeight.semibold,
   },
   actionBtnTextPrimary: {
@@ -1343,7 +1343,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   countPill: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     borderRadius: Radius.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -1352,7 +1352,7 @@ const styles = StyleSheet.create({
   },
   countPillText: {
     fontSize: FontSize.xs,
-    color: '#1E40AF',
+    color: '#4338CA',
     fontWeight: FontWeight.bold,
   },
   viewAllLink: {
@@ -1362,7 +1362,7 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: FontSize.xs,
-    color: '#2563EB',
+    color: '#4F46E5',
     fontWeight: FontWeight.semibold,
   },
   // ===== Transaction rows =====
@@ -1420,7 +1420,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     borderRadius: Radius.sm,
     paddingHorizontal: 6,
     paddingVertical: 3,
@@ -1428,7 +1428,7 @@ const styles = StyleSheet.create({
   },
   txnEditBtnText: {
     fontSize: FontSize.xs,
-    color: '#2563EB',
+    color: '#4F46E5',
     fontWeight: FontWeight.semibold,
   },
   emptyTxnWrap: {
@@ -1531,7 +1531,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4F46E5',
     borderRadius: 30,
     paddingVertical: 16,
     ...Shadow.md,
@@ -1580,7 +1580,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
@@ -1640,7 +1640,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 14,
     borderRadius: Radius.md,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4F46E5',
   },
   phoneEditSaveBtnDisabled: {
     opacity: 0.5,

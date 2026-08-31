@@ -33,8 +33,6 @@ import { RouteTrackingService } from '@/services/routeTracking';
 import { ApiService } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { AuroraBackground, GlassCard, NeonButton } from '@/components/aurora';
-import { AuroraGradients, AuroraColors } from '@/constants/auroraTheme';
 import { formatPKR, getTodayLabel } from '@/utils/format';
 import { generateRouteSummaryPdf } from '@/utils/generateRouteSummaryPdf';
 
@@ -435,10 +433,10 @@ export default function RouteSummaryScreen() {
   const shops = data?.shops ?? [];
 
   return (
-    <AuroraBackground style={styles.root}>
+    <SafeAreaView style={styles.root}>
       {/* Header (gradient) */}
       <LinearGradient
-        colors={[AuroraGradients.brandStart, AuroraGradients.brandMid, AuroraGradients.brandEnd]}
+        colors={['#4F46E5', '#4338CA', '#4338CA']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.header, { paddingTop: insets.top + Spacing.md }]}
@@ -461,7 +459,7 @@ export default function RouteSummaryScreen() {
           </View>
           <View style={styles.totalStatRight}>
             <View style={styles.totalStatPill}>
-              <MaterialIcons name="store" size={12} color={AuroraColors.indigo600} />
+              <MaterialIcons name="store" size={12} color="#4338CA" />
               <Text style={styles.totalStatPillText}>{shops.length} Shops</Text>
             </View>
             {totalApproved > 0 ? (
@@ -567,7 +565,7 @@ export default function RouteSummaryScreen() {
         onClose={() => setEditingEntry(null)}
         onSaved={handleEditSaved}
       />
-    </AuroraBackground>
+    </SafeAreaView>
   );
 }
 
@@ -604,7 +602,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm, paddingVertical: 3,
   },
-  totalStatPillText: { fontSize: FontSize.xs, color: AuroraColors.indigo600, fontWeight: FontWeight.bold },
+  totalStatPillText: { fontSize: FontSize.xs, color: '#4338CA', fontWeight: FontWeight.bold },
   pillApprovedBg: { backgroundColor: '#D1FAE5' },
   pillApprovedTextSmall: { fontSize: FontSize.xs, color: '#047857', fontWeight: FontWeight.bold },
 

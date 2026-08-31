@@ -1,38 +1,20 @@
-// =================================================================
-// AURORA GLASS — DOWNLOAD SCREEN
-// • Brand gradient hero (indigo→violet→indigo)
-// • Glassmorphic content card on slate-50 body
-// • GlassInput-less but uses NeonButton for primary CTAs
-// • AuroraBackground floating orbs
-// =================================================================
+// Download Data Screen — Manual data download, shown before route start
+// BLOCKS download if there's pending offline data (recoveries + GPS waypoints)
+// User MUST upload pending data before downloading new route
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ActivityIndicator,
-  Alert,
+  View, Text, StyleSheet, Pressable, ActivityIndicator, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { useShops } from '@/hooks/useShops';
 import { StorageService } from '@/services/storage';
-import { AuroraBackground, GlassCard, NeonButton } from '@/components/aurora';
-import {
-  AuroraColors,
-  AuroraFont,
-  AuroraRadius,
-  AuroraShadow,
-  AuroraGradients,
-} from '@/constants/auroraTheme';
+import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
 import { getTodayDateStr, getTodayLabel, formatPKR } from '@/utils/format';
 
 export default function DownloadScreen() {
-  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { triggerFullSync } = useShops();
   const [isDownloading, setIsDownloading] = useState(false);
@@ -48,20 +30,22 @@ export default function DownloadScreen() {
 
   async function checkPendingData() {
     try {
+      // Check for pending offline recoveries
       const recoveries = await StorageService.getOfflineQueue();
       const recoveryCount = recoveries?.length || 0;
-      const totalAmount = recoveries?.reduce(
-        (sum: number, r: any) => sum + (r.amount || 0),
-        0
-      ) || 0;
+      const totalAmount = recoveries?.reduce((sum: number, r: any) => sum + (r.amount || 0), 0) || 0;
       setPendingRecoveries(recoveryCount);
       setPendingAmount(totalAmount);
 
+      // Check for pending GPS waypoints
       const locations = await StorageService.getOfflineRouteLocations();
       const waypointCount = locations?.length || 0;
       setPendingWaypoints(waypointCount);
 
+      // Also check yesterday sync flag
       const yesterdayDone = await StorageService.isYesterdaySyncDone();
+
+      // Has pending data if: recoveries > 0 OR waypoints > 0 OR yesterday not synced
       const pending = recoveryCount > 0 || waypointCount > 0 || !yesterdayDone;
       setHasPendingData(pending);
     } catch (e) {
@@ -75,9 +59,15 @@ export default function DownloadScreen() {
     try {
       const { performSyncUpload } = await import('@/services/syncUpload');
       const result = await performSyncUpload();
+      console.log('[Download] Sync upload result:', result);
+
+      // Mark yesterday as synced
       const today = getTodayDateStr();
       await StorageService.saveLastSyncUploadDate(today);
+
+      // Re-check pending data
       await checkPendingData();
+
       if (hasPendingData) {
         Alert.alert(
           'Upload Complete!',
@@ -88,8 +78,7 @@ export default function DownloadScreen() {
     } catch (e: any) {
       Alert.alert(
         'Upload Failed',
-        'Data upload nahi ho saka. Internet check karein aur dobara try karein.\n\nError: ' +
-          (e.message || 'Unknown'),
+        'Data upload nahi ho saka. Internet check karein aur dobara try karein.\n\nError: ' + (e.message || 'Unknown'),
         [{ text: 'OK' }]
       );
     } finally {
@@ -99,6 +88,8 @@ export default function DownloadScreen() {
 
   async function handleDownload() {
     if (!user) return;
+
+    // Double check — no pending data allowed
     if (hasPendingData) {
       Alert.alert(
         '⚠️ Pehle Upload Karein!',
@@ -115,18 +106,12 @@ export default function DownloadScreen() {
         const today = getTodayDateStr();
         await StorageService.saveDataDownloadedDate(today);
         await StorageService.saveDataDownloadedForDate(today);
-        Alert.alert(
-          'Download Complete',
-          'Aaj ka data download ho gaya! Ab route start karein.'
-        );
+        Alert.alert('Download Complete', 'Aaj ka data download ho gaya! Ab route start karein.');
         setTimeout(() => {
           router.replace('/route-start');
         }, 100);
       } else {
-        Alert.alert(
-          'Download Failed',
-          'Data download nahi ho saka. Internet check karein aur dobara try karein.'
-        );
+        Alert.alert('Download Failed', 'Data download nahi ho saka. Internet check karein aur dobara try karein.');
       }
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Download failed. Please try again.');
@@ -136,239 +121,184 @@ export default function DownloadScreen() {
   }
 
   return (
-    <AuroraBackground style={styles.root}>
-      <LinearGradient
-        colors={[
-          AuroraGradients.brandStart,
-          AuroraGradients.brandMid,
-          AuroraGradients.brandEnd,
-        ]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[StyleSheet.absoluteFill, styles.heroBg]}
-      />
+    <View style={styles.root}>
+      <LinearGradient colors={['#4F46E5', '#6366F1', '#818CF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.gradient}>
+        <View style={styles.content}>
+          {/* Icon */}
+          <View style={styles.iconCircle}>
+            <MaterialIcons name="cloud-download" size={56} color="#FFFFFF" />
+          </View>
 
-      {/* Floating glassmorphic icon */}
-      <View style={styles.iconCircleWrap}>
-        <View style={styles.iconCircle}>
-          <MaterialIcons name="cloud-download" size={48} color={AuroraColors.textInverse} />
-        </View>
-      </View>
+          <Text style={styles.title}>Download Today's Data</Text>
+          <Text style={styles.date}>{getTodayLabel()}</Text>
 
-      <View
-        style={[
-          styles.body,
-          {
-            paddingTop: insets.top + 140,
-            paddingBottom: insets.bottom + 24,
-          },
-        ]}
-      >
-        <Text style={styles.title}>Download Today&apos;s Data</Text>
-        <Text style={styles.date}>{getTodayLabel()}</Text>
-        <Text style={styles.desc}>
-          Pehle aaj ka data download karein. Data download ke baad hi route start kar sakte
-          hain aur shops dikhengi.
-        </Text>
+          <Text style={styles.desc}>
+            Pehle aaj ka data download karein. Data download ke baad hi route start kar sakte hain aur shops dikhengi.
+          </Text>
 
-        {/* Pending data warning */}
-        {hasPendingData && (
-          <GlassCard glow="default" padding="md" style={styles.warningCard}>
-            <View style={styles.warningHeader}>
-              <MaterialIcons name="warning" size={22} color={AuroraColors.amber500} />
-              <Text style={styles.warningTitle}>PICHLA DATA UPLOAD KARO</Text>
-            </View>
+          {/* PENDING DATA WARNING — shows upload button */}
+          {hasPendingData && (
+            <View style={styles.warningContainer}>
+              <View style={styles.warningHeader}>
+                <MaterialIcons name="warning" size={24} color="#F59E0B" />
+                <Text style={styles.warningTitle}>PICHLA DATA UPLOAD KARO</Text>
+              </View>
 
-            <View style={styles.pendingList}>
-              {pendingRecoveries > 0 && (
-                <View style={styles.pendingRow}>
-                  <MaterialIcons name="payments" size={16} color={AuroraColors.amber600} />
-                  <Text style={styles.pendingText}>
-                    {pendingRecoveries} pending recoveries ({formatPKR(pendingAmount)})
-                  </Text>
-                </View>
-              )}
-              {pendingWaypoints > 0 && (
-                <View style={styles.pendingRow}>
-                  <MaterialIcons name="location-on" size={16} color={AuroraColors.amber600} />
-                  <Text style={styles.pendingText}>{pendingWaypoints} GPS waypoints</Text>
-                </View>
-              )}
-              {pendingRecoveries === 0 && pendingWaypoints === 0 && (
-                <View style={styles.pendingRow}>
-                  <MaterialIcons name="sync" size={16} color={AuroraColors.amber600} />
-                  <Text style={styles.pendingText}>Kal ka data sync nahi hua</Text>
-                </View>
-              )}
-            </View>
+              <View style={styles.pendingList}>
+                {pendingRecoveries > 0 && (
+                  <View style={styles.pendingRow}>
+                    <MaterialIcons name="payments" size={16} color="#FCD34D" />
+                    <Text style={styles.pendingText}>
+                      {pendingRecoveries} pending recoveries ({formatPKR(pendingAmount)})
+                    </Text>
+                  </View>
+                )}
+                {pendingWaypoints > 0 && (
+                  <View style={styles.pendingRow}>
+                    <MaterialIcons name="location-on" size={16} color="#FCD34D" />
+                    <Text style={styles.pendingText}>
+                      {pendingWaypoints} GPS waypoints
+                    </Text>
+                  </View>
+                )}
+                {pendingRecoveries === 0 && pendingWaypoints === 0 && (
+                  <View style={styles.pendingRow}>
+                    <MaterialIcons name="sync" size={16} color="#FCD34D" />
+                    <Text style={styles.pendingText}>
+                      Kal ka data sync nahi hua
+                    </Text>
+                  </View>
+                )}
+              </View>
 
-            <Text style={styles.warningDesc}>
-              Pehle ye data upload karo, phir naya route download hoga.
-            </Text>
+              <Text style={styles.warningDesc}>
+                Pehle ye data upload karo, phir naya route download hoga.
+              </Text>
 
-            <View style={styles.uploadBtnWrap}>
-              <NeonButton
-                label={isUploading ? 'Uploading...' : 'Abhi Upload Karein'}
-                variant="danger"
+              {/* UPLOAD BUTTON */}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.uploadBtn,
+                  isUploading && styles.btnDisabled,
+                  pressed && !isUploading && styles.btnPressed,
+                ]}
                 onPress={handleUpload}
-                loading={isUploading}
                 disabled={isUploading}
-                icon={
-                  !isUploading && (
-                    <MaterialIcons name="cloud-upload" size={20} color={AuroraColors.textInverse} />
-                  )
-                }
-              />
+              >
+                {isUploading ? (
+                  <>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text style={styles.btnText}>Uploading...</Text>
+                  </>
+                ) : (
+                  <>
+                    <MaterialIcons name="cloud-upload" size={22} color="#FFFFFF" />
+                    <Text style={styles.btnText}>Abhi Upload Karein</Text>
+                  </>
+                )}
+              </Pressable>
             </View>
-          </GlassCard>
-        )}
+          )}
 
-        {/* Download CTA */}
-        <View style={styles.downloadBtnWrap}>
-          <NeonButton
-            label={
-              isDownloading
-                ? 'Downloading...'
-                : hasPendingData
-                ? 'Download Locked'
-                : 'Download Data'
-            }
+          {/* DOWNLOAD BUTTON — disabled if pending data */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.downloadBtn,
+              (isDownloading || hasPendingData) && styles.btnDisabled,
+              pressed && !isDownloading && !hasPendingData && styles.btnPressed,
+            ]}
             onPress={handleDownload}
-            loading={isDownloading}
             disabled={isDownloading || hasPendingData}
-            icon={
-              !isDownloading && (
-                <MaterialIcons name="download" size={22} color={AuroraColors.textInverse} />
-              )
-            }
-            style={styles.ctaBtn}
-          />
-        </View>
+          >
+            <LinearGradient
+              colors={hasPendingData ? ['#94A3B8', '#94A3B8'] : ['#4F46E5', '#6366F1']}
+              style={styles.btnGradient}
+            >
+              {isDownloading ? (
+                <>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.btnText}>Downloading...</Text>
+                </>
+              ) : (
+                <>
+                  <MaterialIcons name="download" size={24} color="#FFFFFF" />
+                  <Text style={styles.btnText}>
+                    {hasPendingData ? 'Download Locked' : 'Download Data'}
+                  </Text>
+                </>
+              )}
+            </LinearGradient>
+          </Pressable>
 
-        <Text style={styles.footer}>
-          {hasPendingData
-            ? '⚠️ Pehle pending data upload karein'
-            : 'WiFi ya Mobile Data ON hona chahiye'}
-        </Text>
-      </View>
-    </AuroraBackground>
+          <Text style={styles.footer}>
+            {hasPendingData
+              ? '⚠️ Pehle pending data upload karein'
+              : 'WiFi ya Mobile Data ON hona chahiye'
+            }
+          </Text>
+        </View>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  heroBg: {
-    height: 320,
-    borderBottomLeftRadius: AuroraRadius.r2xl,
-    borderBottomRightRadius: AuroraRadius.r2xl,
-  },
-  iconCircleWrap: {
-    position: 'absolute',
-    top: 80,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 5,
-  },
+  root: { flex: 1, backgroundColor: '#4F46E5' },
+  gradient: { flex: 1 },
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.xl },
   iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 26,
-    backgroundColor: AuroraColors.glassOnGradient,
-    borderWidth: 1,
-    borderColor: AuroraColors.glassOnGradientBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    ...AuroraShadow.lg,
+    width: 110, height: 110, borderRadius: 55,
+    backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center',
+    marginBottom: Spacing.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
   },
-  body: {
-    flex: 1,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  title: {
-    fontFamily: AuroraFont.display,
-    fontSize: 26,
-    fontWeight: AuroraFont.extrabold as any,
-    color: AuroraColors.textPrimary,
-    textAlign: 'center',
-    letterSpacing: -0.4,
-    marginBottom: 4,
-  },
-  date: {
-    fontFamily: AuroraFont.sans,
-    fontSize: AuroraFont.fsLg, // 18
-    color: AuroraColors.indigo600,
-    fontWeight: AuroraFont.bold as any,
-  },
-  desc: {
-    fontFamily: AuroraFont.sans,
-    fontSize: AuroraFont.fsBase, // 15
-    color: AuroraColors.textSecondary,
-    textAlign: 'center',
-    marginTop: 12,
-    lineHeight: 22,
-    marginBottom: 20,
-  },
-  // ── Pending data warning card ──
-  warningCard: {
+  title: { fontSize: 26, fontWeight: '900', color: '#FFFFFF', textAlign: 'center', letterSpacing: 0.5 },
+  date: { fontSize: FontSize.lg, color: 'rgba(255,255,255,0.8)', fontWeight: FontWeight.bold, marginTop: 2 },
+  desc: { fontSize: FontSize.base, color: 'rgba(255,255,255,0.75)', textAlign: 'center', marginTop: Spacing.md, lineHeight: 22, marginBottom: Spacing.lg },
+
+  // Warning container (pending data)
+  warningContainer: {
     width: '100%',
-    marginBottom: 16,
+    backgroundColor: 'rgba(245,158,11,0.15)',
+    borderRadius: 16,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    borderWidth: 2,
+    borderColor: 'rgba(245,158,11,0.5)',
   },
   warningHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
   warningTitle: {
-    fontSize: AuroraFont.fsBase, // 15
-    fontWeight: AuroraFont.extrabold as any,
-    color: AuroraColors.amber600,
-    letterSpacing: 0.5,
-    fontFamily: AuroraFont.sans,
+    fontSize: FontSize.base, fontWeight: '900', color: '#FCD34D', letterSpacing: 0.5,
   },
   pendingList: {
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
   },
   pendingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
     paddingVertical: 4,
   },
   pendingText: {
-    fontSize: AuroraFont.fsSm, // 13
-    color: AuroraColors.textSecondary,
-    fontWeight: AuroraFont.medium as any,
-    fontFamily: AuroraFont.sans,
+    fontSize: FontSize.sm, color: '#FEF3C7', fontWeight: FontWeight.medium,
   },
   warningDesc: {
-    fontSize: AuroraFont.fsXs, // 11
-    color: AuroraColors.textMuted,
-    marginBottom: 14,
+    fontSize: FontSize.xs, color: 'rgba(252,211,77,0.8)', marginBottom: Spacing.md,
     fontStyle: 'italic',
-    fontFamily: AuroraFont.sans,
   },
-  uploadBtnWrap: {
-    marginTop: 4,
+
+  // Upload button
+  uploadBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
+    backgroundColor: '#F59E0B', borderRadius: 12, paddingVertical: 14,
+    ...Shadow.md,
   },
-  // ── Download CTA ──
-  downloadBtnWrap: {
-    width: '100%',
-    marginTop: 8,
-  },
-  ctaBtn: {
-    minHeight: 54,
-  },
-  footer: {
-    fontFamily: AuroraFont.sans,
-    fontSize: AuroraFont.fsXs, // 11
-    color: AuroraColors.textMuted,
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  btnText: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: '#FFFFFF' },
+
+  // Download button
+  downloadBtn: { borderRadius: 16, overflow: 'hidden', width: '100%', ...Shadow.xl },
+  btnGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: 18 },
+  btnDisabled: { opacity: 0.6 },
+  btnPressed: { opacity: 0.85 },
+  footer: { fontSize: FontSize.xs, color: 'rgba(255,255,255,0.5)', marginTop: Spacing.md },
 });

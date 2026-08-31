@@ -1,17 +1,7 @@
-// =================================================================
-// AURORA GLASS — BISMILLAH SPLASH
-// Brand gradient (indigo→violet→indigo) background with floating
-// glassmorphic orb behind Bismillah text. Auto-dismisses after 3s.
-// =================================================================
+// Bismillah Splash Screen — Shows "بسم الله الرحمن الرحیم" for 3 seconds on app startup
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  AuroraColors,
-  AuroraGradients,
-  AuroraFont,
-  AuroraShadow,
-} from '@/constants/auroraTheme';
 
 interface BismillahSplashProps {
   onFinish: () => void;
@@ -20,10 +10,9 @@ interface BismillahSplashProps {
 export function BismillahSplash({ onFinish }: BismillahSplashProps) {
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.8)).current;
-  const orbPulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Fade in + scale spring
+    // Fade in animation
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
@@ -31,28 +20,12 @@ export function BismillahSplash({ onFinish }: BismillahSplashProps) {
         useNativeDriver: true,
       }),
       Animated.spring(scale, {
+        toValue: 1,
         tension: 60,
         friction: 8,
-        toValue: 1,
         useNativeDriver: true,
       }),
     ]).start();
-
-    // Subtle orb breathing pulse
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(orbPulse, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(orbPulse, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
 
     // Auto-dismiss after 3 seconds
     const timer = setTimeout(() => {
@@ -68,31 +41,14 @@ export function BismillahSplash({ onFinish }: BismillahSplashProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  const orbScale = orbPulse.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.08],
-  });
-
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={[
-          AuroraGradients.brandStart, // #4F46E5
-          AuroraGradients.brandMid, // #7C3AED
-          AuroraGradients.brandEnd, // #6366F1
-        ]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-
+    <LinearGradient
+      colors={['#4F46E5', '#7C3AED', '#6366F1']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
       <Animated.View style={[styles.content, { opacity, transform: [{ scale }] }]}>
-        {/* Floating glassmorphic orb behind text */}
-        <Animated.View
-          style={[styles.glowOrb, { transform: [{ scale: orbScale }] }]}
-          pointerEvents="none"
-        />
-
         {/* Bismillah Arabic Text */}
         <Text style={styles.bismillahText}>بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</Text>
 
@@ -106,11 +62,9 @@ export function BismillahSplash({ onFinish }: BismillahSplashProps) {
         {/* App name */}
         <Text style={styles.appName}>Finexa Recovery App</Text>
       </Animated.View>
-    </View>
+    </LinearGradient>
   );
 }
-
-const ORB_SIZE = 320;
 
 const styles = StyleSheet.create({
   container: {
@@ -118,34 +72,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999,
-    overflow: 'hidden',
   },
   content: {
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  // Floating glow orb — semi-transparent white circle behind the text
-  glowOrb: {
-    position: 'absolute',
-    width: ORB_SIZE,
-    height: ORB_SIZE,
-    borderRadius: ORB_SIZE / 2,
-    backgroundColor: 'rgba(255,255,255,0.10)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-    top: -40,
-    ...AuroraShadow.xl,
-  },
   bismillahText: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: AuroraColors.textInverse,
+    color: '#FFFFFF',
     textAlign: 'center',
     lineHeight: 52,
-    fontFamily: 'System',
-    textShadowColor: 'rgba(0,0,0,0.25)',
+    textShadowColor: 'rgba(0,0,0,0.2)',
     textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
+    textShadowRadius: 4,
   },
   decorativeLine: {
     flexDirection: 'row',
@@ -156,20 +96,19 @@ const styles = StyleSheet.create({
   lineSegment: {
     width: 40,
     height: 1.5,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
   },
   diamond: {
     width: 8,
     height: 8,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.75)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     transform: [{ rotate: '45deg' }],
   },
   appName: {
-    fontSize: 16,
-    fontWeight: AuroraFont.semibold as any,
+    fontSize: 18,
+    fontWeight: '600',
     color: 'rgba(255,255,255,0.85)',
-    letterSpacing: 1.2,
-    fontFamily: AuroraFont.sans,
+    letterSpacing: 1,
   },
 });

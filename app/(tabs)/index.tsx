@@ -21,9 +21,8 @@ import { useShops } from '@/hooks/useShops';
 import { ApiService, Shop, Transaction } from '@/services/api';
 import { router } from 'expo-router';
 import { getShopDisplayBalance } from '@/components/ui/ShopCard';
-import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { AuroraBackground } from '@/components/aurora';
-import { AuroraGradients, AuroraColors as AuroraColorsRaw } from '@/constants/auroraTheme';
+import { AURORA, Colors, Spacing, Radius, FontSize, FontWeight, Shadow, FontMono } from '@/constants/theme';
+import { Svg, Circle } from 'react-native-svg';
 import { ROUTE_DAYS, DAY_LABELS } from '@/constants/config';
 import { getTodayDayName, getTodayLabel, getTodayDateStr, capitalize, formatPKR } from '@/utils/format';
 import { ShopCard } from '@/components/ui/ShopCard';
@@ -58,6 +57,45 @@ type ChartView = 'trend' | 'analysis' | 'none';
 type SectionItem =
   | { type: 'header'; dayKey: string; dayLabel: string; shopCount: number; isToday: boolean }
   | { type: 'shop'; shop: Shop; dayKey: string };
+
+// Compact PKR formatter (mockup style: Rs 1.2L / Rs 47.5K / Rs 850)
+function compactPKR(amount: number): string {
+  const abs = Math.abs(amount);
+  if (abs >= 100000) return `Rs ${(amount / 100000).toFixed(abs >= 1000000 ? 0 : 1)}L`;
+  if (abs >= 1000) return `Rs ${(amount / 1000).toFixed(1)}K`;
+  return `Rs ${amount}`;
+}
+
+// Progress ring (mockup .progress-ring-wrap): white arc on glass track
+function ProgressRing({ pct, size = 84 }: { pct: number; size?: number }) {
+  const r = 34;
+  const circumference = 2 * Math.PI * r;
+  const clamped = Math.min(Math.max(pct, 0), 100);
+  const offset = circumference * (1 - clamped / 100);
+  return (
+    <View style={styles.ringWrap}>
+      <Svg width={size} height={size} viewBox="0 0 80 80">
+        <Circle cx={40} cy={40} r={r} stroke="rgba(255,255,255,0.25)" strokeWidth={8} fill="none" />
+        <Circle
+          cx={40}
+          cy={40}
+          r={r}
+          stroke="#FFFFFF"
+          strokeWidth={8}
+          strokeLinecap="round"
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          transform="rotate(-90, 40, 40)"
+        />
+      </Svg>
+      <View style={styles.ringCenter} pointerEvents="none">
+        <Text style={styles.ringPct}>{clamped}%</Text>
+        <Text style={styles.ringLabel}>Visited</Text>
+      </View>
+    </View>
+  );
+}
 
 export default function TodayRouteScreen() {
   const insets = useSafeAreaInsets();
@@ -1046,7 +1084,11 @@ export default function TodayRouteScreen() {
     : user?.companyName;
 
   return (
-    <AuroraBackground style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      {/* Aurora page tint blobs (radial gradients on light bg) */}
+      <View style={styles.auroraBlobA} pointerEvents="none" />
+      <View style={styles.auroraBlobB} pointerEvents="none" />
+
       <OfflineBanner
         isOnline={isOnline}
         queueCount={offlineQueueCount}
@@ -1086,7 +1128,7 @@ export default function TodayRouteScreen() {
             <View>
               {/* Hero Card - All Routes */}
               <LinearGradient
-                colors={[AuroraGradients.brandStart, AuroraGradients.brandMid, AuroraGradients.brandEnd]}
+                colors={[...AURORA.brandGradient]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroCard}
@@ -1096,8 +1138,9 @@ export default function TodayRouteScreen() {
 
                 <View style={styles.heroTop}>
                   <View style={{ flex: 1 }}>
+                    <Text style={styles.heroGreetingSmall}>Assalam-o-Alaikum</Text>
                     <Text style={styles.heroGreeting} numberOfLines={1}>
-                      Hello, {user ? user.name.split(' ')[0] : 'Order Booker'} 👋
+                      {user ? user.name.split(' ')[0] : 'Order Booker'} Bhai
                     </Text>
                     <Text style={styles.heroDate}>{getTodayLabel()}</Text>
                   </View>
@@ -1163,37 +1206,16 @@ export default function TodayRouteScreen() {
                   </Pressable>
                 </View>
 
-                {/* Bento Stats Grid — All Routes */}
-                <View style={styles.bentoGrid}>
-                  <View style={styles.bentoCard}>
-                    <View style={styles.bentoIconWrap}>
-                      <MaterialIcons name="store" size={14} color="#FFFFFF" />
-                    </View>
-                    <Text style={styles.bentoValue}>{todayShops.length}</Text>
-                    <Text style={styles.bentoLabel}>Shops</Text>
+                {/* Hero body — Aaj ki recovery + visited ring (mockup .dash-hero-body) */}
+                <View style={styles.heroBody}>
+                  <View style={styles.heroBodyLeft}>
+                    <Text style={styles.heroLabel}>AAJ KI RECOVERY</Text>
+                    <Text style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit={false}>
+                      {compactPKR(todayRecovery)}
+                    </Text>
+                    <Text style={styles.heroDelta}>{visitedCount} of {todayShops.length} shops visited</Text>
                   </View>
-                  <View style={styles.bentoCard}>
-                    <View style={styles.bentoIconWrap}>
-                      <MaterialIcons name="account-balance-wallet" size={14} color="#FFFFFF" />
-                    </View>
-                    <Text style={styles.bentoValue}>{formatPKR(totalOutstanding)}</Text>
-                    <Text style={styles.bentoLabel}>Outstanding</Text>
-                  </View>
-                  <View style={styles.bentoCardWide}>
-                    <View style={styles.bentoWideTop}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.bentoRecoveryValue}>{formatPKR(todayRecovery)}</Text>
-                        <Text style={styles.bentoLabel}>Today's Recovery</Text>
-                      </View>
-                      <View style={styles.bentoRecoveryIcon}>
-                        <MaterialIcons name="trending-up" size={16} color="#34D399" />
-                      </View>
-                    </View>
-                    <View style={styles.bentoProgressTrack}>
-                      <View style={[styles.bentoProgressFill, { width: `${Math.min(progressPct, 100)}%` }]} />
-                    </View>
-                    <Text style={styles.bentoProgressText}>{visitedCount} of {todayShops.length} shops visited · {Math.round(progressPct)}%</Text>
-                  </View>
+                  <ProgressRing pct={Math.round(Math.min(progressPct, 100))} />
                 </View>
 
                 {/* Company-wise balance breakdown (multi-company only) */}
@@ -1217,6 +1239,56 @@ export default function TodayRouteScreen() {
                 ) : null}
               </LinearGradient>
 
+              {/* KPI Grid — white glass tiles overlapping the hero (mockup .kpi-grid) */}
+              <View style={styles.kpiGrid}>
+                <View style={styles.kpiTile}>
+                  <View style={styles.kpiTileGlow} />
+                  <Text style={styles.kpiTileLabel}>Shops</Text>
+                  <Text style={styles.kpiTileValue}>{todayShops.length}</Text>
+                  <Text style={[styles.kpiTileDelta, { color: Colors.emerald }]}>
+                    {visitedCount > 0 ? `↑ ${visitedCount} visited` : '—'}
+                  </Text>
+                  <View style={styles.kpiTileIcon}>
+                    <MaterialIcons name="store" size={18} color={Colors.primary} />
+                  </View>
+                </View>
+                <View style={styles.kpiTile}>
+                  <View style={styles.kpiTileGlow} />
+                  <Text style={styles.kpiTileLabel}>Visits</Text>
+                  <Text style={styles.kpiTileValue}>{visitedCount}</Text>
+                  <Text style={[styles.kpiTileDelta, { color: Colors.emerald }]}>
+                    {Math.round(progressPct)}% done
+                  </Text>
+                  <View style={styles.kpiTileIcon}>
+                    <MaterialIcons name="directions-walk" size={18} color={Colors.primary} />
+                  </View>
+                </View>
+                <View style={styles.kpiTile}>
+                  <View style={styles.kpiTileGlow} />
+                  <Text style={styles.kpiTileLabel}>Overdue</Text>
+                  <Text style={styles.kpiTileValue}>{overdueShopIds.size}</Text>
+                  <Text
+                    style={[
+                      styles.kpiTileDelta,
+                      { color: overdueShopIds.size > 0 ? Colors.roseDark : Colors.emerald },
+                    ]}
+                  >
+                    {overdueShopIds.size > 0 ? '⚠ follow up' : '✓ clear'}
+                  </Text>
+                  <View style={styles.kpiTileIcon}>
+                    <MaterialIcons name="schedule" size={18} color={Colors.primary} />
+                  </View>
+                </View>
+                <View style={styles.kpiTile}>
+                  <View style={styles.kpiTileGlow} />
+                  <Text style={styles.kpiTileLabel}>Outstanding</Text>
+                  <Text style={styles.kpiTileValue}>{compactPKR(totalOutstanding)}</Text>
+                  <Text style={[styles.kpiTileDelta, { color: Colors.textMuted }]}>total balance</Text>
+                  <View style={styles.kpiTileIcon}>
+                    <MaterialIcons name="account-balance-wallet" size={18} color={Colors.primary} />
+                  </View>
+                </View>
+              </View>
 
               {/* Daily Target Progress */}
               <DailyTargetProgress todayRecovery={todayRecovery} />
@@ -1392,7 +1464,7 @@ export default function TodayRouteScreen() {
             <View>
               {/* Hero Card - Normal */}
               <LinearGradient
-                colors={[AuroraGradients.brandStart, AuroraGradients.brandMid, AuroraGradients.brandEnd]}
+                colors={[...AURORA.brandGradient]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.heroCard}
@@ -1402,8 +1474,9 @@ export default function TodayRouteScreen() {
 
                 <View style={styles.heroTop}>
                   <View style={{ flex: 1 }}>
+                    <Text style={styles.heroGreetingSmall}>Assalam-o-Alaikum</Text>
                     <Text style={styles.heroGreeting} numberOfLines={1}>
-                      Hello, {user ? user.name.split(' ')[0] : 'Order Booker'} 👋
+                      {user ? user.name.split(' ')[0] : 'Order Booker'} Bhai
                     </Text>
                     <Text style={styles.heroDate}>{getTodayLabel()}</Text>
                   </View>
@@ -1466,37 +1539,16 @@ export default function TodayRouteScreen() {
                   </Pressable>
                 </View>
 
-                {/* Bento Stats Grid */}
-                <View style={styles.bentoGrid}>
-                  <View style={styles.bentoCard}>
-                    <View style={styles.bentoIconWrap}>
-                      <MaterialIcons name="store" size={14} color="#FFFFFF" />
-                    </View>
-                    <Text style={styles.bentoValue}>{todayShops.length}</Text>
-                    <Text style={styles.bentoLabel}>Shops</Text>
+                {/* Hero body — Aaj ki recovery + visited ring (mockup .dash-hero-body) */}
+                <View style={styles.heroBody}>
+                  <View style={styles.heroBodyLeft}>
+                    <Text style={styles.heroLabel}>AAJ KI RECOVERY</Text>
+                    <Text style={styles.heroValue} numberOfLines={1} adjustsFontSizeToFit={false}>
+                      {compactPKR(todayRecovery)}
+                    </Text>
+                    <Text style={styles.heroDelta}>{visitedCount} of {todayShops.length} shops visited</Text>
                   </View>
-                  <View style={styles.bentoCard}>
-                    <View style={styles.bentoIconWrap}>
-                      <MaterialIcons name="account-balance-wallet" size={14} color="#FFFFFF" />
-                    </View>
-                    <Text style={styles.bentoValue}>{formatPKR(totalOutstanding)}</Text>
-                    <Text style={styles.bentoLabel}>Outstanding</Text>
-                  </View>
-                  <View style={styles.bentoCardWide}>
-                    <View style={styles.bentoWideTop}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.bentoRecoveryValue}>{formatPKR(todayRecovery)}</Text>
-                        <Text style={styles.bentoLabel}>Today's Recovery</Text>
-                      </View>
-                      <View style={styles.bentoRecoveryIcon}>
-                        <MaterialIcons name="trending-up" size={16} color="#34D399" />
-                      </View>
-                    </View>
-                    <View style={styles.bentoProgressTrack}>
-                      <View style={[styles.bentoProgressFill, { width: `${Math.min(progressPct, 100)}%` }]} />
-                    </View>
-                    <Text style={styles.bentoProgressText}>{visitedCount} of {todayShops.length} shops visited · {Math.round(progressPct)}%</Text>
-                  </View>
+                  <ProgressRing pct={Math.round(Math.min(progressPct, 100))} />
                 </View>
 
                 {/* Company-wise balance breakdown (multi-company only) */}
@@ -1520,6 +1572,56 @@ export default function TodayRouteScreen() {
                 ) : null}
               </LinearGradient>
 
+              {/* KPI Grid — white glass tiles overlapping the hero (mockup .kpi-grid) */}
+              <View style={styles.kpiGrid}>
+                <View style={styles.kpiTile}>
+                  <View style={styles.kpiTileGlow} />
+                  <Text style={styles.kpiTileLabel}>Shops</Text>
+                  <Text style={styles.kpiTileValue}>{todayShops.length}</Text>
+                  <Text style={[styles.kpiTileDelta, { color: Colors.emerald }]}>
+                    {visitedCount > 0 ? `↑ ${visitedCount} visited` : '—'}
+                  </Text>
+                  <View style={styles.kpiTileIcon}>
+                    <MaterialIcons name="store" size={18} color={Colors.primary} />
+                  </View>
+                </View>
+                <View style={styles.kpiTile}>
+                  <View style={styles.kpiTileGlow} />
+                  <Text style={styles.kpiTileLabel}>Visits</Text>
+                  <Text style={styles.kpiTileValue}>{visitedCount}</Text>
+                  <Text style={[styles.kpiTileDelta, { color: Colors.emerald }]}>
+                    {Math.round(progressPct)}% done
+                  </Text>
+                  <View style={styles.kpiTileIcon}>
+                    <MaterialIcons name="directions-walk" size={18} color={Colors.primary} />
+                  </View>
+                </View>
+                <View style={styles.kpiTile}>
+                  <View style={styles.kpiTileGlow} />
+                  <Text style={styles.kpiTileLabel}>Overdue</Text>
+                  <Text style={styles.kpiTileValue}>{overdueShopIds.size}</Text>
+                  <Text
+                    style={[
+                      styles.kpiTileDelta,
+                      { color: overdueShopIds.size > 0 ? Colors.roseDark : Colors.emerald },
+                    ]}
+                  >
+                    {overdueShopIds.size > 0 ? '⚠ follow up' : '✓ clear'}
+                  </Text>
+                  <View style={styles.kpiTileIcon}>
+                    <MaterialIcons name="schedule" size={18} color={Colors.primary} />
+                  </View>
+                </View>
+                <View style={styles.kpiTile}>
+                  <View style={styles.kpiTileGlow} />
+                  <Text style={styles.kpiTileLabel}>Outstanding</Text>
+                  <Text style={styles.kpiTileValue}>{compactPKR(totalOutstanding)}</Text>
+                  <Text style={[styles.kpiTileDelta, { color: Colors.textMuted }]}>total balance</Text>
+                  <View style={styles.kpiTileIcon}>
+                    <MaterialIcons name="account-balance-wallet" size={18} color={Colors.primary} />
+                  </View>
+                </View>
+              </View>
 
               {/* Daily Target Progress */}
               <DailyTargetProgress todayRecovery={todayRecovery} />
@@ -1901,7 +2003,7 @@ export default function TodayRouteScreen() {
         visible={showTour}
         onComplete={handleTourComplete}
       />
-    </AuroraBackground>
+    </View>
   );
 }
 
@@ -1910,26 +2012,47 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  // Aurora tint blobs (mockup page radial gradients)
+  auroraBlobA: {
+    position: 'absolute',
+    top: -140,
+    left: -110,
+    width: 340,
+    height: 340,
+    borderRadius: 170,
+    backgroundColor: 'rgba(124,58,237,0.10)',
+  },
+  auroraBlobB: {
+    position: 'absolute',
+    bottom: -120,
+    right: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(79,70,229,0.09)',
+  },
   listContent: {
     paddingBottom: 100,
   },
-  // Hero Card
+  // Hero Card — full-bleed aurora gradient (mockup .dash-hero: 24px 20px 36px, bottom r-28)
   heroCard: {
-    margin: Spacing.md,
-    marginBottom: Spacing.sm,
+    marginHorizontal: 0,
+    marginTop: 0,
+    marginBottom: 0,
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
-    padding: Spacing.lg,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 36,
     overflow: 'hidden',
-    ...Shadow.lg,
+    ...Shadow.md,
   },
   heroBubble1: {
     position: 'absolute',
     width: 160,
     height: 160,
     borderRadius: 80,
-    // Aurora violet orb glow on indigo→violet hero
-    backgroundColor: 'rgba(167,139,250,0.20)',
+    backgroundColor: 'rgba(255,255,255,0.14)',
     top: -50,
     right: -40,
   },
@@ -1938,18 +2061,24 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    // Aurora indigo orb glow
-    backgroundColor: 'rgba(129,140,248,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     bottom: -30,
     left: -20,
   },
   heroTop: {
     marginBottom: Spacing.sm,
   },
+  heroGreetingSmall: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: FontWeight.medium,
+  },
   heroGreeting: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
+    fontSize: 22,
+    fontWeight: FontWeight.extrabold,
     color: '#FFFFFF',
+    letterSpacing: -0.4,
+    marginTop: 1,
   },
   heroDate: {
     fontSize: FontSize.sm,
@@ -2054,90 +2183,114 @@ const styles = StyleSheet.create({
     backgroundColor: '#A5B4FC',
     borderRadius: Radius.full,
   },
-  // Bento Grid — glassmorphism stat cards
-  bentoGrid: {
+  // Hero body (mockup .dash-hero-body): big mono value + progress ring
+  heroBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+    marginTop: Spacing.lg,
+  },
+  heroBodyLeft: {
+    flex: 1,
+  },
+  heroLabel: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: FontWeight.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  heroValue: {
+    fontSize: 34,
+    fontWeight: FontWeight.bold,
+    color: '#FFFFFF',
+    fontFamily: FontMono,
+    letterSpacing: -1,
+    marginTop: 2,
+    lineHeight: 40,
+  },
+  heroDelta: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: FontWeight.semibold,
+    marginTop: 2,
+  },
+  // Progress ring (mockup .progress-ring-wrap)
+  ringWrap: {
+    width: 84,
+    height: 84,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringCenter: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringPct: {
+    fontSize: 17,
+    fontWeight: FontWeight.bold,
+    color: '#FFFFFF',
+    fontFamily: FontMono,
+  },
+  ringLabel: {
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 1,
+  },
+  // KPI grid — white glass tiles overlapping the hero (mockup .kpi-grid)
+  kpiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginTop: Spacing.sm,
+    marginHorizontal: Spacing.md,
+    marginTop: -20,
   },
-  bentoCard: {
+  kpiTile: {
     flex: 1,
-    minWidth: '45%',
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    minWidth: '47%',
+    backgroundColor: AURORA.bgCard,
     borderRadius: 16,
-    padding: 12,
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-  },
-  bentoCardWide: {
-    width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 16,
+    borderColor: AURORA.borderSubtle,
     padding: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    overflow: 'hidden',
+    ...Shadow.sm,
   },
-  bentoIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
+  kpiTileGlow: {
+    position: 'absolute',
+    top: -30,
+    right: -25,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(124,58,237,0.12)',
   },
-  bentoValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-  bentoLabel: {
+  kpiTileLabel: {
     fontSize: 10,
-    color: 'rgba(255,255,255,0.65)',
+    color: Colors.textSecondary,
     fontWeight: FontWeight.semibold,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
+  },
+  kpiTileValue: {
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+    color: Colors.text,
+    fontFamily: FontMono,
+    letterSpacing: -0.5,
     marginTop: 2,
   },
-  bentoWideTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  bentoRecoveryValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#34D399',
-    letterSpacing: -0.5,
-  },
-  bentoRecoveryIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(52,211,153,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bentoProgressTrack: {
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginTop: 8,
-  },
-  bentoProgressFill: {
-    height: 8,
-    backgroundColor: '#A5B4FC',
-    borderRadius: 4,
-  },
-  bentoProgressText: {
+  kpiTileDelta: {
     fontSize: 10,
-    color: 'rgba(255,255,255,0.7)',
-    fontWeight: FontWeight.medium,
-    marginTop: 4,
+    fontWeight: FontWeight.bold,
+    marginTop: 2,
+  },
+  kpiTileIcon: {
+    position: 'absolute',
+    bottom: 8,
+    right: 10,
+    opacity: 0.2,
   },
   // Chart Toggle
   chartToggleRow: {
@@ -2176,20 +2329,20 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.md,
     marginBottom: Spacing.sm,
   },
-  // Search — floating pill
+  // Search — glass card (mockup .shop-search)
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.surface,
+    backgroundColor: AURORA.bgCard,
     marginHorizontal: Spacing.md,
     marginTop: Spacing.sm,
-    borderRadius: 40,
+    borderRadius: 12,
     paddingHorizontal: Spacing.md,
     paddingVertical: 12,
-    ...Shadow.md,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    ...Shadow.sm,
+    borderWidth: 1,
+    borderColor: AURORA.borderDefault,
   },
   searchInput: {
     flex: 1,
@@ -2370,7 +2523,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#93C5FD',
+    backgroundColor: '#C7D2FE',
   },
   companyBalName: {
     fontSize: 10,

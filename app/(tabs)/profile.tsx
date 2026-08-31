@@ -23,13 +23,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useShops } from '@/hooks/useShops';
 import { useLock } from '@/hooks/useLock';
 import { useRouteTracking } from '@/contexts/RouteTrackingContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { ApiService } from '@/services/api';
 import { StorageService } from '@/services/storage';
 import { SecureStorageService } from '@/services/secureStorage';
 import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
-import { AuroraBackground } from '@/components/aurora';
-import { AuroraGradients, AuroraColors } from '@/constants/auroraTheme';
 import { formatPKR, getTodayDateStr } from '@/utils/format';
 import { RecoveryAnalysisChart } from '@/components/ui/RecoveryAnalysisChart';
 import { RecoveryComparison } from '@/components/ui/RecoveryComparison';
@@ -203,7 +200,7 @@ function SectionLabel({ icon, label }: { icon: string; label: string }) {
   return (
     <View style={sectionLabelStyles.wrap}>
       <View style={sectionLabelStyles.iconBox}>
-        <MaterialIcons name={icon as any} size={14} color={AuroraColors.indigo600} />
+        <MaterialIcons name={icon as any} size={14} color="#4F46E5" />
       </View>
       <Text style={sectionLabelStyles.text}>{label}</Text>
     </View>
@@ -222,7 +219,7 @@ const sectionLabelStyles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 8,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -242,7 +239,6 @@ export default function ProfileScreen() {
   const { allShops } = useShops();
   const { setNeedsPinSetup, lock } = useLock();
   const { isTracking, isStarting, isStopping, startRoute, endRoute, startTime, error: routeError } = useRouteTracking();
-  const { isDark, toggleTheme: toggleAppTheme } = useTheme();
 
   const [loggingOut, setLoggingOut] = useState(false);
   const [todayRecovery, setTodayRecovery] = useState(0);
@@ -478,13 +474,13 @@ export default function ProfileScreen() {
   };
 
   return (
-    <AuroraBackground style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {/* ─────────────────────────────────────────────────────────────── */}
-        {/* HERO HEADER — brand gradient with bubbles, avatar, name, badges  */}
+        {/* HERO HEADER — blue gradient with bubbles, avatar, name, badges  */}
         {/* ─────────────────────────────────────────────────────────────── */}
         <LinearGradient
-          colors={[AuroraGradients.brandStart, AuroraGradients.brandMid, AuroraGradients.brandEnd]}
+          colors={['#4F46E5', '#7C3AED', '#6366F1']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.hero}
@@ -506,7 +502,7 @@ export default function ProfileScreen() {
 
           {/* Role pill */}
           <View style={styles.rolePill}>
-            <MaterialIcons name="badge" size={11} color={AuroraColors.indigo600} />
+            <MaterialIcons name="badge" size={11} color="#4F46E5" />
             <Text style={styles.rolePillText}>ORDERBOOKER</Text>
           </View>
 
@@ -548,7 +544,7 @@ export default function ProfileScreen() {
         {/* Phone edit floating bar (only when editing) */}
         {isEditingPhone ? (
           <View style={styles.phoneEditBar}>
-            <MaterialIcons name="call" size={18} color={AuroraColors.indigo600} />
+            <MaterialIcons name="call" size={18} color="#4F46E5" />
             <TextInput
               ref={phoneInputRef}
               value={phoneInput}
@@ -564,7 +560,7 @@ export default function ProfileScreen() {
             <Pressable
               onPress={handleSavePhone}
               disabled={isSavingPhone}
-              style={[styles.phoneEditBtn, { backgroundColor: AuroraColors.indigo600 }]}
+              style={[styles.phoneEditBtn, { backgroundColor: '#4F46E5' }]}
             >
               {isSavingPhone ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
@@ -593,8 +589,8 @@ export default function ProfileScreen() {
             label="Total Shops"
             value={totalShops}
             icon="store"
-            accent={AuroraColors.indigo600}
-            accentSoft="#DBEAFE"
+            accent="#4F46E5"
+            accentSoft="#E0E7FF"
           />
           <StatCard
             label="Recovery (MO)"
@@ -616,7 +612,7 @@ export default function ProfileScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderIcon}>
-              <MaterialIcons name="person-outline" size={14} color={AuroraColors.indigo600} />
+              <MaterialIcons name="person-outline" size={14} color="#4F46E5" />
             </View>
             <Text style={styles.cardHeaderTitle}>ACCOUNT</Text>
           </View>
@@ -669,7 +665,7 @@ export default function ProfileScreen() {
         >
           <View style={styles.analysisToggleLeft}>
             <View style={styles.analysisToggleIcon}>
-              <MaterialIcons name="analytics" size={20} color={AuroraColors.indigo600} />
+              <MaterialIcons name="analytics" size={20} color="#4F46E5" />
             </View>
             <View>
               <Text style={styles.analysisToggleTitle}>Recovery Analysis</Text>
@@ -680,7 +676,7 @@ export default function ProfileScreen() {
             <MaterialIcons
               name={showAnalysis ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
               size={22}
-              color={showAnalysis ? AuroraColors.indigo600 : Colors.textSecondary}
+              color={showAnalysis ? '#4F46E5' : Colors.textSecondary}
             />
           </View>
         </Pressable>
@@ -776,44 +772,11 @@ export default function ProfileScreen() {
         {/* ─────────────────────────────────────────────────────────────── */}
         <SectionLabel icon="settings" label="Settings" />
         <View style={styles.card}>
-          {/* Row 0: App Theme toggle (light / dark) */}
-          <SettingsRow
-            icon="palette"
-            iconColor={isDark ? '#FBBF24' : AuroraColors.indigo600}
-            iconBg={isDark ? 'rgba(251,191,36,0.18)' : '#DBEAFE'}
-            title="App Theme"
-            subtitle={isDark ? 'Midnight Gold (Dark)' : 'Aurora Glass (Light)'}
-            rightElement={
-              <View style={themeToggleStyles.toggleWrap}>
-                <MaterialIcons
-                  name="light-mode"
-                  size={14}
-                  color={!isDark ? AuroraColors.indigo600 : AuroraColors.textMuted}
-                />
-                <Switch
-                  value={isDark}
-                  onValueChange={toggleAppTheme}
-                  trackColor={{
-                    false: '#CBD5E1',
-                    true: isDark ? '#FBBF24' : AuroraColors.indigo600,
-                  }}
-                  thumbColor="#FFFFFF"
-                  style={themeToggleStyles.switch}
-                />
-                <MaterialIcons
-                  name="dark-mode"
-                  size={14}
-                  color={isDark ? '#FBBF24' : AuroraColors.textMuted}
-                />
-              </View>
-            }
-          />
-
           {/* Row 1: Company Assignments */}
           <SettingsRow
             icon="business"
-            iconColor={AuroraColors.indigo600}
-            iconBg="#DBEAFE"
+            iconColor="#4F46E5"
+            iconBg="#E0E7FF"
             title="Company Assignments"
             subtitle={companies.length > 0 ? `${companies.length} assigned` : 'No company assigned'}
             rightElement={renderCompanyBadges()}
@@ -845,7 +808,7 @@ export default function ProfileScreen() {
               <Switch
                 value={notificationsEnabled}
                 onValueChange={setNotificationsEnabled}
-                trackColor={{ false: '#CBD5E1', true: AuroraColors.indigo600 }}
+                trackColor={{ false: '#CBD5E1', true: '#4F46E5' }}
                 thumbColor="#FFFFFF"
               />
             }
@@ -854,8 +817,8 @@ export default function ProfileScreen() {
           {/* Row 4: Help & Support */}
           <SettingsRow
             icon="help-outline"
-            iconColor={AuroraColors.indigo600}
-            iconBg="#DBEAFE"
+            iconColor="#4F46E5"
+            iconBg="#E0E7FF"
             title="Help & Support"
             subtitle="FAQs, contact, & guides"
             onPress={() => Alert.alert('Help & Support', 'Contact: support@finexa.app')}
@@ -865,8 +828,8 @@ export default function ProfileScreen() {
           {/* Row 7: About App */}
           <SettingsRow
             icon="info-outline"
-            iconColor={AuroraColors.indigo600}
-            iconBg="#DBEAFE"
+            iconColor="#4F46E5"
+            iconBg="#E0E7FF"
             title="About App"
             subtitle="Version & legal info"
             onPress={() =>
@@ -886,8 +849,8 @@ export default function ProfileScreen() {
           {/* Additional row: Change PIN (preserve existing functionality) */}
           <SettingsRow
             icon="lock-outline"
-            iconColor={AuroraColors.indigo600}
-            iconBg="#DBEAFE"
+            iconColor="#4F46E5"
+            iconBg="#E0E7FF"
             title="Change PIN"
             subtitle="Update your 4-digit security PIN"
             onPress={handleChangePin}
@@ -933,7 +896,7 @@ export default function ProfileScreen() {
 
         <View style={{ height: Spacing.xxl }} />
       </ScrollView>
-    </AuroraBackground>
+    </View>
   );
 }
 
@@ -959,7 +922,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: 'rgba(167,139,250,0.20)',
+    backgroundColor: 'rgba(96,165,250,0.18)',
     top: -90,
     right: -70,
   },
@@ -968,7 +931,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: 'rgba(129,140,248,0.18)',
+    backgroundColor: 'rgba(96,165,250,0.12)',
     bottom: -50,
     left: -40,
   },
@@ -999,7 +962,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: FontSize.xxxl,
     fontWeight: FontWeight.bold,
-    color: AuroraColors.indigo600,
+    color: '#4F46E5',
   },
   avatarRingDot: {
     position: 'absolute',
@@ -1010,7 +973,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#22C55E',
     borderWidth: 3,
-    borderColor: '#1E40AF',
+    borderColor: '#4338CA',
   },
   userName: {
     fontSize: FontSize.xxxl,
@@ -1032,7 +995,7 @@ const styles = StyleSheet.create({
   rolePillText: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.bold,
-    color: AuroraColors.indigo600,
+    color: '#4F46E5',
     letterSpacing: 1,
   },
   heroMetaRow: {
@@ -1095,13 +1058,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     ...Shadow.md,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: '#E0E7FF',
   },
   phoneEditInput: {
     flex: 1,
     height: 36,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: '#E0E7FF',
     borderRadius: Radius.sm,
     paddingHorizontal: 10,
     fontSize: FontSize.base,
@@ -1146,7 +1109,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 8,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1220,7 +1183,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1234,7 +1197,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  toggleIconWrapActive: { backgroundColor: '#DBEAFE' },
+  toggleIconWrapActive: { backgroundColor: '#E0E7FF' },
 
   // ── Route error / active / start ──
   routeErrorBox: {
@@ -1340,7 +1303,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   badgePillActive: {
-    backgroundColor: AuroraColors.indigo600,
+    backgroundColor: '#4F46E5',
   },
   badgePillSoft: {
     backgroundColor: '#F1F5F9',
@@ -1383,7 +1346,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
   },
   langPillSideActive: {
-    backgroundColor: AuroraColors.indigo600,
+    backgroundColor: '#4F46E5',
   },
   langPillDivider: {
     width: 1,
@@ -1443,17 +1406,5 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontWeight: FontWeight.semibold,
     letterSpacing: 0.3,
-  },
-});
-
-// ── Theme toggle styles (light/dark switch row) ──
-const themeToggleStyles = StyleSheet.create({
-  toggleWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  switch: {
-    transform: [{ scale: 0.85 }],
   },
 });

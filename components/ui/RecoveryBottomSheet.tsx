@@ -20,7 +20,7 @@ import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
-import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { AURORA, Colors, Spacing, Radius, FontSize, FontWeight, Shadow, FontMono } from '@/constants/theme';
 import { Shop } from '@/services/api';
 import { getShopDisplayBalance } from '@/components/ui/ShopCard';
 import { formatPKR } from '@/utils/format';
@@ -100,7 +100,7 @@ function ConfettiOverlay({ visible }: { visible: boolean }) {
       id: i,
       x: Math.random() * SCREEN_WIDTH,
       delay: Math.random() * 300,
-      color: ['#2563EB', '#F59E0B', '#EF4444', '#10B981', '#7C3AED'][i % 5],
+      color: ['#4F46E5', '#F59E0B', '#EF4444', '#10B981', '#7C3AED'][i % 5],
       size: 4 + Math.random() * 6,
       rotation: Math.random() * 360,
     }))
@@ -161,7 +161,7 @@ function SuccessCheckmark({ visible }: { visible: boolean }) {
 
   return (
     <Animated.View style={[successStyles.container, { opacity: opacityAnim, transform: [{ scale: scaleAnim }] }]}>
-      <LinearGradient colors={['#2563EB', '#1D4ED8']} style={successStyles.badge}>
+      <LinearGradient colors={['#4F46E5', '#7C3AED', '#6366F1']} style={successStyles.badge}>
         <MaterialIcons name="check" size={28} color="#FFFFFF" />
       </LinearGradient>
     </Animated.View>
@@ -488,7 +488,7 @@ export function RecoveryBottomSheet({
               {/* ============ BIG AMOUNT INPUT (blue gradient) ============ */}
               <Animated.View style={[{ transform: [{ scale: amountScaleAnim }] }]}>
                 <LinearGradient
-                  colors={['#2563EB', '#1E40AF']}
+                  colors={['#4F46E5', '#7C3AED', '#6366F1']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.amountHero}
@@ -572,7 +572,7 @@ export function RecoveryBottomSheet({
               {numericAmount > 0 && numericAmount <= displayBalance ? (
                 <View style={styles.balancePreviewCard}>
                   <View style={styles.balancePreviewHeader}>
-                    <MaterialIcons name="trending-down" size={14} color="#1E40AF" />
+                    <MaterialIcons name="trending-down" size={14} color="#4338CA" />
                     <Text style={styles.balancePreviewTitle}>AFTER THIS RECOVERY</Text>
                   </View>
                   <View style={styles.balancePreviewRow}>
@@ -582,7 +582,7 @@ export function RecoveryBottomSheet({
                         {formatPKR(displayBalance)}
                       </Text>
                     </View>
-                    <MaterialIcons name="arrow-forward" size={16} color="#2563EB" />
+                    <MaterialIcons name="arrow-forward" size={16} color="#4F46E5" />
                     <View style={styles.balancePreviewItem}>
                       <Text style={styles.balancePreviewLabel}>Remaining</Text>
                       <Text style={[styles.balancePreviewValue, { color: remainingBalance > 0 ? '#F59E0B' : '#10B981' }]}>
@@ -639,7 +639,7 @@ export function RecoveryBottomSheet({
                       <MaterialIcons
                         name="storefront"
                         size={20}
-                        color={markGpsVisit ? '#2563EB' : Colors.textMuted}
+                        color={markGpsVisit ? '#4F46E5' : Colors.textMuted}
                       />
                     </View>
                     <View style={styles.gpsVisitTextWrap}>
@@ -655,7 +655,7 @@ export function RecoveryBottomSheet({
                     value={markGpsVisit}
                     onValueChange={handleToggleGpsVisit}
                     trackColor={{ false: Colors.border, true: '#93C5FD' }}
-                    thumbColor={Platform.OS === 'android' ? (markGpsVisit ? '#2563EB' : Colors.textMuted) : undefined}
+                    thumbColor={Platform.OS === 'android' ? (markGpsVisit ? '#4F46E5' : Colors.textMuted) : undefined}
                     ios_backgroundColor={Colors.border}
                   />
                 </View>
@@ -673,7 +673,7 @@ export function RecoveryBottomSheet({
 
                 {markGpsVisit && capturingGps && (
                   <View style={styles.gpsCapturingPill}>
-                    <ActivityIndicator size="small" color="#2563EB" />
+                    <ActivityIndicator size="small" color="#4F46E5" />
                     <Text style={styles.gpsCapturingPillLabel}>Capturing GPS location...</Text>
                   </View>
                 )}
@@ -686,7 +686,7 @@ export function RecoveryBottomSheet({
                     <View style={styles.mapContainer}>
                       {mapLoading ? (
                         <View style={styles.mapLoader}>
-                          <ActivityIndicator size="small" color="#2563EB" />
+                          <ActivityIndicator size="small" color="#4F46E5" />
                           <Text style={styles.mapLoaderText}>Loading map...</Text>
                         </View>
                       ) : null}
@@ -714,7 +714,7 @@ export function RecoveryBottomSheet({
                     <View style={styles.gpsInfo}>
                       <View style={styles.coordsRow}>
                         <View style={styles.coordsBadge}>
-                          <MaterialIcons name="gps-fixed" size={13} color="#1E40AF" />
+                          <MaterialIcons name="gps-fixed" size={13} color="#4338CA" />
                           <Text style={styles.coordsText}>
                             {gpsLat!.toFixed(5)}, {gpsLng!.toFixed(5)}
                           </Text>
@@ -743,7 +743,7 @@ export function RecoveryBottomSheet({
                         <MaterialIcons
                           name={capturingGps ? 'sync' : 'refresh'}
                           size={14}
-                          color="#1E40AF"
+                          color="#4338CA"
                           style={capturingGps ? { transform: [{ rotate: '180deg' }] } : {}}
                         />
                         <Text style={styles.retryBtnText}>
@@ -763,9 +763,9 @@ export function RecoveryBottomSheet({
                     <View style={styles.captureBtnInner}>
                       <View style={styles.captureBtnIconWrap}>
                         {capturingGps ? (
-                          <ActivityIndicator size="small" color="#2563EB" />
+                          <ActivityIndicator size="small" color="#4F46E5" />
                         ) : (
-                          <MaterialIcons name="add-location-alt" size={22} color="#2563EB" />
+                          <MaterialIcons name="add-location-alt" size={22} color="#4F46E5" />
                         )}
                       </View>
                       <View style={styles.captureBtnTextWrap}>
@@ -789,7 +789,7 @@ export function RecoveryBottomSheet({
                   onPress={handlePhotoProof}
                 >
                   <View style={styles.photoProofIconWrap}>
-                    <MaterialIcons name="photo-camera" size={20} color="#2563EB" />
+                    <MaterialIcons name="photo-camera" size={20} color="#4F46E5" />
                   </View>
                   <View style={styles.photoProofTextWrap}>
                     <Text style={styles.photoProofTitle}>Add Photo Proof</Text>
@@ -820,7 +820,7 @@ export function RecoveryBottomSheet({
             <View style={styles.footer}>
               {showSuccess ? (
                 <View style={styles.successFooter}>
-                  <LinearGradient colors={['#2563EB', '#1D4ED8']} style={styles.successFooterInner}>
+                  <LinearGradient colors={['#4F46E5', '#7C3AED', '#6366F1']} style={styles.successFooterInner}>
                     <MaterialIcons name="check-circle" size={24} color="#FFFFFF" />
                     <Text style={styles.successFooterText}>Recovery Submitted Successfully!</Text>
                   </LinearGradient>
@@ -882,9 +882,9 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   sheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: AURORA.bgElevated,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     maxHeight: '93%',
     ...Shadow.lg,
   },
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4F46E5',
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadow.sm,
@@ -1073,14 +1073,14 @@ const styles = StyleSheet.create({
     borderColor: '#BFDBFE',
   },
   quickChipActive: {
-    borderColor: '#2563EB',
-    backgroundColor: '#2563EB',
+    borderColor: '#4F46E5',
+    backgroundColor: '#4F46E5',
   },
   quickChipPressed: { opacity: 0.85, transform: [{ scale: 0.97 }] },
   quickChipText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semibold,
-    color: '#2563EB',
+    color: '#4F46E5',
   },
   quickChipTextActive: {
     color: '#FFFFFF',
@@ -1104,7 +1104,7 @@ const styles = StyleSheet.create({
   balancePreviewTitle: {
     fontSize: 10,
     fontWeight: FontWeight.bold,
-    color: '#1E40AF',
+    color: '#4338CA',
     letterSpacing: 0.6,
   },
   balancePreviewRow: {
@@ -1137,12 +1137,12 @@ const styles = StyleSheet.create({
   },
   reductionBarFill: {
     height: 4,
-    backgroundColor: '#2563EB',
+    backgroundColor: '#4F46E5',
     borderRadius: Radius.full,
   },
   reductionText: {
     fontSize: FontSize.xs,
-    color: '#1E40AF',
+    color: '#4338CA',
     fontWeight: FontWeight.semibold,
     textAlign: 'center',
     marginTop: 4,
@@ -1175,7 +1175,7 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   noteWrapFocused: {
-    borderColor: '#2563EB',
+    borderColor: '#4F46E5',
     backgroundColor: '#EFF6FF',
   },
   noteInput: {
@@ -1202,8 +1202,8 @@ const styles = StyleSheet.create({
     ...Shadow.sm,
   },
   gpsVisitCardActive: {
-    borderColor: '#2563EB',
-    backgroundColor: '#EFF6FF',
+    borderColor: '#4F46E5',
+    backgroundColor: '#EEF2FF',
   },
   gpsVisitLeft: {
     flexDirection: 'row',
@@ -1215,7 +1215,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1272,7 +1272,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
-    borderColor: '#2563EB',
+    borderColor: '#4F46E5',
     ...Shadow.md,
   },
   mapContainer: {
@@ -1340,14 +1340,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     flex: 1,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     borderRadius: Radius.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 6,
   },
   coordsText: {
     fontSize: FontSize.xs,
-    color: '#1E40AF',
+    color: '#4338CA',
     fontWeight: FontWeight.semibold,
     fontVariant: ['tabular-nums'],
   },
@@ -1376,11 +1376,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginTop: Spacing.xs,
     borderRadius: Radius.sm,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
   },
   retryBtnText: {
     fontSize: FontSize.sm,
-    color: '#1E40AF',
+    color: '#4338CA',
     fontWeight: FontWeight.semibold,
   },
   // ===== GPS capture button =====
@@ -1403,7 +1403,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1437,7 +1437,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1473,32 +1473,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRadius: Radius.md,
     padding: Spacing.md,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#E0E7FF',
   },
   amountPreviewLabel: {
     fontSize: FontSize.sm,
-    color: '#1E40AF',
+    color: '#4338CA',
     fontWeight: FontWeight.bold,
   },
   amountPreviewSub: {
     fontSize: FontSize.xs,
-    color: '#2563EB',
+    color: '#4F46E5',
     marginTop: 1,
   },
   amountPreviewValue: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: '#1E40AF',
+    color: '#4338CA',
   },
   submitBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: '#2563EB',
-    borderRadius: 30,
+    backgroundColor: '#4F46E5',
+    borderRadius: 12,
     paddingVertical: 16,
-    ...Shadow.md,
+    ...Shadow.button,
   },
   submitBtnDisabled: {
     backgroundColor: '#CBD5E1',

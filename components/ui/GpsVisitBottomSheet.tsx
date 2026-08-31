@@ -220,7 +220,7 @@ export function GpsVisitBottomSheet({
           <View style={styles.handle} />
 
           <LinearGradient
-            colors={['#2563EB', '#1D4ED8', '#1E40AF']}
+            colors={['#4F46E5', '#4338CA', '#4338CA']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.headerGradient}
