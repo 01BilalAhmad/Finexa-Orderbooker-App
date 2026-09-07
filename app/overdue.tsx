@@ -315,9 +315,10 @@ export default function OverdueScreen() {
             const daysPillBg = isPulse ? colors.rose500 : isAmber ? colors.amber500 : colors.rose500;
             const daysLabel = shop.daysOverdue >= 999 ? '∞' : `${shop.daysOverdue} din`;
 
-            // Estimated FIFO overdue portion: assume ~65% of balance is "14+ days overdue"
-            // (mockup shows specific FIFO bills — in real app we'd need a bills API)
-            const fifoOverdue = Math.round(shop.balance * 0.65);
+            // REAL FIFO overdue portion from the v2 API (server-computed,
+            // same logic as the web admin Overdue page). Null when running
+            // on the local fallback calculator (offline, no server data).
+            const fifoOverdue = shop.overdueAmount != null ? shop.overdueAmount : null;
 
             return (
               <OverdueCard
@@ -358,7 +359,7 @@ function OverdueCard({
   isPulse: boolean;
   daysPillBg: string;
   daysLabel: string;
-  fifoOverdue: number;
+  fifoOverdue: number | null;
   onOpenShop: () => void;
 }) {
   const { colors, isDark } = useTheme();
@@ -416,27 +417,15 @@ function OverdueCard({
     ? [colors.rose600, colors.rose500, colors.rose400]
     : [colors.amber600, colors.amber500, colors.amber400];
 
-  // FIFO bill rows: synthesize 2 entries derived from balance + last recovery date
-  // (mockup shows: "12 Aug — Credit · Rs 18,000 (20d)" and "06 Aug — Credit · Rs 12,000 (26d)")
-  // We split the FIFO overdue into two parts ~60/40 for visual demo.
-  const fifoBill1 = Math.round(fifoOverdue * 0.60);
-  const fifoBill2 = fifoOverdue - fifoBill1;
-  const bill1Days = shop.daysOverdue >= 999 ? 20 : Math.max(14, shop.daysOverdue - 6);
-  const bill2Days = shop.daysOverdue >= 999 ? 26 : Math.max(14, shop.daysOverdue + 6);
-
-  // Format last recovery / no-recovery dates
-  const lastRecDate = shop.lastRecoveryDate
-    ? new Date(shop.lastRecoveryDate)
-    : null;
-  const bill1Date = lastRecDate
-    ? new Date(lastRecDate.getTime() - bill1Days * 86400000)
-    : null;
-  const bill2Date = lastRecDate
-    ? new Date(lastRecDate.getTime() - bill2Days * 86400000)
-    : null;
-  const fmtDate = (d: Date | null) =>
-    d
-      ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+  // REAL unpaid bills from the v2 API — every row is an actual unpaid bill
+  // (date, remaining amount, age), oldest first. Empty when running on the
+  // local fallback calculator — we show NO bills rather than fake ones.
+  const unpaidBills = Array.isArray(shop.unpaidBills) ? shop.unpaidBills.slice(0, 3) : [];
+  const totalBills = shop.unpaidBillCount ?? (shop.unpaidBills?.length ?? 0);
+  const moreBills = Math.max(0, totalBills - unpaidBills.length);
+  const fmtBillDate = (iso: string | null | undefined) =>
+    iso
+      ? new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
       : '—';
 
   return (
@@ -522,26 +511,29 @@ function OverdueCard({
         </Text>
       </View>
 
-      {/* FIFO overdue row */}
-      <View style={[styles.balanceRow, { marginBottom: isPulse ? 6 : 0 }]}>
-        <Text style={[styles.balanceLabel, { color: colors.textMuted }]}>
-          FIFO overdue (14+)
-        </Text>
-        <Text
-          style={[
-            styles.balanceAmt,
-            {
-              color: isPulse ? colors.rose600 : colors.amber600,
-              fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
-            },
-          ]}
-        >
-          {formatPKR(fifoOverdue)}
-        </Text>
-      </View>
+      {/* FIFO overdue row — only when the server-provided v2 value is present */}
+      {fifoOverdue != null && (
+        <View style={[styles.balanceRow, { marginBottom: unpaidBills.length > 0 ? 6 : 0 }]}>
+          <Text style={[styles.balanceLabel, { color: colors.textMuted }]}>
+            Overdue 14+ din portion
+          </Text>
+          <Text
+            style={[
+              styles.balanceAmt,
+              {
+                color: isPulse ? colors.rose600 : colors.amber600,
+                fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
+              },
+            ]}
+          >
+            {formatPKR(fifoOverdue)}
+          </Text>
+        </View>
+      )}
 
-      {/* FIFO bills list (only on .pulse cards per mockup) */}
-      {isPulse && (
+      {/* REAL unpaid bills list (dates + amounts + age) — from the v2 API.
+          Shown for every card when data is present; nothing when not. */}
+      {unpaidBills.length > 0 && (
         <View
           style={[
             styles.fifoWrap,
@@ -552,22 +544,21 @@ function OverdueCard({
             },
           ]}
         >
-          <View style={styles.fifoBill}>
-            <Text style={[styles.fifoDate, { color: colors.textSecondary }]}>
-              {fmtDate(bill1Date)} — Credit
+          {unpaidBills.map((b, i) => (
+            <View key={i} style={styles.fifoBill}>
+              <Text style={[styles.fifoDate, { color: colors.textSecondary }]}>
+                {fmtBillDate(b.date)} — Credit
+              </Text>
+              <Text style={[styles.fifoAmt, { color: colors.rose600 }]}>
+                {formatPKR(b.remaining)} ({b.daysOld}d)
+              </Text>
+            </View>
+          ))}
+          {moreBills > 0 && (
+            <Text style={[styles.fifoMore, { color: colors.textMuted }]}>
+              + {moreBills} more unpaid bill{moreBills === 1 ? '' : 's'} (total {totalBills})
             </Text>
-            <Text style={[styles.fifoAmt, { color: colors.rose600 }]}>
-              {formatPKR(fifoBill1)} ({bill1Days}d)
-            </Text>
-          </View>
-          <View style={styles.fifoBill}>
-            <Text style={[styles.fifoDate, { color: colors.textSecondary }]}>
-              {fmtDate(bill2Date)} — Credit
-            </Text>
-            <Text style={[styles.fifoAmt, { color: colors.rose600 }]}>
-              {formatPKR(fifoBill2)} ({bill2Days}d)
-            </Text>
-          </View>
+          )}
         </View>
       )}
     </Animated.View>
@@ -805,5 +796,10 @@ const styles = StyleSheet.create({
   fifoAmt: {
     fontSize: 11,
     fontWeight: '700',
+  },
+  fifoMore: {
+    fontSize: 10,
+    fontStyle: 'italic',
+    marginTop: 2,
   },
 });

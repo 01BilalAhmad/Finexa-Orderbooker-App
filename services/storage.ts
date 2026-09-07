@@ -104,6 +104,18 @@ export interface OverdueShop {
   balance: number;
   lastRecoveryDate: string | null;
   daysOverdue: number;
+  // v2 fields (from /api/orderbooker/overdue-shops — FIFO aging):
+  // daysOverdue is the age of the OLDEST UNPAID BILL (not last recovery)
+  overdueAmount?: number;
+  totalBalance?: number;
+  unpaidBills?: Array<{
+    date: string | null;
+    amount: number;
+    remaining: number;
+    daysOld: number;
+  }>;
+  unpaidBillCount?: number;
+  oldestUnpaidCreditDate?: string | null;
 }
 
 export interface ShopNote {

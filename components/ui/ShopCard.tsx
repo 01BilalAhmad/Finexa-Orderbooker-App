@@ -36,7 +36,7 @@ interface ShopCardProps {
   shop: Shop;
   isVisited: boolean;
   hasRecovery?: boolean; // Whether recovery has been submitted for this shop today
-  isOverdue?: boolean; // Whether this shop is overdue (7+ days since last recovery)
+  isOverdue?: boolean; // Whether this shop is overdue (oldest unpaid bill 14+ days old — FIFO)
   onCollect: () => void;
   onPress: () => void;
   onGpsVisit?: () => void;
